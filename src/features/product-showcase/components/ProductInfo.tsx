@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useEffect, useState } from "react";
 import gsap from "gsap";
-import { useMobile } from "@/shared/hooks";
+import { useMobile, useLanguage } from "@/shared";
 import { ProductInfoProps } from "../types";
 
 export default function ProductInfo({
@@ -24,6 +24,7 @@ export default function ProductInfo({
   const animationRef = useRef<gsap.core.Tween | null>(null);
   const previousTitle = useRef<string>(title);
   const isMobile = useMobile();
+  const { t, language } = useLanguage();
 
   // Add delay on initial render only
   useEffect(() => {
@@ -45,12 +46,10 @@ export default function ProductInfo({
         animationRef.current.kill();
       }
 
-      const juice = juiceData[title];
-
       // Update content
-      if (titleRef.current) titleRef.current.textContent = juice?.title || "";
+      if (titleRef.current) titleRef.current.textContent = t(`products.${title}`);
       if (descriptionRef.current)
-        descriptionRef.current.textContent = juice?.description || "";
+        descriptionRef.current.textContent = t(`descriptions.${title}`);
 
       // Create new animation with optimized settings
       animationRef.current = gsap.fromTo(
@@ -80,10 +79,7 @@ export default function ProductInfo({
       buttonRef.current.style.backgroundColor = buttonBgColor;
       buttonRef.current.style.color = buttonTextColor;
     }
-  }, [title, juiceData, renderDelayComplete, buttonBgColor, buttonTextColor]);
-
-  // Get initial juice data
-  const initialJuice = juiceData[title];
+  }, [title, juiceData, renderDelayComplete, buttonBgColor, buttonTextColor, t, language]);
 
   return (
     <div
@@ -109,23 +105,29 @@ export default function ProductInfo({
           <div
             ref={contentWrapperRef}
             className="relative"
-            style={{ willChange: "transform, opacity" }}
+            style={{ willtChange: "transform, opacity" }}
           >
             <h1
               ref={titleRef}
               className={`text-shadow-xs ${
                 isMobile ? "text-4xl mb-2" : "text-5xl mb-4"
-              } font-light  text-white`}
+              } font-light text-white`}
+              style={{
+                textShadow: "0px 2px 10px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.8)"
+              }}
             >
-              {initialJuice?.title}
+              {t(`products.${title}`)}
             </h1>
             <p
               ref={descriptionRef}
               className={`text-white ${
                 isMobile ? "text-base line-clamp-3" : "text-xl"
               } text-shadow-xs`}
+              style={{
+                textShadow: "0px 2px 8px rgba(0,0,0,0.9), 0px 1px 2px rgba(0,0,0,0.9)"
+              }}
             >
-              {initialJuice?.description}
+              {t(`descriptions.${title}`)}
             </p>
           </div>
           {/* Button that stays stable with updated hover behavior */}

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { Image as DreiImage } from "@react-three/drei";
 import * as THREE from "three";
 import { Can3DProps } from "../types";
 
-// Component for loading and rendering a 3D can model
+// Component for loading and rendering a 3D image model
 export default function Can3D({
   modelPath,
   rotate = [0, 0, 0],
@@ -14,7 +14,6 @@ export default function Can3D({
   onLoaded,
   isMobile = false,
 }: Can3DProps) {
-  const { scene } = useGLTF(modelPath);
   const modelRef = useRef<THREE.Group>(null);
   const timeRef = useRef(0);
   const loadedRef = useRef(false);
@@ -82,38 +81,15 @@ export default function Can3D({
     }
   });
 
+  // Call onLoaded after a short delay to simulate loading
   useEffect(() => {
-    if (modelRef.current) {
-      const clonedScene = scene.clone();
-
-      clonedScene.traverse((o) => {
-        if ((o as THREE.Mesh).isMesh) {
-          const mesh = o as THREE.Mesh;
-
-          if (mesh.material) {
-            if (mesh.material instanceof THREE.MeshStandardMaterial) {
-              mesh.material.metalness = 0.95;
-              mesh.material.roughness = 0.02;
-              mesh.material.alphaTest = 0.1;
-            }
-          }
-        }
-      });
-
-      while (modelRef.current.children.length > 0) {
-        modelRef.current.remove(modelRef.current.children[0]);
-      }
-
-      modelRef.current.add(clonedScene);
-
-      if (onLoaded && !loadedRef.current) {
-        loadedRef.current = true;
-        setTimeout(() => {
-          if (onLoaded) onLoaded();
-        }, 200);
-      }
+    if (onLoaded && !loadedRef.current) {
+      loadedRef.current = true;
+      setTimeout(() => {
+        if (onLoaded) onLoaded();
+      }, 300);
     }
-  }, [scene, onLoaded]);
+  }, [onLoaded]);
 
   // Scale and position adjustments for mobile
   const scale = isMobile ? 0.75 : 1;
@@ -125,8 +101,6 @@ export default function Can3D({
       rotation={rotate}
       scale={scale}
       position={position as [number, number, number]}
-      castShadow
-      receiveShadow
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
       onPointerDown={() => {
@@ -135,6 +109,13 @@ export default function Can3D({
       onPointerUp={() => {
         document.body.style.cursor = hovered ? "grab" : "auto";
       }}
-    ></group>
+    >
+      <DreiImage
+        url={modelPath}
+        transparent
+        scale={[2.2, 2.2]}
+        position={[0, 0, 0]}
+      />
+    </group>
   );
 }

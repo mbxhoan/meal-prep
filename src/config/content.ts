@@ -24,32 +24,32 @@ export interface PageContent {
 
 export const pageContent: PageContent = {
     nav: {
-        logo: "Juicy",
+        logo: "MEAL PREP",
         items: [
-            { label: "Flavour" },
-            { label: "Drinks" },
-            { label: "Fruit" },
-            { label: "About" },
-            { label: "Contact" },
+            { label: "Chicken" },
+            { label: "Beef" },
+            { label: "Pork" },
+            { label: "Seafood" },
+            { label: "Spices" },
         ],
         cartCount: 2,
     },
     logo: {
-        text: "JUICY",
+        text: "MEAL PREP",
     },
     sizes: [
-        { size: "355", unit: "ML", selected: true },
-        { size: "100", unit: "ML" },
-        { size: "125", unit: "ML" },
+        { size: "500", unit: "G", selected: true },
+        { size: "200", unit: "G" },
+        { size: "1", unit: "KG" },
     ],
     product: {
-        title: "Cheeky lime",
+        title: "Marinated Chicken",
         description:
-            "Discover a world of vibrant flavors with our premium juice selection. At Fresh & Juicy, we believe in the power of nature's finest ingredients to bring you",
-        buttonText: "See More",
+            "Enjoy our perfectly marinated meats, packed with protein and gourmet flavor. Designed for athletes, health enthusiasts, and busy professionals who demand maximum taste with zero prep time.",
+        buttonText: "Order Now",
     },
     scroll: {
-        firstLine: "Get",
-        secondLine: "This",
+        firstLine: "Scroll",
+        secondLine: "Down",
     },
 };

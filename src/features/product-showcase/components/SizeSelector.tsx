@@ -8,6 +8,7 @@ export default function SizeSelector({
   unselectedColor = "#82AF38",
   textColor = "#82AF38",
   selectedTextColor = "white",
+  onSelect,
 }: SizeSelectorProps) {
   const isMobile = useMobile();
 
@@ -23,6 +24,7 @@ export default function SizeSelector({
         <button
           key={index}
           type="button"
+          onClick={() => onSelect && onSelect(option.size)}
           className={`${
             isMobile ? "w-[60px] h-[60px]" : "w-[80px] h-[80px]"
           } border-1 border-white/50 rounded-full flex items-center justify-center flex-col cursor-pointer transition-all duration-300`}

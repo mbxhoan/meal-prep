@@ -1,6 +1,7 @@
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaGlobe } from "react-icons/fa";
 import { GiShoppingBag } from "react-icons/gi";
 import { MobileMenuProps } from "../types";
+import { useLanguage } from "@/shared";
 
 export default function MobileMenu({
   navItems,
@@ -9,11 +10,13 @@ export default function MobileMenu({
   activeDropdown,
   toggleDropdown,
 }: MobileMenuProps) {
+  const { t, language, setLanguage } = useLanguage();
+
   return (
     <div className="relative md:hidden">
       {/* Hamburger Button */}
       <button
-        className="relative z-10 flex flex-col justify-center items-center w-8 h-8 p-1"
+        className="relative z-10 flex flex-col justify-center items-center w-10 h-10 p-1 bg-black/40 hover:bg-black/60 rounded-full border border-white/30 transition-colors"
         onClick={() => {
           const newDropdown = activeDropdown === "menu" ? null : "menu";
           toggleDropdown(newDropdown === null ? "menu" : "menu");
@@ -55,11 +58,23 @@ export default function MobileMenu({
                 href={item.href || "#"}
                 className="block px-4 py-2.5 text-gray-800 hover:bg-gray-100 text-center text-lg font-medium transition-colors"
               >
-                {item.label}
+                {t(`nav.${item.label.toLowerCase()}`)}
               </a>
             ))}
             <div className="pt-2 mt-2 border-t border-gray-100"></div>
             <div className="flex justify-center gap-6 py-2">
+              <button
+                className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLanguage(language === "vi" ? "en" : "vi");
+                }}
+              >
+                <span className="text-sm font-bold flex items-center justify-center flex-col gap-[2px]">
+                  <FaGlobe size={14} color="#555" />
+                  <span className="text-[10px] text-[#555] uppercase">{language}</span>
+                </span>
+              </button>
               <button
                 className="flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                 onClick={(e) => {

@@ -1,5 +1,5 @@
-// Theme configuration for different juice flavors
-export type JuiceName = "Lemon Ginger" | "Blueberry Açai" | "Mango Burst" | "Raspberry Rosé";
+// Theme configuration for different meal prep products
+export type ProductName = "Marinated Chicken" | "Premium Beef" | "BBQ Ribs" | "Citrus Salmon";
 
 export interface ThemeConfig {
     mainBgColor: string;
@@ -10,68 +10,68 @@ export interface ThemeConfig {
     buttonTextColor: string;
 }
 
-export interface JuiceInfo {
+export interface ProductInfo {
     title: string;
     description: string;
 }
 
-// Can color and text color map
-export const canThemeMap: Record<JuiceName, ThemeConfig> = {
-    "Lemon Ginger": {
-        mainBgColor: "#82AF38",
-        blurColor: "#E5F985",
+// Product color and text color map
+export const canThemeMap: Record<ProductName, ThemeConfig> = {
+    "Marinated Chicken": {
+        mainBgColor: "#D37B40", // Warm roasted chicken color
+        blurColor: "#FFC299",
         textColor: "white",
         accentColor: "rgba(255, 255, 255, 0.9)",
         buttonBgColor: "white",
-        buttonTextColor: "#82AF38",
+        buttonTextColor: "#D37B40",
     },
-    "Blueberry Açai": {
-        mainBgColor: "#385dd2",
-        blurColor: "#B6B6F9",
+    "Premium Beef": {
+        mainBgColor: "#8C2A2A", // Deep red meat color
+        blurColor: "#E57575",
         textColor: "white",
         accentColor: "rgba(255, 255, 255, 0.9)",
         buttonBgColor: "white",
-        buttonTextColor: "#385dd2",
+        buttonTextColor: "#8C2A2A",
     },
-    "Mango Burst": {
-        mainBgColor: "#FFA500",
-        blurColor: "#FFF3B6",
-        textColor: "#222",
-        accentColor: "rgba(0,0,0,0.7)",
-        buttonBgColor: "white",
-        buttonTextColor: "#FFA500",
-    },
-    "Raspberry Rosé": {
-        mainBgColor: "#FF6B81",
-        blurColor: "#FFD6DE",
+    "BBQ Ribs": {
+        mainBgColor: "#592E25", // Dark BBQ brown
+        blurColor: "#A66A58",
         textColor: "white",
-        accentColor: "rgba(255,255,255,0.9)",
+        accentColor: "rgba(255, 255, 255, 0.9)",
         buttonBgColor: "white",
-        buttonTextColor: "#FF6B81",
+        buttonTextColor: "#592E25",
+    },
+    "Citrus Salmon": {
+        mainBgColor: "#F47B62", // Salmon pink
+        blurColor: "#FFC3B5",
+        textColor: "white",
+        accentColor: "rgba(255, 255, 255, 0.9)",
+        buttonBgColor: "white",
+        buttonTextColor: "#F47B62",
     },
 };
 
-// Juice product data with unique descriptions for each flavor
-export const juiceData: Record<JuiceName, JuiceInfo> = {
-    "Lemon Ginger": {
-        title: "Lemon Ginger",
+// Meal product data with unique descriptions
+export const juiceData: Record<ProductName, ProductInfo> = {
+    "Marinated Chicken": {
+        title: "Marinated Chicken",
         description:
-            "A zesty and refreshing blend with a spicy kick. Our Lemon Ginger juice combines the citrusy brightness of fresh lemons with the warming properties of ginger.",
+            "Lean, premium chicken breast marinated in our signature blend of herbs and spices. Perfect for a quick, protein-packed meal.",
     },
-    "Blueberry Açai": {
-        title: "Blueberry Açai",
+    "Premium Beef": {
+        title: "Premium Beef",
         description:
-            "A nutrient-packed superfood blend. Our Blueberry Açai juice brings together antioxidant-rich berries with the exotic taste of açai for a delicious health boost.",
+            "Juicy cuts of marbled beef, aged to perfection and pre-seasoned. Experience restaurant-quality steak from the comfort of your home.",
     },
-    "Mango Burst": {
-        title: "Mango Burst",
+    "BBQ Ribs": {
+        title: "BBQ Ribs",
         description:
-            "A tropical explosion of sweetness. Our Mango Burst juice captures the sun-ripened goodness of premium mangoes for a taste of paradise in every sip.",
+            "Fall-off-the-bone pork ribs coated in a rich, smoky barbecue rub. Slow-marinated so all you need to do is cook and enjoy.",
     },
-    "Raspberry Rosé": {
-        title: "Raspberry Rosé",
+    "Citrus Salmon": {
+        title: "Citrus Salmon",
         description:
-            "An elegant and sophisticated blend. Our Raspberry Rosé juice combines the delicate sweetness of raspberries with subtle floral notes for a refined exp.",
+            "Fresh, sustainably sourced salmon fillets infused with zesty citrus and dill. A light, nutritious option bursting with Omega-3s.",
     },
 };
 
@@ -83,17 +83,17 @@ export interface SizeOption {
 }
 
 export const defaultSizes: SizeOption[] = [
-    { size: "355", unit: "ML", selected: true },
-    { size: "500", unit: "ML", selected: false },
-    { size: "1", unit: "L", selected: false },
+    { size: "500", unit: "G", selected: true },
+    { size: "200", unit: "G", selected: false },
+    { size: "1", unit: "KG", selected: false },
 ];
 
-// Helper function to get theme by juice name
-export function getTheme(juiceName: string): ThemeConfig {
-    return canThemeMap[juiceName as JuiceName] || canThemeMap["Lemon Ginger"];
+// Helper function to get theme by product name
+export function getTheme(productName: string): ThemeConfig {
+    return canThemeMap[productName as ProductName] || canThemeMap["Marinated Chicken"];
 }
 
-// Helper function to get juice info
-export function getJuiceInfo(juiceName: string): JuiceInfo {
-    return juiceData[juiceName as JuiceName] || juiceData["Lemon Ginger"];
+// Helper function to get product info
+export function getProductInfo(productName: string): ProductInfo {
+    return juiceData[productName as ProductName] || juiceData["Marinated Chicken"];
 }

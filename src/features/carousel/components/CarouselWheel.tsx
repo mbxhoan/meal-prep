@@ -8,6 +8,7 @@ export default function CarouselWheel({
   isMobile,
   onActiveModelLoaded,
   wheelRef,
+  imageScale = 1,
 }: CarouselWheelProps) {
   const canModelsRef = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -21,7 +22,7 @@ export default function CarouselWheel({
         <div
           key={can.name}
           className={`${positionConfigs[index].className} ${
-            isMobile ? "w-[45%] h-[45%] mx-auto" : "w-1/2 h-1/2"
+            isMobile ? "w-[40%] h-[40%] mx-auto" : "w-1/2 h-1/2"
           } transform-gpu`}
           style={{
             transformOrigin: positionConfigs[index].transformOrigin,
@@ -37,6 +38,7 @@ export default function CarouselWheel({
             isMobile={isMobile}
             isActivePosition={index === activeIndex}
             onLoaded={onActiveModelLoaded}
+            imageScale={imageScale}
           />
         </div>
       ))}

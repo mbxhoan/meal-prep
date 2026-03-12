@@ -37,7 +37,7 @@ export function IceElement({ element, side, mounted, index }: ElementProps) {
       {mounted && (
         <Image
           src={getImagePath(element.elementType, element.variant)}
-          alt={element.elementType === "cube" ? "Ice cube" : "Leaf"}
+          alt="Spices"
           width={element.size}
           height={element.size}
           className="object-contain"

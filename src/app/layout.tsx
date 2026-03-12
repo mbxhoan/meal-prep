@@ -30,10 +30,12 @@ const thunder = localFont({
   display: "swap",
 });
 
+import { LanguageProvider } from "@/shared";
+
 export const metadata: Metadata = {
-  title: "Juicy - Premium Juice Selection",
+  title: "PrepBox - Premium Meal Prep Selection",
   description:
-    "Discover a world of vibrant flavors with our premium juice selection",
+    "Discover a world of vibrant flavors with our premium meal prep selection",
 };
 
 export default function RootLayout({
@@ -46,7 +48,9 @@ export default function RootLayout({
       <body
         className={`${inconsolata.variable} ${thunder.variable} antialiased w-screen overflow-hidden `}
       >
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );

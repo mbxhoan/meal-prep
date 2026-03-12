@@ -10,10 +10,10 @@ export const fruitTypeMap: Record<string, string> = {
     default: 'lemon.png'
 };
 
-// Get the path to the fruit image based on juice type
-export function getFruitImagePath(juiceType: string): string {
-    const filename = fruitTypeMap[juiceType] || fruitTypeMap.default;
-    return `/assets/images/fruit/${filename}`;
+// Get the path to the spice image
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getFruitImagePath(_juiceType?: string): string {
+    return `/assets/products/spices_nobg.png`;
 }
 
 // Get the appropriate fruit configs for a juice type

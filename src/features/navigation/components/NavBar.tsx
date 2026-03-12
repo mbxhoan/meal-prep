@@ -1,8 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaGlobe } from "react-icons/fa";
 import { GiShoppingBag } from "react-icons/gi";
-import { useMobile } from "@/shared/hooks";
+import { useMobile, useLanguage } from "@/shared";
 import { NavBarProps } from "../types";
 import { sampleCartItems } from "../config";
 import NavLinks from "./NavLinks";
@@ -16,6 +16,7 @@ export default function NavBar({
   cartItemCount,
   textColor = "white",
   bgColor = "transparent",
+  // bgColor = "rgba(0, 0, 0, 0.1)",
   themeColor = "#82AF38",
 }: NavBarProps) {
   const [activeDropdown, setActiveDropdown] = useState<
@@ -25,6 +26,7 @@ export default function NavBar({
   const accountRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const isMobile = useMobile();
+  const { language, setLanguage } = useLanguage();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -125,14 +127,35 @@ export default function NavBar({
 
       {/* User and Cart Icons - Desktop */}
       <div className={`${isMobile ? "hidden" : "flex"} items-center space-x-4`}>
+        {/* Language Switcher */}
+        <div 
+          className="relative cursor-pointer hover:opacity-100 transition-all duration-300 flex items-center bg-black/40 hover:bg-black/60 px-3 py-1.5 rounded-full border border-white/30" 
+          onClick={() => setLanguage(language === "vi" ? "en" : "vi")}
+        >
+          <span className="text-sm font-bold flex items-center gap-2" style={{ color: "white" }}>
+            <FaGlobe size={14} className="opacity-80" />
+            {language === "vi" ? (
+              <>
+                <span className="text-lg leading-none mt-[1px]">🇻🇳</span>
+                <span>VI</span>
+              </>
+            ) : (
+              <>
+                <span className="text-lg leading-none mt-[1px]">🇺🇸</span>
+                <span>EN</span>
+              </>
+            )}
+          </span>
+        </div>
+
         {/* Account Icon with Dropdown */}
         <div ref={accountRef} className="relative">
           <span
-            className="cursor-pointer hover:opacity-80 transition-opacity duration-300"
-            style={{ color: textColor }}
+            className="cursor-pointer hover:opacity-100 transition-opacity duration-300 flex items-center justify-center bg-black/40 hover:bg-black/60 w-9 h-9 rounded-full border border-white/30"
+            style={{ color: "white" }}
             onClick={() => toggleDropdown("account")}
           >
-            <FaUser size={20} />
+            <FaUser size={16} />
           </span>
 
           {/* Account Dropdown Menu - Desktop */}
@@ -144,11 +167,11 @@ export default function NavBar({
         {/* Cart Icon with Dropdown */}
         <div ref={cartRef} className="relative">
           <span
-            className="relative cursor-pointer hover:opacity-80 transition-opacity duration-300"
-            style={{ color: textColor }}
+            className="relative cursor-pointer hover:opacity-100 transition-opacity duration-300 flex items-center justify-center bg-black/40 hover:bg-black/60 w-9 h-9 rounded-full border border-white/30"
+            style={{ color: "white" }}
             onClick={() => toggleDropdown("cart")}
           >
-            <GiShoppingBag size={20} />
+            <GiShoppingBag size={18} />
             {cartItemCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                 {cartItemCount}

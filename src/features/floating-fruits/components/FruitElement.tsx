@@ -115,7 +115,7 @@ export function FruitElement({
       <div className="relative w-full h-full motion-blur-container">
         <Image
           src={imagePath}
-          alt="Fruit"
+          alt="Spices"
           width={fruitConfig.size}
           height={fruitConfig.size}
           style={{

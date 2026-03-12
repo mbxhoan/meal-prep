@@ -2,13 +2,13 @@
 export { ProductInfo, ProductLogo, SizeSelector, ScrollDownButton } from "./components";
 
 // Config
-export { canThemeMap, juiceData, defaultSizes, getTheme, getJuiceInfo } from "./config";
+export { canThemeMap, juiceData, defaultSizes, getTheme, getProductInfo } from "./config";
 
 // Types
 export type {
-    JuiceName,
+    ProductName,
     ThemeConfig,
-    JuiceInfo,
+    ProductInfo as ProductInfoType,
     SizeOption
 } from "./config";
 

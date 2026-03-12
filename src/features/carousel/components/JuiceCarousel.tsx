@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import gsap from "gsap";
-import { useGLTF } from "@react-three/drei";
+import { useTexture } from "@react-three/drei";
 import { useMobile } from "@/shared/hooks";
 import { useCarouselNavigation } from "../hooks";
 import { juiceCans } from "../config";
@@ -15,6 +15,7 @@ import { JuiceCarouselProps } from "../types";
 export default function JuiceCarousel({
   onCanChange,
   enableScrollNavigation = true,
+  imageScale = 1,
 }: JuiceCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -177,7 +178,7 @@ export default function JuiceCarousel({
     setLoadedModels(initialLoadingState);
 
     modelPaths.forEach((path) => {
-      useGLTF.preload(path);
+      useTexture.preload(path);
     });
   }, []);
 
@@ -204,17 +205,17 @@ export default function JuiceCarousel({
         />
 
         <div
-          className={`absolute top-0 left-1/2 -translate-x-1/2 
-          ${isMobile ? "translate-y-[1%]" : "translate-y-[3%]"} 
-          w-[300vh] h-[300vh] inset-0 flex items-center justify-center
+          className={`absolute left-1/2 -translate-x-1/2 
+          ${isMobile ? "-top-[10vh]" : "-top-[25vh]"} 
+          w-[300vh] h-[300vh] flex items-center justify-center
           `}
         >
-          {/* Carousel Wheel Component */}
           <CarouselWheel
             activeIndex={activeIndex}
             isMobile={isMobile}
             onActiveModelLoaded={handleActiveModelLoaded}
             wheelRef={wheelRef as React.RefObject<HTMLDivElement>}
+            imageScale={imageScale}
           />
         </div>
 

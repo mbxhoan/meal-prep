@@ -35,6 +35,7 @@ export interface SizeSelectorProps {
     unselectedColor?: string;
     textColor?: string;
     selectedTextColor?: string;
+    onSelect?: (size: string) => void;
 }
 
 export interface ScrollDownButtonProps {

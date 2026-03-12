@@ -24,6 +24,7 @@ export interface Can3DProps {
 export interface JuiceCarouselProps {
     onCanChange?: (canName: string) => void;
     enableScrollNavigation?: boolean;
+    imageScale?: number;
 }
 
 export interface CarouselControlsProps {
@@ -40,6 +41,7 @@ export interface CanvasContainerProps {
     isMobile: boolean;
     isActivePosition: boolean;
     onLoaded?: () => void;
+    imageScale?: number;
 }
 
 export interface CarouselWheelProps {
@@ -47,6 +49,7 @@ export interface CarouselWheelProps {
     isMobile: boolean;
     onActiveModelLoaded: () => void;
     wheelRef: React.RefObject<HTMLDivElement>;
+    imageScale?: number;
 }
 
 export interface FruitsContainerProps {

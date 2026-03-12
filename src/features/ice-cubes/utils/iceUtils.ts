@@ -1,13 +1,9 @@
 import { ElementConfig } from '../types';
 
 // Helper function to get the correct image path based on element type and variant
-export function getImagePath(elementType: "cube" | "leaf", variant?: 1 | 2): string {
-    if (elementType === "cube") {
-        return `/assets/images/ice/cube.webp`;
-    } else if (elementType === "leaf" && variant) {
-        return `/assets/images/leaf/${variant}.png`;
-    }
-    return `/assets/images/ice/cube.webp`; // Fallback
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getImagePath(_elementType?: "cube" | "leaf", _variant?: 1 | 2): string {
+    return `/assets/products/spices_nobg.png`;
 }
 
 // Function to generate elements with varying sizes and positions for each side

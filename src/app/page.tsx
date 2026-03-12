@@ -1,9 +1,8 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import dynamic from "next/dynamic";
 
 // Shared components
-import { AnimatedBackground, BlurredBackground } from "@/shared";
+import { AnimatedBackground, BlurredBackground, useLanguage } from "@/shared";
 import { useMobile } from "@/shared/hooks";
 
 // Feature imports
@@ -15,7 +14,7 @@ import {
   ScrollDownButton,
   canThemeMap,
   juiceData,
-  JuiceName,
+  ProductName,
 } from "@/features/product-showcase";
 import { JuiceCarousel } from "@/features/carousel";
 import { IceCubes } from "@/features/ice-cubes";
@@ -23,20 +22,15 @@ import { IceCubes } from "@/features/ice-cubes";
 // App config
 import { pageContent } from "@/config";
 
-// Optimize loading with specific settings to improve performance
-const WaterWave = dynamic(() => import("react-water-wave"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-screen max-h-[1100px] overflow-hidden relative"></div>
-  ),
-});
+// Removed WaterWave
 
 export default function Home() {
-  // Default to Lemon Ginger
-  const [theme, setTheme] = useState(canThemeMap["Lemon Ginger"]);
-  const [productTitle, setProductTitle] = useState("Lemon Ginger");
+  const [theme, setTheme] = useState(canThemeMap["Marinated Chicken"]);
+  const [productTitle, setProductTitle] = useState("Marinated Chicken");
   const [, setProductDesc] = useState(pageContent.product.description);
+  const [activeSize, setActiveSize] = useState("500");
   const isMobile = useMobile();
+  const { t } = useLanguage();
 
   const containerWidth = 1220;
 
@@ -63,12 +57,21 @@ export default function Home() {
   const handleCanChange = (canName: string) => {
     // Type check to ensure canName is a valid key in canThemeMap
     if (Object.keys(canThemeMap).includes(canName)) {
-      const typedCanName = canName as JuiceName;
+      const typedCanName = canName as ProductName;
       setTheme(canThemeMap[typedCanName]);
       setProductTitle(canName);
       setProductDesc(juiceData[typedCanName].description);
     }
   };
+
+  const dynamicSizes = pageContent.sizes.map((s) => ({
+    ...s,
+    selected: s.size === activeSize,
+  }));
+
+  let imageScale = 1;
+  if (activeSize === "200") imageScale = 0.85;
+  if (activeSize === "1") imageScale = 1.2;
 
   return (
     <div className="relative w-full max-w-[1440px] mx-auto max-h-screen sm:max-h-900px h-[100dvh] shadow-2xl select-none border-x-1 border-white/30">
@@ -81,14 +84,15 @@ export default function Home() {
         themeColor={theme.mainBgColor} // Pass theme color to NavBar
         buttonTextColor={theme.buttonTextColor} // Pass button text color to NavBar
       />
-      <WaterWave
-        dropRadius={isMobile ? 8 : 10}
-        perturbance={isMobile ? 0.006 : 0.01}
-        imageUrl="/assets/images/drop.png"
-        resolution={isMobile ? 700 : 1900}
+      <div 
+        className="max-h-screen sm:max-h-900px h-[100dvh] overflow-hidden w-full relative"
+        style={{
+          backgroundImage: "url('/assets/images/spice_pattern.png')",
+          backgroundRepeat: "repeat",
+          backgroundSize: "400px",
+          animation: "scroll-background 60s linear infinite",
+        }}
       >
-        {() => (
-          <div className="max-h-screen sm:max-h-900px h-[100dvh] overflow-hidden w-full relative">
             {/* Background as a separate component that handles its own animation */}
             <AnimatedBackground
               backgroundColor={theme.mainBgColor}
@@ -109,10 +113,10 @@ export default function Home() {
               {/* Blurred background */}
               <BlurredBackground color={theme.blurColor} />
 
-              {/* ProductLogo always fixed as "JUICY" and always white */}
+              {/* ProductLogo always fixed as "MEAL PREP" and always white */}
               <ProductLogo
                 isMobile={isMobile}
-                text="JUICY"
+                text="MEAL PREP"
                 color="white"
                 className="theme-text "
               />
@@ -126,36 +130,46 @@ export default function Home() {
                 <JuiceCarousel
                   onCanChange={handleCanChange}
                   enableScrollNavigation={true}
+                  imageScale={imageScale}
                 />
               </div>
 
               <SizeSelector
-                sizes={pageContent.sizes}
-                selectedColor={theme.buttonBgColor}
-                unselectedColor={theme.mainBgColor}
-                textColor={theme.mainBgColor}
-                selectedTextColor="white"
+                sizes={dynamicSizes}
+                selectedColor={theme.mainBgColor}
+                unselectedColor="rgba(0,0,0,0.45)"
+                textColor="white"
+                selectedTextColor="rgba(255,255,255,0.9)"
+                onSelect={setActiveSize}
               />
 
               <ProductInfo
                 title={productTitle}
                 juiceData={juiceData}
-                buttonText={pageContent.product.buttonText}
+                buttonText={t("orderNow")}
                 buttonBgColor={theme.buttonBgColor}
                 buttonTextColor={theme.buttonTextColor}
               />
 
               <ScrollDownButton
-                firstLine={pageContent.scroll.firstLine}
-                secondLine={pageContent.scroll.secondLine}
+                firstLine={t("scroll")}
+                secondLine={t("down")}
                 textColor="white"
                 isMobile={isMobile}
                 themeColor={theme.mainBgColor}
               />
             </div>
           </div>
-        )}
-      </WaterWave>
+        <style jsx global>{`
+          @keyframes scroll-background {
+            0% {
+              background-position: 0 0;
+            }
+            100% {
+              background-position: -400px -400px;
+            }
+          }
+        `}</style>
     </div>
   );
 }
