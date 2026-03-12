@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inconsolata } from "next/font/google";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const inconsolata = Inconsolata({
@@ -50,6 +52,8 @@ export default function RootLayout({
       >
         <LanguageProvider>
           {children}
+          <Analytics />
+          <SpeedInsights />
         </LanguageProvider>
       </body>
     </html>
