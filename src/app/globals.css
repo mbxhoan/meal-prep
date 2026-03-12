@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+button {
+  cursor: pointer;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+.jquery-ripples canvas {
+  width: 100% !important;
+
+  height: 100% !important;}
+
+body {
+  background: #82AF38;
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Motion blur for fruit elements */
+.motion-blur-container {
+  position: relative;
+  overflow: visible;
+}
+
+/* Blur overlay for enhanced depth effect */
+.blur-overlay {
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Dropdown animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom scrollbar for dropdowns */
+.styled-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Add responsive styles for mobile */
+@media screen and (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+
+  /* Optimize animations for mobile */
+  .motion-blur-container {
+    transform: translateZ(0);
+    /* Force hardware acceleration on mobile */
+  }
+
+  /* Improve touch interactions */
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Fix possible overflow issues */
+  .overflow-hidden-mobile {
+    overflow: hidden;
+  }
+}
