@@ -26,11 +26,13 @@ export const pageContent: PageContent = {
     nav: {
         logo: "MEAL PREP",
         items: [
-            { label: "Chicken" },
-            { label: "Beef" },
-            { label: "Pork" },
-            { label: "Seafood" },
-            { label: "Spices" },
+            { label: "Chicken", href: "/#" },
+            { label: "Beef", href: "/#" },
+            { label: "Pork", href: "/#" },
+            { label: "Seafood", href: "/#" },
+            { label: "Spices", href: "/#" },
+            { label: "Menu", href: "/menu" },
+            { label: "About", href: "/about" },
         ],
         cartCount: 2,
     },

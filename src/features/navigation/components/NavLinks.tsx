@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { NavLinksProps } from "../types";
 import { useLanguage } from "@/shared";
 
@@ -7,8 +8,9 @@ export default function NavLinks({ navItems, textColor }: NavLinksProps) {
   return (
     <div className="hidden md:flex space-x-8">
       {navItems.map((item, index) => (
-        <span
+        <Link
           key={index}
+          href={item.href || "#"}
           className="text-lg font-medium cursor-pointer relative group drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
           style={{ color: textColor }}
         >
@@ -17,7 +19,7 @@ export default function NavLinks({ navItems, textColor }: NavLinksProps) {
             className="absolute left-0 bottom-0 w-0 h-[2px] group-hover:w-full transition-all duration-300"
             style={{ backgroundColor: textColor }}
           />
-        </span>
+        </Link>
       ))}
     </div>
   );

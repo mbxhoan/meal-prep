@@ -46,9 +46,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="w-screen overflow-hidden">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inconsolata.variable} ${thunder.variable} antialiased w-screen overflow-hidden `}
+        className={`${inconsolata.variable} ${thunder.variable} antialiased`}
       >
         <LanguageProvider>
           {children}

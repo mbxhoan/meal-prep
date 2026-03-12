@@ -105,7 +105,7 @@ export default function ProductInfo({
           <div
             ref={contentWrapperRef}
             className="relative"
-            style={{ willtChange: "transform, opacity" }}
+            style={{ willChange: "transform, opacity" }}
           >
             <h1
               ref={titleRef}
