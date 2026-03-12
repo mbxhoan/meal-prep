@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useLanguage } from "@/shared";
-import { Footer } from "@/shared";
+import { useLanguage, Footer } from "@/shared";
 import { FaLeaf, FaHeart, FaRecycle, FaClock, FaArrowLeft } from "react-icons/fa";
 
 const valueIcons = [FaLeaf, FaHeart, FaRecycle, FaClock];
@@ -13,88 +12,92 @@ export default function AboutPage() {
 
   return (
     <div
-      className="min-h-screen text-white"
+      className="min-h-screen"
       style={{
         backgroundImage: "url('/assets/images/spice_pattern.png')",
         backgroundRepeat: "repeat",
         backgroundSize: "400px",
+        backgroundAttachment: "fixed",
       }}
     >
-      {/* Dark overlay */}
-      <div className="min-h-screen" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
+      {/* Light overlay instead of dark */}
+      <div className="min-h-screen" style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
         {/* Back button */}
         <div className="pt-6 px-6 md:px-16">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm"
+            className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors text-sm font-medium"
           >
             <FaArrowLeft size={12} />
             {t("backToHome")}
           </Link>
         </div>
 
-        {/* Hero */}
-        <header className="text-center py-16 px-6">
-          <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-            {t("about.title")}
-          </h1>
-          <p className="text-xl md:text-2xl text-white/60 max-w-2xl mx-auto">
-            {t("about.subtitle")}
-          </p>
-        </header>
+        {/* White content card */}
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-10">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            {/* Hero Header */}
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-8 md:px-12 py-14 text-center">
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-3">
+                {t("about.title")}
+              </h1>
+              <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
+                {t("about.subtitle")}
+              </p>
+            </div>
 
-        {/* Story */}
-        <section className="max-w-4xl mx-auto px-6 pb-16">
-          <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-white/10">
-            <p className="text-lg md:text-xl text-white/80 leading-relaxed">
-              {t("about.story")}
-            </p>
+            {/* Story */}
+            <section className="px-8 md:px-12 py-10 border-b border-gray-100">
+              <p className="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
+                {t("about.story")}
+              </p>
+            </section>
+
+            {/* Mission */}
+            <section className="px-8 md:px-12 py-10 border-b border-gray-100">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">
+                {t("about.mission")}
+              </h2>
+              <p className="text-base text-gray-500 text-center max-w-3xl mx-auto leading-relaxed">
+                {t("about.missionText")}
+              </p>
+            </section>
+
+            {/* Values */}
+            <section className="px-8 md:px-12 py-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {Array.isArray(values) && values.map((val, i) => {
+                  const Icon = valueIcons[i];
+                  return (
+                    <div
+                      key={i}
+                      className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-all duration-300 hover:transform hover:scale-[1.02]"
+                    >
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                        style={{ backgroundColor: `${valueColors[i]}15` }}
+                      >
+                        <Icon size={22} color={valueColors[i]} />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-800 mb-2">{val.title}</h3>
+                      <p className="text-gray-500 text-sm leading-relaxed">{val.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* CTA */}
+            <section className="text-center pb-12 px-8">
+              <Link
+                href="/menu"
+                className="inline-block px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-full hover:opacity-90 transition-opacity text-lg shadow-lg shadow-orange-500/20"
+              >
+                {t("menu.title")} →
+              </Link>
+            </section>
           </div>
-        </section>
-
-        {/* Mission */}
-        <section className="max-w-4xl mx-auto px-6 pb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">
-            {t("about.mission")}
-          </h2>
-          <p className="text-lg text-white/70 text-center max-w-3xl mx-auto leading-relaxed">
-            {t("about.missionText")}
-          </p>
-        </section>
-
-        {/* Values */}
-        <section className="max-w-5xl mx-auto px-6 pb-20">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {Array.isArray(values) && values.map((val, i) => {
-              const Icon = valueIcons[i];
-              return (
-                <div
-                  key={i}
-                  className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:transform hover:scale-[1.02]"
-                >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                    style={{ backgroundColor: `${valueColors[i]}20` }}
-                  >
-                    <Icon size={24} color={valueColors[i]} />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{val.title}</h3>
-                  <p className="text-white/60 leading-relaxed">{val.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="text-center pb-16 px-6">
-          <Link
-            href="/menu"
-            className="inline-block px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-full hover:opacity-90 transition-opacity text-lg"
-          >
-            {t("menu.title")} →
-          </Link>
-        </section>
+        </div>
 
         {/* Footer */}
         <Footer />

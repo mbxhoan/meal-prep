@@ -10,6 +10,7 @@ export default function ProductInfo({
   buttonText,
   buttonBgColor = "white",
   buttonTextColor = "#82AF38",
+  onProductClick,
 }: ProductInfoProps) {
   // Create stable refs for elements that shouldn't re-render
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,6 +138,7 @@ export default function ProductInfo({
               isMobile ? "text-sm hidden" : ""
             }`}
             style={{ backgroundColor: buttonBgColor, color: buttonTextColor }}
+            onClick={onProductClick}
             onMouseOver={(e) => {
               e.currentTarget.style.opacity = "0.8";
             }}

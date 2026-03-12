@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 // Shared components
 import { AnimatedBackground, BlurredBackground, useLanguage } from "@/shared";
@@ -25,6 +26,7 @@ import { pageContent } from "@/config";
 // Removed WaterWave
 
 export default function Home() {
+  const router = useRouter();
   const [theme, setTheme] = useState(canThemeMap["Marinated Chicken"]);
   const [productTitle, setProductTitle] = useState("Marinated Chicken");
   const [, setProductDesc] = useState(pageContent.product.description);
@@ -149,6 +151,16 @@ export default function Home() {
                 buttonText={t("orderNow")}
                 buttonBgColor={theme.buttonBgColor}
                 buttonTextColor={theme.buttonTextColor}
+                onProductClick={() => {
+                  const slugMap: Record<string, string> = {
+                    "Marinated Chicken": "marinated-chicken",
+                    "Premium Beef": "premium-beef",
+                    "BBQ Ribs": "bbq-ribs",
+                    "Citrus Salmon": "citrus-salmon",
+                  };
+                  const slug = slugMap[productTitle] || "marinated-chicken";
+                  router.push(`/product/${slug}`);
+                }}
               />
 
               <ScrollDownButton

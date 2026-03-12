@@ -35,7 +35,7 @@ const thunder = localFont({
 import { LanguageProvider } from "@/shared";
 
 export const metadata: Metadata = {
-  title: "PrepBox - Premium Meal Prep Selection",
+  title: "MealPrep - Premium Meal Prep Selection",
   description:
     "Discover a world of vibrant flavors with our premium meal prep selection",
 };

@@ -19,7 +19,6 @@ const weightOptions = [
   { size: "1", unit: "KG", multiplier: 10 },
 ];
 
-// Price per weight (placeholder)
 const priceMap: Record<string, string> = {
   "200": "Đang cập nhật",
   "500": "Đang cập nhật",
@@ -38,7 +37,6 @@ export default function ProductDetailPage({
   const [activeWeight, setActiveWeight] = useState("500");
   const [customWeight, setCustomWeight] = useState<string>("");
 
-  // Calculate nutrition based on active weight (must be before early return)
   const multiplier = useMemo(() => {
     if (customWeight && parseFloat(customWeight) > 0) {
       return parseFloat(customWeight) / 100;
@@ -80,18 +78,16 @@ export default function ProductDetailPage({
   if (!product) {
     return (
       <div
-        className="min-h-screen text-white flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center"
         style={{
           backgroundImage: "url('/assets/images/spice_pattern.png')",
           backgroundRepeat: "repeat",
           backgroundSize: "400px",
         }}
       >
-        <div className="min-h-screen flex items-center justify-center w-full" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
-            <Link href="/menu" className="text-orange-400 hover:underline">{t("backToMenu")}</Link>
-          </div>
+        <div className="text-center bg-white rounded-2xl p-12 shadow-xl">
+          <h1 className="text-3xl font-bold mb-4 text-gray-800">Product Not Found</h1>
+          <Link href="/menu" className="text-orange-500 hover:underline font-medium">{t("backToMenu")}</Link>
         </div>
       </div>
     );
@@ -99,166 +95,163 @@ export default function ProductDetailPage({
 
   return (
     <div
-      className="min-h-screen text-white"
+      className="min-h-screen"
       style={{
         backgroundImage: "url('/assets/images/spice_pattern.png')",
         backgroundRepeat: "repeat",
         backgroundSize: "400px",
+        backgroundAttachment: "fixed",
       }}
     >
-      <div className="min-h-screen" style={{ backgroundColor: "rgba(0,0,0,0.55)" }}>
+      <div className="min-h-screen" style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
         {/* Back button */}
         <div className="pt-6 px-6 md:px-16">
           <Link
             href="/menu"
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors text-sm"
+            className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors text-sm font-medium"
           >
             <FaArrowLeft size={12} />
             {t("backToMenu")}
           </Link>
         </div>
 
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            {/* Left: Product Image */}
-            <div className="flex flex-col items-center gap-6">
-              <div className="flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/10 min-h-[300px] w-full">
-                <div className="relative w-full max-w-[280px] aspect-square">
-                  <Image
-                    src={product.image}
-                    alt={t(`products.${product.nameKey}`)}
-                    fill
-                    className="object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.4)]"
-                    style={{ animation: "float-product 6s ease-in-out infinite" }}
-                  />
-                </div>
-              </div>
-
-              {/* Weight Selector */}
-              <div className="w-full bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-                <p className="text-sm text-white/50 mb-3 font-medium">
-                  {t("perServing")} — {displayWeight}
-                </p>
-                <div className="flex gap-3 mb-4">
-                  {weightOptions.map((opt) => (
-                    <button
-                      key={opt.size}
-                      onClick={() => {
-                        setActiveWeight(opt.size);
-                        setCustomWeight("");
-                      }}
-                      className={`flex-1 py-3 rounded-xl text-center font-bold transition-all duration-300 border ${
-                        activeWeight === opt.size && !customWeight
-                          ? "bg-gradient-to-r from-orange-500 to-red-500 border-transparent text-white"
-                          : "bg-white/5 border-white/20 text-white/60 hover:bg-white/10"
-                      }`}
-                    >
-                      <span className="text-lg">{opt.size}</span>
-                      <span className="text-xs ml-1">{opt.unit}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Custom weight input */}
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-1">
-                    <input
-                      type="number"
-                      min="0"
-                      value={customWeight}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "" || parseFloat(val) >= 0) {
-                          setCustomWeight(val);
-                        }
-                      }}
-                      placeholder={t("perServing")}
-                      className="w-full bg-white/5 border border-white/20 text-white rounded-xl px-4 py-3 text-sm placeholder:text-white/30 focus:outline-none focus:border-orange-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              {/* Left: Product Image + Weight Selector */}
+              <div className="bg-gradient-to-br from-gray-50 to-white p-6 md:p-8 flex flex-col items-center gap-6 border-r border-gray-100">
+                <div className="flex items-center justify-center min-h-[280px] w-full">
+                  <div className="relative w-full max-w-[260px] aspect-square">
+                    <Image
+                      src={product.image}
+                      alt={t(`products.${product.nameKey}`)}
+                      fill
+                      className="object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.15)]"
+                      style={{ animation: "float-product 6s ease-in-out infinite" }}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">g</span>
+                  </div>
+                </div>
+
+                {/* Weight Selector */}
+                <div className="w-full bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                  <p className="text-sm text-gray-400 mb-3 font-medium">
+                    {t("perServing")} — {displayWeight}
+                  </p>
+                  <div className="flex gap-3 mb-4">
+                    {weightOptions.map((opt) => (
+                      <button
+                        key={opt.size}
+                        onClick={() => {
+                          setActiveWeight(opt.size);
+                          setCustomWeight("");
+                        }}
+                        className={`flex-1 py-3 rounded-xl text-center font-bold transition-all duration-300 border ${
+                          activeWeight === opt.size && !customWeight
+                            ? "bg-gradient-to-r from-orange-500 to-red-500 border-transparent text-white shadow-md"
+                            : "bg-white border-gray-200 text-gray-500 hover:bg-gray-100"
+                        }`}
+                      >
+                        <span className="text-lg">{opt.size}</span>
+                        <span className="text-xs ml-1">{opt.unit}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={customWeight}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || parseFloat(val) >= 0) {
+                            setCustomWeight(val);
+                          }
+                        }}
+                        placeholder={t("perServing")}
+                        className="w-full bg-white border border-gray-200 text-gray-800 rounded-xl px-4 py-3 text-sm placeholder:text-gray-300 focus:outline-none focus:border-orange-400 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">g</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right: Product Info */}
-            <div>
-              {/* Title + Calorie badge */}
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <h1 className="text-3xl md:text-4xl font-bold leading-tight">
-                  {t(`products.${product.nameKey}`)}
-                </h1>
-                <span className="shrink-0 bg-white/10 backdrop-blur-sm text-white font-bold px-4 py-2 rounded-2xl text-sm border border-white/10">
-                  {scaledNutrition.calories} {t("kcal")}
-                </span>
-              </div>
+              {/* Right: Product Info */}
+              <div className="p-6 md:p-8">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
+                    {t(`products.${product.nameKey}`)}
+                  </h1>
+                  <span className="shrink-0 bg-orange-50 text-orange-600 font-bold px-4 py-2 rounded-2xl text-sm border border-orange-100">
+                    {scaledNutrition.calories} {t("kcal")}
+                  </span>
+                </div>
 
-              {/* Description */}
-              <p className="text-white/60 leading-relaxed mb-6">
-                {t(`descriptions.${product.nameKey}`)}
-              </p>
+                <p className="text-gray-500 leading-relaxed mb-5 text-sm">
+                  {t(`descriptions.${product.nameKey}`)}
+                </p>
 
-              {/* Price */}
-              <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10">
-                <span className="text-sm text-white/40 block mb-1">Giá / Price</span>
-                <span className="text-lg font-bold text-orange-400 italic">
-                  📦 {currentPrice}
-                </span>
-              </div>
+                {/* Price */}
+                <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
+                  <span className="text-sm text-gray-400 block mb-1">Giá / Price</span>
+                  <span className="text-lg font-bold text-orange-500 italic">
+                    📦 {currentPrice}
+                  </span>
+                </div>
 
-              {/* Nutrition Info */}
-              <div className="mb-6">
-                <h2 className="text-lg font-bold mb-1">{t("nutritionInfo")}</h2>
-                <p className="text-xs text-white/40 mb-4">{displayWeight}</p>
-
-                <div className="grid grid-cols-4 gap-3">
-                  {nutritionColors.map((nc, i) => (
-                    <div
-                      key={nc.label}
-                      className="relative bg-white/10 rounded-2xl overflow-hidden flex flex-col items-center pt-4 pb-3 min-h-[120px] border border-white/5"
-                    >
-                      <span className="text-[11px] md:text-xs font-semibold text-white/70 mb-auto">
-                        {nc.label}
-                      </span>
+                {/* Nutrition */}
+                <div className="mb-5">
+                  <h2 className="text-base font-bold text-gray-800 mb-1">{t("nutritionInfo")}</h2>
+                  <p className="text-xs text-gray-400 mb-3">{displayWeight}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {nutritionColors.map((nc, i) => (
                       <div
-                        className="absolute bottom-0 left-0 right-0 rounded-b-2xl transition-all duration-700"
-                        style={{
-                          height: `${Math.max(fillPercentages[i], 15)}%`,
-                          background: `linear-gradient(to top, ${nc.fill}, ${nc.fill}88)`,
-                          opacity: 0.5,
-                        }}
-                      />
-                      <span className="relative z-10 text-base md:text-lg font-bold mt-auto text-white">
-                        {nutritionValues[i]}
-                      </span>
-                    </div>
-                  ))}
+                        key={nc.label}
+                        className="relative bg-[#e8edf5] rounded-2xl overflow-hidden flex flex-col items-center pt-3 pb-2 min-h-[100px]"
+                      >
+                        <span className="text-[10px] md:text-xs font-semibold text-gray-500 mb-auto">
+                          {nc.label}
+                        </span>
+                        <div
+                          className="absolute bottom-0 left-0 right-0 rounded-b-2xl transition-all duration-700"
+                          style={{
+                            height: `${Math.max(fillPercentages[i], 15)}%`,
+                            background: `linear-gradient(to top, ${nc.fill}, ${nc.fill}88)`,
+                            opacity: 0.6,
+                          }}
+                        />
+                        <span className="relative z-10 text-sm md:text-base font-bold mt-auto text-gray-800">
+                          {nutritionValues[i]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Benefits */}
-              <div className="mb-8">
-                <h2 className="text-lg font-bold mb-3">{t("benefits")}</h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {product.benefits.map((bKey) => (
-                    <div key={bKey} className="flex items-center gap-2 text-sm text-white/60">
-                      <FaCheckCircle className="text-green-400 shrink-0" size={14} />
-                      <span>{t(bKey)}</span>
-                    </div>
-                  ))}
+                {/* Benefits */}
+                <div className="mb-6">
+                  <h2 className="text-base font-bold text-gray-800 mb-3">{t("benefits")}</h2>
+                  <div className="grid grid-cols-2 gap-2">
+                    {product.benefits.map((bKey) => (
+                      <div key={bKey} className="flex items-center gap-2 text-sm text-gray-500">
+                        <FaCheckCircle className="text-green-500 shrink-0" size={13} />
+                        <span>{t(bKey)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* CTA */}
-              <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-lg flex items-center justify-center gap-3 hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20">
-                <FaShoppingCart size={18} />
-                {t("productDetail.addToCart")}
-              </button>
+                {/* CTA */}
+                <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-base flex items-center justify-center gap-3 hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20">
+                  <FaShoppingCart size={16} />
+                  {t("productDetail.addToCart")}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <Footer />
 
         <style jsx global>{`

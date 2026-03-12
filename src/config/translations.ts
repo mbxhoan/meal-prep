@@ -4,6 +4,7 @@ export const translations = {
   en: {
     // Navigation
     nav: {
+      home: "Home",
       chicken: "Chicken",
       beef: "Beef",
       pork: "Pork",
@@ -129,6 +130,7 @@ export const translations = {
   vi: {
     // Navigation
     nav: {
+      home: "Trang chủ",
       chicken: "Gà",
       beef: "Bò",
       pork: "Heo",

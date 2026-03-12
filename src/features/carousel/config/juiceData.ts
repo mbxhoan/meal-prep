@@ -3,6 +3,12 @@ import { JuiceCan, PositionConfig } from "../types";
 // Juice can data with 3D model paths (now using images rendered in 3D)
 export const juiceCans: JuiceCan[] = [
     {
+        name: "Citrus Salmon",
+        color: "#F47B62", 
+        model: "/assets/products/salmon_nobg.png",
+        position: "left", // 9 o'clock
+    },
+    {
         name: "Marinated Chicken",
         color: "#D37B40", 
         model: "/assets/products/chicken_nobg.png",
@@ -19,13 +25,7 @@ export const juiceCans: JuiceCan[] = [
         color: "#592E25", 
         model: "/assets/products/ribs_nobg.png",
         position: "bottom", // 6 o'clock
-    },
-    {
-        name: "Citrus Salmon",
-        color: "#F47B62", 
-        model: "/assets/products/salmon_nobg.png",
-        position: "left", // 9 o'clock
-    },
+    }
 ];
 
 // Position configurations

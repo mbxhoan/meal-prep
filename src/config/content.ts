@@ -26,11 +26,7 @@ export const pageContent: PageContent = {
     nav: {
         logo: "MEAL PREP",
         items: [
-            { label: "Chicken", href: "/#" },
-            { label: "Beef", href: "/#" },
-            { label: "Pork", href: "/#" },
-            { label: "Seafood", href: "/#" },
-            { label: "Spices", href: "/#" },
+            { label: "Home", href: "/" },
             { label: "Menu", href: "/menu" },
             { label: "About", href: "/about" },
         ],

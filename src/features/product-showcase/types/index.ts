@@ -12,6 +12,7 @@ export interface ProductInfoProps {
     descColor?: string;
     buttonBgColor?: string;
     buttonTextColor?: string;
+    onProductClick?: () => void;
 }
 
 export interface JuicyLogoProps {
