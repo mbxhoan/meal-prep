@@ -115,10 +115,10 @@ export default function Home() {
               {/* Blurred background */}
               <BlurredBackground color={theme.blurColor} />
 
-              {/* ProductLogo always fixed as "MEAL PREP" and always white */}
+              {/* ProductLogo always fixed as "MEAL FIT" and always white */}
               <ProductLogo
                 isMobile={isMobile}
-                text="MEAL PREP"
+                text="MEAL FIT"
                 color="white"
                 className="theme-text "
               />

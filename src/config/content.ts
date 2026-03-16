@@ -24,7 +24,7 @@ export interface PageContent {
 
 export const pageContent: PageContent = {
     nav: {
-        logo: "MEAL PREP",
+        logo: "MEAL FIT",
         items: [
             { label: "Home", href: "/" },
             { label: "Menu", href: "/menu" },
@@ -33,7 +33,7 @@ export const pageContent: PageContent = {
         cartCount: 2,
     },
     logo: {
-        text: "MEAL PREP",
+        text: "MEAL FIT",
     },
     sizes: [
         { size: "500", unit: "G", selected: true },
