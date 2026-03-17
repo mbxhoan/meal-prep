@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Project overview
-- Repo: `meal-prep`
+- Repo: `meal-fit`
 - Stack: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS v4
 - Public storefront routes:
   - `/`

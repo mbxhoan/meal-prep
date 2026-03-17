@@ -7,83 +7,191 @@
 -- -----------------------------------------------------------------------------
 -- Auth users + profiles
 -- -----------------------------------------------------------------------------
+with seed_accounts as (
+  select *
+  from (
+    values
+      (
+        '90000000-0000-0000-0000-000000000001'::uuid,
+        'sysadmin@mealfit.vn'::text,
+        'MealFit System Admin'::text,
+        'system_admin'::text
+      ),
+      (
+        '90000000-0000-0000-0000-000000000002'::uuid,
+        'admin@mealfit.vn'::text,
+        'MealFit Shop Owner'::text,
+        'shop_owner'::text
+      ),
+      (
+        '90000000-0000-0000-0000-000000000003'::uuid,
+        'staff@mealfit.vn'::text,
+        'MealFit Staff'::text,
+        'staff'::text
+      )
+  ) as t(id, email, full_name, app_role)
+)
 insert into auth.users (
+  instance_id,
   id,
   aud,
   role,
   email,
   encrypted_password,
   email_confirmed_at,
+  recovery_sent_at,
+  last_sign_in_at,
   raw_app_meta_data,
   raw_user_meta_data,
+  is_super_admin,
+  created_at,
+  updated_at,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token,
+  email_change_token_current,
+  email_change_confirm_status,
+  is_sso_user,
+  is_anonymous
+)
+select
+  '00000000-0000-0000-0000-000000000000'::uuid,
+  sa.id,
+  'authenticated',
+  'authenticated',
+  sa.email,
+  extensions.crypt('Mealfit@123!', extensions.gen_salt('bf')),
+  now(),
+  now(),
+  now(),
+  jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email')),
+  jsonb_build_object('full_name', sa.full_name),
+  false,
+  now(),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  '',
+  0,
+  false,
+  false
+from seed_accounts sa
+on conflict (id) do update
+set instance_id = excluded.instance_id,
+    aud = excluded.aud,
+    role = excluded.role,
+    email = excluded.email,
+    encrypted_password = excluded.encrypted_password,
+    email_confirmed_at = excluded.email_confirmed_at,
+    recovery_sent_at = excluded.recovery_sent_at,
+    last_sign_in_at = excluded.last_sign_in_at,
+    raw_app_meta_data = excluded.raw_app_meta_data,
+    raw_user_meta_data = excluded.raw_user_meta_data,
+    is_super_admin = excluded.is_super_admin,
+    updated_at = now(),
+    confirmation_token = excluded.confirmation_token,
+    email_change = excluded.email_change,
+    email_change_token_new = excluded.email_change_token_new,
+    recovery_token = excluded.recovery_token,
+    email_change_token_current = excluded.email_change_token_current,
+    email_change_confirm_status = excluded.email_change_confirm_status,
+    is_sso_user = excluded.is_sso_user,
+    is_anonymous = excluded.is_anonymous;
+
+with seed_accounts as (
+  select *
+  from (
+    values
+      (
+        '90000000-0000-0000-0000-000000000001'::uuid,
+        'sysadmin@mealfit.vn'::text,
+        'MealFit System Admin'::text,
+        'system_admin'::text
+      ),
+      (
+        '90000000-0000-0000-0000-000000000002'::uuid,
+        'admin@mealfit.vn'::text,
+        'MealFit Shop Owner'::text,
+        'shop_owner'::text
+      ),
+      (
+        '90000000-0000-0000-0000-000000000003'::uuid,
+        'staff@mealfit.vn'::text,
+        'MealFit Staff'::text,
+        'staff'::text
+      )
+  ) as t(id, email, full_name, app_role)
+)
+insert into auth.identities (
+  id,
+  user_id,
+  identity_data,
+  provider,
+  provider_id,
+  last_sign_in_at,
   created_at,
   updated_at
 )
-values
-  (
-    '90000000-0000-0000-0000-000000000001',
-    'authenticated',
-    'authenticated',
-    'sysadmin@mealfit.vn',
-    extensions.crypt('Mealfit@123!', extensions.gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"MealFit System Admin"}'::jsonb,
-    now(),
-    now()
+select
+  sa.id,
+  sa.id,
+  jsonb_build_object(
+    'sub',
+    sa.id::text,
+    'email',
+    sa.email,
+    'email_verified',
+    true,
+    'phone_verified',
+    false
   ),
-  (
-    '90000000-0000-0000-0000-000000000002',
-    'authenticated',
-    'authenticated',
-    'admin@mealfit.vn',
-    extensions.crypt('Mealfit@123!', extensions.gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"MealFit Shop Owner"}'::jsonb,
-    now(),
-    now()
-  ),
-  (
-    '90000000-0000-0000-0000-000000000003',
-    'authenticated',
-    'authenticated',
-    'staff@mealfit.vn',
-    extensions.crypt('Mealfit@123!', extensions.gen_salt('bf')),
-    now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{"full_name":"MealFit Staff"}'::jsonb,
-    now(),
-    now()
-  )
+  'email',
+  sa.email,
+  now(),
+  now(),
+  now()
+from seed_accounts sa
 on conflict (id) do update
-set email = excluded.email,
-    encrypted_password = excluded.encrypted_password,
-    email_confirmed_at = excluded.email_confirmed_at,
-    raw_app_meta_data = excluded.raw_app_meta_data,
-    raw_user_meta_data = excluded.raw_user_meta_data,
+set identity_data = excluded.identity_data,
+    provider = excluded.provider,
+    provider_id = excluded.provider_id,
+    last_sign_in_at = excluded.last_sign_in_at,
     updated_at = now();
 
+with seed_accounts as (
+  select *
+  from (
+    values
+      (
+        '90000000-0000-0000-0000-000000000001'::uuid,
+        'sysadmin@mealfit.vn'::text,
+        'MealFit System Admin'::text,
+        'system_admin'::text
+      ),
+      (
+        '90000000-0000-0000-0000-000000000002'::uuid,
+        'admin@mealfit.vn'::text,
+        'MealFit Shop Owner'::text,
+        'shop_owner'::text
+      ),
+      (
+        '90000000-0000-0000-0000-000000000003'::uuid,
+        'staff@mealfit.vn'::text,
+        'MealFit Staff'::text,
+        'staff'::text
+      )
+  ) as t(id, email, full_name, app_role)
+)
 insert into public.profiles (id, email, full_name, role)
-values
-  (
-    '90000000-0000-0000-0000-000000000001',
-    'sysadmin@mealfit.vn',
-    'MealFit System Admin',
-    'system_admin'
-  ),
-  (
-    '90000000-0000-0000-0000-000000000002',
-    'admin@mealfit.vn',
-    'MealFit Shop Owner',
-    'shop_owner'
-  ),
-  (
-    '90000000-0000-0000-0000-000000000003',
-    'staff@mealfit.vn',
-    'MealFit Staff',
-    'staff'
-  )
+select
+  sa.id,
+  sa.email,
+  sa.full_name,
+  sa.app_role
+from seed_accounts sa
 on conflict (id) do update
 set email = excluded.email,
     full_name = excluded.full_name,
