@@ -27,13 +27,17 @@
   - `src/lib/supabase/server.ts`
   - `src/lib/supabase/client.ts`
 - Admin supports two modes:
-  - `live`: Supabase env is present and authenticated admin/editor session exists
+  - `live`: Supabase env is present and authenticated `system_admin` / `shop_owner` / `staff` session exists
   - `demo`: fallback mode using local mock data when Supabase is not configured
 
 ## Supabase rules
 - Base schema docs are in `docs/init/01_schema_supabase.sql` and `docs/init/02_seed_mealprep.sql`.
+- Local/dev seed data lives in:
+  - `supabase/seed.sql`
 - Inventory/profit extension migration is in:
   - `supabase/migrations/20260316231500_inventory_profit_admin.sql`
+- Role alignment migration is in:
+  - `supabase/migrations/20260316230500_role_model_and_permissions.sql`
 - Do not expose recipe cost or internal inventory cost data to public storefront queries.
 - Public storefront should only read product/category/content data needed for display.
 - Admin-only data:
@@ -42,6 +46,11 @@
   - `recipe_components`
   - `orders`
   - `order_items`
+- Current admin roles:
+  - `system_admin`
+  - `shop_owner`
+  - `staff`
+  - `viewer`
 - If you need new inventory/profit logic, prefer SQL functions/triggers in Supabase over duplicating calculation logic in the client.
 
 ## UI and editing guidance

@@ -332,17 +332,18 @@ Khi dùng Supabase MCP, agent nên làm theo thứ tự:
 - `public.profiles`
 
 **Role values**
-- `admin`
-- `editor`
+- `system_admin`
+- `shop_owner`
+- `staff`
 - `viewer`
 
 **Luật**
 - public site: anonymous read published content
-- admin/editor: full CRUD trên content tables
+- `system_admin` / `shop_owner` / `staff`: vào admin và thao tác content
 - viewer: không vào admin
 
 **Guard logic**
-- `profiles.role in ('admin', 'editor')` -> allow admin routes
+- `profiles.role in ('system_admin', 'shop_owner', 'staff')` -> allow admin routes
 - còn lại redirect về login hoặc trang không có quyền
 
 ---

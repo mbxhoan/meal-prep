@@ -11,7 +11,7 @@ export function LoginForm({ reason }: { reason?: string }) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(
     reason === "role"
-      ? "Tài khoản của bạn chưa có quyền admin/editor."
+      ? "Tài khoản của bạn chưa có quyền system_admin, shop_owner hoặc staff."
       : null,
   );
   const [pending, setPending] = useState(false);
@@ -26,8 +26,9 @@ export function LoginForm({ reason }: { reason?: string }) {
         Đăng nhập quản trị
       </h1>
       <p className="mt-3 text-sm leading-7 text-slate-500">
-        Dùng tài khoản Supabase có role <code>admin</code> hoặc <code>editor</code>.
-        Nếu chưa cấu hình môi trường, bạn vẫn có thể mở dashboard ở demo mode.
+        Dùng tài khoản Supabase có role <code>system_admin</code>,{" "}
+        <code>shop_owner</code> hoặc <code>staff</code>. Nếu chưa cấu hình môi
+        trường, bạn vẫn có thể mở dashboard ở demo mode.
       </p>
 
       {!configured ? (

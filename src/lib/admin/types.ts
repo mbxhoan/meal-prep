@@ -1,5 +1,11 @@
 export type AdminMode = "demo" | "live";
-export type AdminRole = "admin" | "editor" | "viewer";
+export type AdminRole =
+  | "system_admin"
+  | "shop_owner"
+  | "staff"
+  | "viewer"
+  | "admin"
+  | "editor";
 export type SalesChannel =
   | "website"
   | "facebook"

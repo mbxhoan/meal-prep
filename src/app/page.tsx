@@ -76,7 +76,7 @@ export default function Home() {
   if (activeSize === "1") imageScale = 1.2;
 
   return (
-    <div className="relative w-full max-w-[1440px] mx-auto max-h-screen sm:max-h-900px h-[100dvh] shadow-2xl select-none border-x-1 border-white/30 overflow-hidden">
+    <div className="relative w-full max-h-screen sm:max-h-900px h-[100dvh] shadow-2xl select-none overflow-hidden">
       <IceCubes {...iceCubesProps} />
       <NavBar
         logo={pageContent.nav.logo}

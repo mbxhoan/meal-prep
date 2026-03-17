@@ -26,11 +26,21 @@ function createDemoContext(): AdminContext {
       id: "demo-admin",
       email: "demo@mealfit.vn",
       fullName: "MealFit Demo Admin",
-      role: "admin",
+      role: "system_admin",
       avatarUrl: null,
     },
     canEdit: true,
   };
+}
+
+function canAccessAdmin(role: AdminRole) {
+  return (
+    role === "system_admin" ||
+    role === "shop_owner" ||
+    role === "staff" ||
+    role === "admin" ||
+    role === "editor"
+  );
 }
 
 function safeNumber(value: unknown, fallback = 0) {
@@ -255,7 +265,7 @@ export const getAdminContext = cache(async (): Promise<AdminContext> => {
       role,
       avatarUrl: profile?.avatar_url ?? null,
     },
-    canEdit: role === "admin" || role === "editor",
+    canEdit: canAccessAdmin(role),
   };
 });
 

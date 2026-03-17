@@ -90,7 +90,7 @@ export default function NavBar({
 
   return (
     <div
-      className="flex fixed left-1/2 border-b-1 border-white/30 -translate-x-1/2 top-0 w-full max-w-[1440px] items-center justify-between ps-[6.2%] pe-[5.5%] py-3 z-[100] select-none"
+      className="fixed inset-x-0 top-0 z-[100] flex items-center justify-between border-b-1 border-white/30 ps-[6.2%] pe-[5.5%] py-3 select-none"
       style={{
         backgroundColor: bgColor,
         backdropFilter: "blur(2px)",
