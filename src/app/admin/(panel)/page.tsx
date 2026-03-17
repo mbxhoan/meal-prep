@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  FaArrowRight,
   FaBoxArchive,
   FaClipboardList,
   FaMoneyBillTrendUp,
@@ -8,7 +7,6 @@ import {
 } from "react-icons/fa6";
 import {
   MetricCard,
-  PageHeader,
   StatusPill,
   statusTone,
 } from "@/features/admin/components";
@@ -20,21 +18,6 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <PageHeader
-        eyebrow="Dashboard"
-        title="Tồn kho, doanh thu và lợi nhuận"
-        description="Dashboard này gom các chỉ số quan trọng cho vận hành MealFit: tiền vào trong 30 ngày, gross profit, số món đang bán và các nguyên liệu sắp chạm mức reorder."
-        action={
-          <Link
-            href="/admin/orders/new"
-            className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
-          >
-            Tạo đơn mới
-            <FaArrowRight className="text-xs" />
-          </Link>
-        }
-      />
-
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Revenue 30d"

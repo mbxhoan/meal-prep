@@ -1,4 +1,4 @@
-import { PageHeader, InventoryAdjustmentForm, StatusPill } from "@/features/admin/components";
+import { InventoryAdjustmentForm, StatusPill } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/admin/format";
 import { getInventoryItems } from "@/lib/admin/service";
 
@@ -12,12 +12,6 @@ export default async function AdminInventoryPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <PageHeader
-        eyebrow="Inventory"
-        title="Tồn kho, AVG cost và biến động nguyên liệu"
-        description="Nhập kho hay điều chỉnh ở đây để cập nhật cost bình quân. Cost hiện tại sẽ được dùng ngay cho recipe BOM và các đơn mới."
-      />
-
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">

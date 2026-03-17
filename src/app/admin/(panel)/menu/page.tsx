@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FaArrowRight } from "react-icons/fa6";
-import { PageHeader, StatusPill } from "@/features/admin/components";
+import { StatusPill } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/admin/format";
 import { getMenuProducts } from "@/lib/admin/service";
 
@@ -10,12 +10,6 @@ export default async function AdminMenuPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <PageHeader
-        eyebrow="Menu"
-        title="Ảnh đại diện, giá bán và cost profile"
-        description="Trang này tập trung vào chỉnh thực đơn. Mỗi món có ảnh đại diện, thông tin hiển thị trên trang menu và các variant kèm cost profile để order builder dùng khi tính lợi nhuận."
-      />
-
       <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
         {products.map((product) => {
           const defaultVariant =

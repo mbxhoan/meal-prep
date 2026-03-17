@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { FaArrowRight } from "react-icons/fa6";
 import {
-  PageHeader,
   StatusPill,
   statusTone,
 } from "@/features/admin/components";
@@ -13,21 +10,6 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <PageHeader
-        eyebrow="Orders"
-        title="Đơn hàng và lời lãi theo từng đơn"
-        description="Mỗi đơn được lưu cùng revenue, COGS và gross profit. Khi order có status confirmed hoặc completed, hệ thống có thể tự trừ tồn kho theo recipe."
-        action={
-          <Link
-            href="/admin/orders/new"
-            className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90"
-          >
-            Tạo đơn
-            <FaArrowRight className="text-xs" />
-          </Link>
-        }
-      />
-
       <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <div className="overflow-hidden rounded-[26px] border border-slate-200">
           <table className="min-w-full text-left text-sm">

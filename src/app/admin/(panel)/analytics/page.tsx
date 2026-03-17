@@ -1,4 +1,4 @@
-import { PageHeader, StatusPill } from "@/features/admin/components";
+import { StatusPill } from "@/features/admin/components";
 import { formatCurrency, formatPercent } from "@/lib/admin/format";
 import { getAnalytics, getOrders } from "@/lib/admin/service";
 
@@ -29,12 +29,6 @@ export default async function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <PageHeader
-        eyebrow="Analytics"
-        title="Doanh thu và lợi nhuận theo ngày"
-        description="Trang này giúp nhìn rõ sau khi nhập cost mới thì margin đang thay đổi thế nào theo ngày và theo từng kênh bán."
-      />
-
       <section className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
