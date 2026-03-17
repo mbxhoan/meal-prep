@@ -154,9 +154,9 @@ export default function Home() {
                 onProductClick={() => {
                   const slugMap: Record<string, string> = {
                     "Marinated Chicken": "marinated-chicken",
-                    "Premium Beef": "premium-beef",
+                    "Premium Beef": "prime-beef",
                     "BBQ Ribs": "bbq-ribs",
-                    "Citrus Salmon": "citrus-salmon",
+                    "Citrus Salmon": "orange-salmon",
                   };
                   const slug = slugMap[productTitle] || "marinated-chicken";
                   router.push(`/product/${slug}`);

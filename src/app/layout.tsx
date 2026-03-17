@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Inconsolata } from "next/font/google";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
-
-const inconsolata = Inconsolata({
-  variable: "--font-inconsolata",
-  subsets: ["latin"],
-});
 
 const thunder = localFont({
   src: [
@@ -47,9 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inconsolata.variable} ${thunder.variable} antialiased`}
-      >
+      <body className={`${thunder.variable} antialiased`}>
         <LanguageProvider>
           {children}
           <Analytics />

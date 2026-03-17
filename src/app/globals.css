@@ -12,8 +12,8 @@ button {
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-thunder);
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +39,20 @@ body {
 
 a {
   text-decoration: none;
+}
+
+@keyframes float-product {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-15px) rotate(1deg);
+  }
+
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
 }
 
 /* Motion blur for fruit elements */

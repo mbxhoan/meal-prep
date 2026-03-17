@@ -1,97 +1,27 @@
-"use client";
-import { use, useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useLanguage, Footer } from "@/shared";
-import { products } from "@/config/products";
+import { notFound } from "next/navigation";
 import { FaArrowLeft, FaCheckCircle, FaShoppingCart } from "react-icons/fa";
+import { Footer } from "@/shared";
+import { formatCurrency } from "@/lib/admin/format";
+import { getMenuProductBySlug } from "@/lib/admin/service";
 
-const nutritionColors = [
-  { label: "Protein", fill: "#f9a8a8" },
-  { label: "Carbs", fill: "#6ee7b7" },
-  { label: "Fat", fill: "#93c5fd" },
-  { label: "Fiber", fill: "#fbbf24" },
-];
-
-const weightOptions = [
-  { size: "200", unit: "G", multiplier: 2 },
-  { size: "500", unit: "G", multiplier: 5 },
-  { size: "1", unit: "KG", multiplier: 10 },
-];
-
-const priceMap: Record<string, string> = {
-  "200": "Đang cập nhật",
-  "500": "Đang cập nhật",
-  "1": "Đang cập nhật",
-  custom: "Đang cập nhật",
-};
-
-export default function ProductDetailPage({
+export default async function ProductDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = use(params);
-  const { t } = useLanguage();
-  const product = products.find((p) => p.slug === slug);
-  const [activeWeight, setActiveWeight] = useState("500");
-  const [customWeight, setCustomWeight] = useState<string>("");
-
-  const multiplier = useMemo(() => {
-    if (customWeight && parseFloat(customWeight) > 0) {
-      return parseFloat(customWeight) / 100;
-    }
-    const opt = weightOptions.find((w) => w.size === activeWeight);
-    return opt ? opt.multiplier : 5;
-  }, [activeWeight, customWeight]);
-
-  const baseNutrition = product?.nutrition ?? { calories: 0, protein: "0g", carbs: "0g", fat: "0g", fiber: "0g" };
-  const scaledNutrition = {
-    calories: Math.round(baseNutrition.calories * multiplier),
-    protein: `${(parseFloat(baseNutrition.protein) * multiplier).toFixed(1)}g`,
-    carbs: `${(parseFloat(baseNutrition.carbs) * multiplier).toFixed(1)}g`,
-    fat: `${(parseFloat(baseNutrition.fat) * multiplier).toFixed(1)}g`,
-    fiber: `${(parseFloat(baseNutrition.fiber) * multiplier).toFixed(1)}g`,
-  };
-
-  const nutritionValues = [
-    scaledNutrition.protein,
-    scaledNutrition.carbs,
-    scaledNutrition.fat,
-    scaledNutrition.fiber,
-  ];
-
-  const maxGrams = 50 * multiplier;
-  const fillPercentages = nutritionValues.map((v) => {
-    const num = parseFloat(v);
-    return Math.min((num / maxGrams) * 100, 100);
-  });
-
-  const currentPrice = customWeight && parseFloat(customWeight) > 0
-    ? priceMap.custom
-    : priceMap[activeWeight] || "Đang cập nhật";
-
-  const displayWeight = customWeight && parseFloat(customWeight) > 0
-    ? `${customWeight}g`
-    : activeWeight === "1" ? "1 KG" : `${activeWeight}G`;
+  const { slug } = await params;
+  const product = await getMenuProductBySlug(slug);
 
   if (!product) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          backgroundImage: "url('/assets/images/spice_pattern.png')",
-          backgroundRepeat: "repeat",
-          backgroundSize: "400px",
-        }}
-      >
-        <div className="text-center bg-white rounded-2xl p-12 shadow-xl">
-          <h1 className="text-3xl font-bold mb-4 text-gray-800">Product Not Found</h1>
-          <Link href="/menu" className="text-orange-500 hover:underline font-medium">{t("backToMenu")}</Link>
-        </div>
-      </div>
-    );
+    notFound();
   }
+
+  const lowestPrice = product.variants.reduce(
+    (min, variant) => Math.min(min, variant.price),
+    product.variants[0]?.price ?? 0,
+  );
 
   return (
     <div
@@ -103,28 +33,29 @@ export default function ProductDetailPage({
         backgroundAttachment: "fixed",
       }}
     >
-      <div className="min-h-screen" style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
-        {/* Back button */}
+      <div
+        className="min-h-screen"
+        style={{ backgroundColor: "rgba(255,255,255,0.3)" }}
+      >
         <div className="pt-6 px-6 md:px-16">
           <Link
             href="/menu"
             className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors text-sm font-medium"
           >
             <FaArrowLeft size={12} />
-            {t("backToMenu")}
+            Quay lại thực đơn
           </Link>
         </div>
 
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-8">
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2">
-              {/* Left: Product Image + Weight Selector */}
               <div className="bg-gradient-to-br from-gray-50 to-white p-6 md:p-8 flex flex-col items-center gap-6 border-r border-gray-100">
                 <div className="flex items-center justify-center min-h-[280px] w-full">
                   <div className="relative w-full max-w-[260px] aspect-square">
                     <Image
-                      src={product.image}
-                      alt={t(`products.${product.nameKey}`)}
+                      src={product.mainImageUrl}
+                      alt={product.name}
                       fill
                       className="object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.15)]"
                       style={{ animation: "float-product 6s ease-in-out infinite" }}
@@ -132,120 +63,109 @@ export default function ProductDetailPage({
                   </div>
                 </div>
 
-                {/* Weight Selector */}
                 <div className="w-full bg-gray-50 rounded-2xl p-5 border border-gray-100">
                   <p className="text-sm text-gray-400 mb-3 font-medium">
-                    {t("perServing")} — {displayWeight}
+                    Chọn size đang mở bán
                   </p>
-                  <div className="flex gap-3 mb-4">
-                    {weightOptions.map((opt) => (
-                      <button
-                        key={opt.size}
-                        onClick={() => {
-                          setActiveWeight(opt.size);
-                          setCustomWeight("");
-                        }}
-                        className={`flex-1 py-3 rounded-xl text-center font-bold transition-all duration-300 border ${
-                          activeWeight === opt.size && !customWeight
-                            ? "bg-gradient-to-r from-orange-500 to-red-500 border-transparent text-white shadow-md"
-                            : "bg-white border-gray-200 text-gray-500 hover:bg-gray-100"
-                        }`}
+                  <div className="grid gap-3">
+                    {product.variants.map((variant) => (
+                      <div
+                        key={variant.id}
+                        className="rounded-2xl border border-gray-200 bg-white px-4 py-3"
                       >
-                        <span className="text-lg">{opt.size}</span>
-                        <span className="text-xs ml-1">{opt.unit}</span>
-                      </button>
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-gray-800">{variant.label}</p>
+                            <p className="text-xs text-gray-400">
+                              {variant.weightInGrams
+                                ? `${variant.weightInGrams} g`
+                                : "Kích thước linh hoạt"}
+                            </p>
+                          </div>
+                          <span className="text-sm font-semibold text-orange-500">
+                            {formatCurrency(variant.price)}
+                          </span>
+                        </div>
+                      </div>
                     ))}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        min="0"
-                        value={customWeight}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "" || parseFloat(val) >= 0) {
-                            setCustomWeight(val);
-                          }
-                        }}
-                        placeholder={t("perServing")}
-                        className="w-full bg-white border border-gray-200 text-gray-800 rounded-xl px-4 py-3 text-sm placeholder:text-gray-300 focus:outline-none focus:border-orange-400 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">g</span>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Right: Product Info */}
               <div className="p-6 md:p-8">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <h1 className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
-                    {t(`products.${product.nameKey}`)}
+                    {product.name}
                   </h1>
                   <span className="shrink-0 bg-orange-50 text-orange-600 font-bold px-4 py-2 rounded-2xl text-sm border border-orange-100">
-                    {scaledNutrition.calories} {t("kcal")}
+                    {product.categoryName}
                   </span>
                 </div>
 
                 <p className="text-gray-500 leading-relaxed mb-5 text-sm">
-                  {t(`descriptions.${product.nameKey}`)}
+                  {product.description}
                 </p>
 
-                {/* Price */}
                 <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
                   <span className="text-sm text-gray-400 block mb-1">Giá / Price</span>
                   <span className="text-lg font-bold text-orange-500 italic">
-                    📦 {currentPrice}
+                    📦 Từ {formatCurrency(lowestPrice)}
                   </span>
                 </div>
 
-                {/* Nutrition */}
                 <div className="mb-5">
-                  <h2 className="text-base font-bold text-gray-800 mb-1">{t("nutritionInfo")}</h2>
-                  <p className="text-xs text-gray-400 mb-3">{displayWeight}</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {nutritionColors.map((nc, i) => (
+                  <h2 className="text-base font-bold text-gray-800 mb-3">
+                    Các lựa chọn hiện có
+                  </h2>
+                  <div className="grid grid-cols-1 gap-3">
+                    {product.variants.map((variant) => (
                       <div
-                        key={nc.label}
-                        className="relative bg-[#e8edf5] rounded-2xl overflow-hidden flex flex-col items-center pt-3 pb-2 min-h-[100px]"
+                        key={variant.id}
+                        className="rounded-2xl border border-gray-100 bg-gray-50 p-4"
                       >
-                        <span className="text-[10px] md:text-xs font-semibold text-gray-500 mb-auto">
-                          {nc.label}
-                        </span>
-                        <div
-                          className="absolute bottom-0 left-0 right-0 rounded-b-2xl transition-all duration-700"
-                          style={{
-                            height: `${Math.max(fillPercentages[i], 15)}%`,
-                            background: `linear-gradient(to top, ${nc.fill}, ${nc.fill}88)`,
-                            opacity: 0.6,
-                          }}
-                        />
-                        <span className="relative z-10 text-sm md:text-base font-bold mt-auto text-gray-800">
-                          {nutritionValues[i]}
-                        </span>
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-gray-800">{variant.label}</p>
+                            <p className="mt-1 text-sm text-gray-500">
+                              {variant.weightInGrams
+                                ? `${variant.weightInGrams} g / phần`
+                                : "Kích thước linh hoạt"}
+                            </p>
+                          </div>
+                          <span className="font-semibold text-orange-500">
+                            {formatCurrency(variant.price)}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Benefits */}
                 <div className="mb-6">
-                  <h2 className="text-base font-bold text-gray-800 mb-3">{t("benefits")}</h2>
+                  <h2 className="text-base font-bold text-gray-800 mb-3">
+                    Điểm nổi bật
+                  </h2>
                   <div className="grid grid-cols-2 gap-2">
-                    {product.benefits.map((bKey) => (
-                      <div key={bKey} className="flex items-center gap-2 text-sm text-gray-500">
+                    {[
+                      "Ảnh đại diện đồng bộ từ admin",
+                      "Giá bán quản lý theo variant",
+                      "Danh mục có thể đổi từ dashboard",
+                      "Sẵn sàng cho theo dõi lợi nhuận",
+                    ].map((benefit) => (
+                      <div
+                        key={benefit}
+                        className="flex items-center gap-2 text-sm text-gray-500"
+                      >
                         <FaCheckCircle className="text-green-500 shrink-0" size={13} />
-                        <span>{t(bKey)}</span>
+                        <span>{benefit}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* CTA */}
                 <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-base flex items-center justify-center gap-3 hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20">
                   <FaShoppingCart size={16} />
-                  {t("productDetail.addToCart")}
+                  Liên hệ đặt món
                 </button>
               </div>
             </div>
@@ -253,14 +173,6 @@ export default function ProductDetailPage({
         </div>
 
         <Footer />
-
-        <style jsx global>{`
-          @keyframes float-product {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(1deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-          }
-        `}</style>
       </div>
     </div>
   );
