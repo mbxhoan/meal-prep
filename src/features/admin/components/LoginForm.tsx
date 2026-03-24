@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PROFILE_ROLE_LABELS } from "@/lib/rbac/constants";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export function LoginForm({ reason }: { reason?: string }) {
@@ -10,8 +11,8 @@ export function LoginForm({ reason }: { reason?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(
-    reason === "role"
-      ? "Tài khoản của bạn chưa có quyền system_admin, shop_owner hoặc staff."
+    reason === "permission" || reason === "role"
+      ? "Tài khoản của bạn chưa được gán quyền truy cập admin hoặc shop hợp lệ."
       : null,
   );
   const [pending, setPending] = useState(false);
@@ -26,8 +27,10 @@ export function LoginForm({ reason }: { reason?: string }) {
         Đăng nhập quản trị
       </h1>
       <p className="mt-3 text-sm leading-7 text-slate-500">
-        Dùng tài khoản Supabase có role <code>system_admin</code>,{" "}
-        <code>shop_owner</code> hoặc <code>staff</code>. Nếu chưa cấu hình môi
+        Dùng tài khoản Supabase đã được gán role{" "}
+        <code>{PROFILE_ROLE_LABELS.system_admin}</code>,{" "}
+        <code>{PROFILE_ROLE_LABELS.shop_admin}</code> hoặc{" "}
+        <code>{PROFILE_ROLE_LABELS.employee}</code>. Nếu chưa cấu hình môi
         trường, bạn vẫn có thể mở dashboard ở demo mode.
       </p>
 

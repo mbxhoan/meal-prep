@@ -1,11 +1,14 @@
+import type {
+  PermissionCode,
+  ProfileRoleCode,
+  RoleCode,
+  ShopContext,
+  UserShopRoleRecord,
+  EmployeeRecord as RbacEmployeeRecord,
+} from "@/lib/rbac";
+
 export type AdminMode = "demo" | "live";
-export type AdminRole =
-  | "system_admin"
-  | "shop_owner"
-  | "staff"
-  | "viewer"
-  | "admin"
-  | "editor";
+export type AdminRole = ProfileRoleCode;
 export type SalesChannel =
   | "website"
   | "facebook"
@@ -30,13 +33,20 @@ export interface AdminIdentity {
   fullName: string | null;
   role: AdminRole;
   avatarUrl: string | null;
+  activeShopId: string | null;
+  activeShopName: string | null;
 }
 
 export interface AdminContext {
   configured: boolean;
   mode: AdminMode;
   user: AdminIdentity | null;
+  shop: ShopContext | null;
+  shops: ShopContext[];
+  permissions: PermissionCode[];
   canEdit: boolean;
+  canAccessPanel: boolean;
+  canManageRoles: boolean;
 }
 
 export interface AdminCategory {
@@ -118,6 +128,25 @@ export interface InventoryMovement {
   unitCost: number | null;
   notes: string;
   createdAt: string;
+}
+
+export type EmployeeRecord = RbacEmployeeRecord;
+
+export interface RoleOption {
+  code: RoleCode;
+  label: string;
+  description: string;
+  scope: "global" | "shop";
+}
+
+export interface UserRoleAssignmentView {
+  id: string;
+  userId: string;
+  userEmail: string | null;
+  userName: string | null;
+  profileRole: AdminRole;
+  employee: EmployeeRecord | null;
+  assignments: UserShopRoleRecord[];
 }
 
 export interface OrderItem {
@@ -237,4 +266,11 @@ export interface OrderPayload {
     quantity: number;
     unitPrice: number;
   }>;
+}
+
+export interface AssignRolePayload {
+  userId: string;
+  shopId: string;
+  roleCode: RoleCode;
+  isPrimary: boolean;
 }

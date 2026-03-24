@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import type { IconType } from "react-icons";
 import {
   FaArrowRight,
   FaArrowUpRightFromSquare,
@@ -12,19 +13,55 @@ import {
   FaChartLine,
   FaClipboardList,
   FaHouse,
+  FaStore,
+  FaUserShield,
   FaUtensils,
   FaXmark,
 } from "react-icons/fa6";
 import type { AdminContext } from "@/lib/admin/types";
+import { PROFILE_ROLE_LABELS, type PermissionCode } from "@/lib/rbac/constants";
 import { LogoutButton } from "@/features/admin/components/LogoutButton";
 import { StatusPill } from "@/features/admin/components/StatusPill";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: IconType;
+  permission?: PermissionCode;
+};
+
+const navItems: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: FaHouse },
-  { href: "/admin/menu", label: "Thực đơn", icon: FaUtensils },
-  { href: "/admin/inventory", label: "Tồn kho", icon: FaBoxArchive },
-  { href: "/admin/orders", label: "Đơn hàng", icon: FaClipboardList },
-  { href: "/admin/analytics", label: "Doanh thu", icon: FaChartLine },
+  {
+    href: "/admin/menu",
+    label: "Thực đơn",
+    icon: FaUtensils,
+    permission: "master.menu.read",
+  },
+  {
+    href: "/admin/inventory",
+    label: "Tồn kho",
+    icon: FaBoxArchive,
+    permission: "inventory.stock.read",
+  },
+  {
+    href: "/admin/orders",
+    label: "Đơn hàng",
+    icon: FaClipboardList,
+    permission: "sales.order.read",
+  },
+  {
+    href: "/admin/analytics",
+    label: "Doanh thu",
+    icon: FaChartLine,
+    permission: "report.sales.read",
+  },
+  {
+    href: "/admin/settings/roles",
+    label: "Phân quyền",
+    icon: FaUserShield,
+    permission: "system.user.assign_role",
+  },
 ];
 
 type HeaderConfig = {
@@ -43,6 +80,16 @@ function isActivePath(pathname: string, href: string) {
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function formatRoleLabel(role: string | null | undefined) {
+  if (!role) {
+    return PROFILE_ROLE_LABELS.viewer;
+  }
+
+  return (
+    PROFILE_ROLE_LABELS[role as keyof typeof PROFILE_ROLE_LABELS] ?? role
+  );
 }
 
 function getHeaderConfig(pathname: string): HeaderConfig {
@@ -117,6 +164,15 @@ function getHeaderConfig(pathname: string): HeaderConfig {
     };
   }
 
+  if (pathname === "/admin/settings/roles") {
+    return {
+      eyebrow: "Access control",
+      title: "Phân quyền user theo shop",
+      description:
+        "Gán role, shop và employee profile trong một màn hình duy nhất.",
+    };
+  }
+
   return {
     eyebrow: "Operations",
     description:
@@ -134,6 +190,9 @@ export function AdminShell({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const header = getHeaderConfig(pathname);
+  const visibleNavItems = navItems.filter((item) =>
+    item.permission ? context.permissions.includes(item.permission) : true,
+  );
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(244,114,32,0.12),_transparent_32%),linear-gradient(180deg,_#f6f7f1_0%,_#eef2e7_56%,_#f6f1e7_100%)] text-slate-900">
@@ -166,17 +225,31 @@ export function AdminShell({
             <p className="mt-1 text-sm text-white/45">
               {context.user?.email ?? "demo@mealfit.vn"}
             </p>
-            <div className="mt-4 flex items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <StatusPill
                 label={context.mode === "live" ? "Live mode" : "Demo mode"}
                 tone={context.mode === "live" ? "success" : "warning"}
               />
-              <StatusPill label={context.user?.role ?? "admin"} tone="muted" />
+              <StatusPill
+                label={formatRoleLabel(context.user?.role)}
+                tone="muted"
+              />
             </div>
+            <div className="mt-4 flex items-center gap-2 text-xs text-white/60">
+              <FaStore className="shrink-0" />
+              <span className="truncate">
+                {context.shop?.name ?? "Chưa chọn shop"}
+              </span>
+            </div>
+            {context.shops.length > 1 ? (
+              <p className="mt-2 text-xs text-white/45">
+                {context.shops.length} shop đang khả dụng cho tài khoản này.
+              </p>
+            ) : null}
           </div>
 
           <nav className="mt-8 space-y-2">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(pathname, item.href);
 
@@ -219,8 +292,8 @@ export function AdminShell({
         ) : null}
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <header className="sticky top-4 z-20 rounded-[30px] border border-white/70 bg-white/82 px-5 py-4 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:px-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <header className="sticky top-4 z-20 rounded-[30px] border border-white/70 bg-white/82 px-4 py-3 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:px-5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex min-w-0 items-start gap-3">
                 <button
                   type="button"
@@ -230,18 +303,32 @@ export function AdminShell({
                   <FaBars />
                 </button>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-slate-400">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-slate-400">
                     {header.eyebrow}
                   </p>
                   {header.title ? (
-                    <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-900 md:text-2xl">
+                    <h1 className="mt-1 text-lg font-semibold tracking-tight text-slate-900 md:text-xl">
                       {header.title}
                     </h1>
                   ) : null}
-                  <p className="mt-1 flex max-w-4xl items-start gap-2 text-sm leading-6 text-slate-600">
+                  <p className="mt-1 flex max-w-4xl items-start gap-2 text-xs leading-6 text-slate-600 md:text-sm">
                     <FaChartColumn className="mt-1 shrink-0 text-[#51724f]" />
                     <span>{header.description}</span>
                   </p>
+                  {context.shop ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <StatusPill
+                        label={context.shop.name}
+                        tone="info"
+                      />
+                      {context.shops.length > 1 ? (
+                        <StatusPill
+                          label={`${context.shops.length} shop`}
+                          tone="muted"
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -255,7 +342,7 @@ export function AdminShell({
                     <FaArrowRight className="text-xs" />
                   </Link>
                 ) : null}
-                <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-500">
+                <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 md:text-sm">
                   {context.mode === "live"
                     ? "Đang kết nối Supabase"
                     : "Demo fallback đang bật"}

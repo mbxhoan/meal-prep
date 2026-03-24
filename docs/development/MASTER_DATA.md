@@ -18,6 +18,8 @@
 - phone
 - shop
 - active status
+- employee.profile nên link trực tiếp `auth.users.id`
+- `user_shop_roles` quản lý role theo shop, `profiles.role` chỉ là snapshot
 
 ### 3. roles
 ### 4. permissions
@@ -165,6 +167,13 @@ Các config gợi ý:
 - allow_negative_stock
 - allow_expired_issue
 - allow_fefo_override
+
+### 23. audit_logs
+- actor_user_id
+- shop_id
+- action
+- entity_name / entity_id / entity_code
+- before_json / after_json / metadata_json
 
 ## Master data bổ sung rất nên có
 1. `recipe_headers` / `recipe_lines`

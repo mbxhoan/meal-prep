@@ -2,13 +2,13 @@
 
 ## Role mặc định
 ### 1. system_admin
-Quyền cao nhất toàn hệ thống.
+Quyền cao nhất toàn hệ thống, có thể đọc / quản lý mọi shop.
 
 ### 2. shop_admin
-Quản trị một shop.
+Quản trị nghiệp vụ trong phạm vi shop được gán.
 
 ### 3. employee
-Nhân viên tác nghiệp.
+Nhân viên tác nghiệp theo quyền được cấp.
 
 ## Permission code gợi ý
 
@@ -102,9 +102,7 @@ Nhân viên tác nghiệp.
 Full tất cả permission.
 
 ### shop_admin
-Gần full trong phạm vi shop, trừ:
-- `system.*`
-- và một số override cực nhạy nếu muốn hạn chế
+Gần full trong phạm vi shop, trừ các `system.*`.
 
 ### employee
 Có thể bắt đầu với:
@@ -119,6 +117,20 @@ Có thể bắt đầu với:
   - override FEFO
   - xem audit toàn hệ thống
   - quản lý role/permission
+
+## Shop context / auth context
+- `profiles.role` chỉ là snapshot hiển thị, không phải nguồn sự thật RBAC.
+- Nguồn sự thật của quyền là `roles` + `permissions` + `role_permissions` + `user_shop_roles`.
+- `user_shop_roles.shop_id = null` được dùng cho role global như `system_admin`.
+- `employees.user_id` link tới `auth.users.id`, và `employees.primary_shop_id` giữ shop chính của nhân sự.
+
+## SQL helpers cần có
+- `get_user_primary_role_code()`
+- `get_user_primary_shop_id()`
+- `user_can_access_shop(shop_id)`
+- `has_permission(permission_code)`
+- `assign_user_shop_role(user_id, shop_id, role_code, is_primary)`
+- `log_audit_event(...)`
 
 ## RLS nguyên tắc
 - System admin bypass bằng service role hoặc claim đặc biệt.

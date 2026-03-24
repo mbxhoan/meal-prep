@@ -6,6 +6,7 @@ Build phần mềm vận hành thay Google Sheets cho mô hình Meal Prep, chạ
 - quản lý giá bán và giá vốn
 - khuyến mãi / mã giảm giá
 - quản lý tồn kho theo **lô + HSD + FEFO**
+- kiến trúc hỗ trợ **barcode hàng + barcode lô + serial barcode**
 - nhập kho / xuất kho / điều chỉnh kho
 - audit log toàn hệ thống
 - RBAC rõ ràng cho system admin / shop admin / employee
@@ -15,8 +16,9 @@ Khi có xung đột giữa source code cũ và tài liệu này:
 1. `docs/BUSINESS_RULES.md`
 2. `docs/ORDER_PRICING_COST_RULES.md`
 3. `docs/INVENTORY_FEFO_RULES.md`
-4. `docs/SCHEMA_SPEC.md`
-5. `docs/RBAC.md`
+4. `docs/TRACKING_MODES_AND_BARCODES.md`
+5. `docs/SCHEMA_SPEC.md`
+6. `docs/RBAC.md`
 
 ## Nguyên tắc bất biến
 1. **Không để dữ liệu lịch sử tự nhảy theo master hiện tại**.
@@ -28,13 +30,16 @@ Khi có xung đột giữa source code cũ và tài liệu này:
    - Tồn hiện tại = tổng nhập / sản xuất vào - tổng xuất / hao hụt / điều chỉnh.
 3. **FEFO là rule mặc định cho hàng có HSD**.
    - Xuất kho thành phẩm / nguyên liệu có HSD phải ưu tiên lô gần hết hạn nhất còn tồn.
-4. **Mọi thao tác quan trọng phải có audit log**.
+4. **Thiết kế item tracking mode ngay từ đầu**.
+   - Mỗi item phải hỗ trợ `none` / `lot` / `serial` / `lot_serial`.
+   - Phase đầu có thể chỉ vận hành bằng `lot`, nhưng schema phải mở sẵn cho `serial`.
+5. **Mọi thao tác quan trọng phải có audit log**.
    - create / update / delete / approve / confirm / cancel / price override / stock override.
-5. **Dùng migration có version**.
+6. **Dùng migration có version**.
    - Không sửa tay DB production.
    - Tất cả thay đổi schema phải đi qua SQL migration.
-6. **Ưu tiên soft delete / status hơn hard delete**.
-7. **Không dùng lookup động để render số tiền lịch sử**.
+7. **Ưu tiên soft delete / status hơn hard delete**.
+8. **Không dùng lookup động để render số tiền lịch sử**.
    - Order item phải lưu snapshot.
 
 ## Kiến trúc mong muốn
@@ -42,6 +47,7 @@ Khi có xung đột giữa source code cũ và tài liệu này:
 - Backend DB/Auth: Supabase PostgreSQL + Supabase Auth
 - RLS theo shop/tenant
 - RPC / SQL function cho FEFO allocation, posting stock movement, order confirm
+- Chuẩn bị chỗ cho lot allocation và serial allocation trong các phase sau
 - UI desktop-first nhưng responsive cho tablet/mobile
 - Tách module:
   - master data
@@ -53,6 +59,7 @@ Khi có xung đột giữa source code cũ và tài liệu này:
 
 ## Coding rules cho Codex
 - Sinh code theo từng phase nhỏ, chạy được, không cố làm tất cả một lần.
+- Mỗi lần code xong, ghi thêm hướng dẫn next step để rà soát, double check hoặc review lại những gì đã thay đổi thực tế.
 - Mỗi phase phải có:
   - migration SQL
   - type definitions

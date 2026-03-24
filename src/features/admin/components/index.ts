@@ -5,5 +5,6 @@ export * from "./LoginForm";
 export * from "./MetricCard";
 export * from "./OrderBuilder";
 export * from "./PageHeader";
+export * from "./RoleAssignmentForm";
 export * from "./ProductEditorForm";
 export * from "./StatusPill";

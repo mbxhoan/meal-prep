@@ -10,9 +10,14 @@ Mục tiêu:
 
 Deliverables:
 - tables: shops, roles, permissions, role_permissions, user_shop_roles
-- user profile / employee profile
-- shop switcher (nếu cần)
+- employee profile link auth user
+- auth context + shop context helpers
 - audit_logs nền
+- middleware / permission helpers
+- seed default permissions + roles
+- user profile / employee profile
+- audit_logs nền
+- docs/schema update cho `tracking_mode`, item barcode, lot barcode, serial readiness
 
 ## Phase 1 — Master data
 Mục tiêu:
@@ -34,6 +39,9 @@ Bao gồm:
 - payment_methods
 - coupons (basic)
 
+Ghi chú:
+- Phase 1 dùng lại `shops`, `employees`, `user_shop_roles`, `audit_logs` từ Phase 0.
+
 ## Phase 2 — Sales core
 Mục tiêu:
 - tạo đơn thay Google Sheet
@@ -53,7 +61,7 @@ Rule bắt buộc:
 
 ## Phase 3 — Inventory core
 Mục tiêu:
-- nhập / xuất / tồn theo lot
+- nhập / xuất / tồn theo lot, sẵn chỗ cho serial
 
 Bao gồm:
 - inventory_lots
@@ -62,6 +70,8 @@ Bao gồm:
 - inventory_movements
 - stock views
 - FEFO suggestion
+- lot barcode support
+- serial table blueprint hoặc implementation readiness
 
 ## Phase 4 — Sales x Inventory integration
 Mục tiêu:

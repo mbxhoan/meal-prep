@@ -9,16 +9,30 @@ import {
 } from "@/lib/admin/demo-data";
 import type {
   AdminContext,
-  AdminRole,
   AnalyticsPoint,
   DashboardSnapshot,
   InventoryItem,
   MenuProduct,
   OrderRecord,
 } from "@/lib/admin/types";
+import { RBAC_PERMISSION_CODES } from "@/lib/rbac";
+import { getRbacAccessContext } from "@/lib/rbac/server";
 import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
 function createDemoContext(): AdminContext {
+  const demoShop = {
+    id: "demo-shop",
+    code: "mealfit",
+    slug: "mealfit",
+    name: "MealFit Main Shop",
+    address: "TP. Hồ Chí Minh, Việt Nam",
+    phone: "+84 123 456 789",
+    timezone: "Asia/Ho_Chi_Minh",
+    currencyCode: "VND",
+    isDefault: true,
+    isActive: true,
+  };
+
   return {
     configured: false,
     mode: "demo",
@@ -28,19 +42,16 @@ function createDemoContext(): AdminContext {
       fullName: "MealFit Demo Admin",
       role: "system_admin",
       avatarUrl: null,
+      activeShopId: demoShop.id,
+      activeShopName: demoShop.name,
     },
+    shop: demoShop,
+    shops: [demoShop],
+    permissions: [...RBAC_PERMISSION_CODES],
     canEdit: true,
+    canAccessPanel: true,
+    canManageRoles: true,
   };
-}
-
-function canAccessAdmin(role: AdminRole) {
-  return (
-    role === "system_admin" ||
-    role === "shop_owner" ||
-    role === "staff" ||
-    role === "admin" ||
-    role === "editor"
-  );
 }
 
 function safeNumber(value: unknown, fallback = 0) {
@@ -228,44 +239,40 @@ export const getAdminContext = cache(async (): Promise<AdminContext> => {
     return createDemoContext();
   }
 
-  const supabase = await createSupabaseServerClient();
+  const context = await getRbacAccessContext();
 
-  if (!supabase) {
-    return createDemoContext();
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!context) {
     return {
       configured: true,
       mode: "live",
       user: null,
+      shop: null,
+      shops: [],
+      permissions: [],
       canEdit: false,
+      canAccessPanel: false,
+      canManageRoles: false,
     };
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, avatar_url")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const role = (profile?.role ?? "viewer") as AdminRole;
 
   return {
     configured: true,
     mode: "live",
     user: {
-      id: user.id,
-      email: profile?.email ?? user.email ?? null,
-      fullName: profile?.full_name ?? null,
-      role,
-      avatarUrl: profile?.avatar_url ?? null,
+      id: context.userId,
+      email: context.email,
+      fullName: context.fullName,
+      role: context.primaryRole,
+      avatarUrl: context.avatarUrl,
+      activeShopId: context.activeShop?.id ?? null,
+      activeShopName: context.activeShop?.name ?? null,
     },
-    canEdit: canAccessAdmin(role),
+    shop: context.activeShop,
+    shops: context.shops,
+    permissions: context.permissions,
+    canEdit: context.permissions.includes("master.menu.update"),
+    canAccessPanel: context.canAccessPanel,
+    canManageRoles: context.canManageRoles,
   };
 });
 

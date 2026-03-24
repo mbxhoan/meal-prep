@@ -21,13 +21,13 @@ with seed_accounts as (
         '90000000-0000-0000-0000-000000000002'::uuid,
         'admin@mealfit.vn'::text,
         'MealFit Shop Owner'::text,
-        'shop_owner'::text
+        'shop_admin'::text
       ),
       (
         '90000000-0000-0000-0000-000000000003'::uuid,
         'staff@mealfit.vn'::text,
         'MealFit Staff'::text,
-        'staff'::text
+        'employee'::text
       )
   ) as t(id, email, full_name, app_role)
 )
@@ -115,13 +115,13 @@ with seed_accounts as (
         '90000000-0000-0000-0000-000000000002'::uuid,
         'admin@mealfit.vn'::text,
         'MealFit Shop Owner'::text,
-        'shop_owner'::text
+        'shop_admin'::text
       ),
       (
         '90000000-0000-0000-0000-000000000003'::uuid,
         'staff@mealfit.vn'::text,
         'MealFit Staff'::text,
-        'staff'::text
+        'employee'::text
       )
   ) as t(id, email, full_name, app_role)
 )
@@ -175,13 +175,13 @@ with seed_accounts as (
         '90000000-0000-0000-0000-000000000002'::uuid,
         'admin@mealfit.vn'::text,
         'MealFit Shop Owner'::text,
-        'shop_owner'::text
+        'shop_admin'::text
       ),
       (
         '90000000-0000-0000-0000-000000000003'::uuid,
         'staff@mealfit.vn'::text,
         'MealFit Staff'::text,
-        'staff'::text
+        'employee'::text
       )
   ) as t(id, email, full_name, app_role)
 )
@@ -196,6 +196,159 @@ on conflict (id) do update
 set email = excluded.email,
     full_name = excluded.full_name,
     role = excluded.role;
+
+-- -----------------------------------------------------------------------------
+-- Phase 0 foundation
+-- -----------------------------------------------------------------------------
+insert into public.shops (
+  id,
+  code,
+  slug,
+  name,
+  address,
+  phone,
+  timezone,
+  currency_code,
+  is_default,
+  is_active
+)
+values (
+  '80000000-0000-0000-0000-000000000001',
+  'mealfit-main',
+  'mealfit-main',
+  'MealFit Main Shop',
+  'TP. Hồ Chí Minh, Việt Nam',
+  '+84 123 456 789',
+  'Asia/Ho_Chi_Minh',
+  'VND',
+  true,
+  true
+)
+on conflict (id) do update
+set code = excluded.code,
+    slug = excluded.slug,
+    name = excluded.name,
+    address = excluded.address,
+    phone = excluded.phone,
+    timezone = excluded.timezone,
+    currency_code = excluded.currency_code,
+    is_default = excluded.is_default,
+    is_active = excluded.is_active;
+
+insert into public.employees (
+  id,
+  user_id,
+  primary_shop_id,
+  employee_code,
+  full_name,
+  email,
+  phone,
+  job_title,
+  is_active,
+  notes
+)
+values
+  (
+    '91000000-0000-0000-0000-000000000001',
+    '90000000-0000-0000-0000-000000000001',
+    '80000000-0000-0000-0000-000000000001',
+    'SYS-001',
+    'MealFit System Admin',
+    'sysadmin@mealfit.vn',
+    '+84 900 000 001',
+    'System Admin',
+    true,
+    'Seeded for local auth context'
+  ),
+  (
+    '91000000-0000-0000-0000-000000000002',
+    '90000000-0000-0000-0000-000000000002',
+    '80000000-0000-0000-0000-000000000001',
+    'SHOP-001',
+    'MealFit Shop Owner',
+    'admin@mealfit.vn',
+    '+84 900 000 002',
+    'Shop Admin',
+    true,
+    'Seeded for local auth context'
+  ),
+  (
+    '91000000-0000-0000-0000-000000000003',
+    '90000000-0000-0000-0000-000000000003',
+    '80000000-0000-0000-0000-000000000001',
+    'EMP-001',
+    'MealFit Staff',
+    'staff@mealfit.vn',
+    '+84 900 000 003',
+    'Employee',
+    true,
+    'Seeded for local auth context'
+  )
+on conflict (id) do update
+set user_id = excluded.user_id,
+    primary_shop_id = excluded.primary_shop_id,
+    employee_code = excluded.employee_code,
+    full_name = excluded.full_name,
+    email = excluded.email,
+    phone = excluded.phone,
+    job_title = excluded.job_title,
+    is_active = excluded.is_active,
+    notes = excluded.notes,
+    updated_at = now();
+
+insert into public.user_shop_roles (
+  id,
+  user_id,
+  shop_id,
+  role_id,
+  is_primary,
+  is_active,
+  assigned_by,
+  assigned_at
+)
+select
+  role_rows.id,
+  role_rows.user_id,
+  role_rows.shop_id,
+  roles.id,
+  role_rows.is_primary,
+  true,
+  '90000000-0000-0000-0000-000000000001'::uuid,
+  now()
+from (
+  values
+    (
+      '92000000-0000-0000-0000-000000000001'::uuid,
+      '90000000-0000-0000-0000-000000000001'::uuid,
+      null::uuid,
+      'system_admin'::text,
+      true
+    ),
+    (
+      '92000000-0000-0000-0000-000000000002'::uuid,
+      '90000000-0000-0000-0000-000000000002'::uuid,
+      '80000000-0000-0000-0000-000000000001'::uuid,
+      'shop_admin'::text,
+      true
+    ),
+    (
+      '92000000-0000-0000-0000-000000000003'::uuid,
+      '90000000-0000-0000-0000-000000000003'::uuid,
+      '80000000-0000-0000-0000-000000000001'::uuid,
+      'employee'::text,
+      true
+    )
+) as role_rows(id, user_id, shop_id, role_code, is_primary)
+join public.roles roles
+  on roles.code = role_rows.role_code
+on conflict (id) do update
+set user_id = excluded.user_id,
+    shop_id = excluded.shop_id,
+    role_id = excluded.role_id,
+    is_primary = excluded.is_primary,
+    is_active = excluded.is_active,
+    assigned_by = excluded.assigned_by,
+    assigned_at = excluded.assigned_at;
 
 -- -----------------------------------------------------------------------------
 -- Menus

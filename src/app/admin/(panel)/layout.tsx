@@ -13,8 +13,8 @@ export default async function AdminPanelLayout({
     redirect("/admin/login");
   }
 
-  if (context.configured && !context.canEdit) {
-    redirect("/admin/login?reason=role");
+  if (context.configured && !context.canAccessPanel) {
+    redirect("/admin/login?reason=permission");
   }
 
   return <AdminShell context={context}>{children}</AdminShell>;

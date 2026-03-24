@@ -3,11 +3,11 @@
 ## Prompt 1 — đọc tài liệu và chốt nền
 Hãy đọc lần lượt:
 - AGENTS.md
-- docs/PRODUCT_SCOPE.md
-- docs/BUSINESS_RULES.md
-- docs/MASTER_DATA.md
-- docs/SCHEMA_SPEC.md
-- docs/RBAC.md
+- docs/development/PRODUCT_SCOPE.md
+- docs/development/BUSINESS_RULES.md
+- docs/development/MASTER_DATA.md
+- docs/development/SCHEMA_SPEC.md
+- docs/development/RBAC.md
 
 Sau đó:
 1. đề xuất file tree implementation cho source Next.js + Supabase hiện tại

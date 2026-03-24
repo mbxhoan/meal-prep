@@ -82,8 +82,15 @@ Rule:
   - hệ thống gợi ý lot theo expiry date sớm nhất còn tồn > 0
   - override FEFO phải ghi reason
 
+## 7A. Tracking mode / barcode
+- Mỗi item phải có `tracking_mode`: `none`, `lot`, `serial`, `lot_serial`.
+- Mỗi item có thể có `barcode` ở cấp item master.
+- Mỗi lot có thể có `lot_barcode`.
+- Với item `serial` hoặc `lot_serial`, hệ thống có thể tạo `serial_no` / `serial_barcode` cho từng đơn vị.
+- Phase đầu không bắt buộc scan serial cho toàn bộ Meal Prep; lot là mặc định.
+
 ## 8. Expiry / FEFO
-- FEFO áp dụng theo `expired_at` tăng dần.
+- FEFO áp dụng theo `expired_at` tăng dần trên các item có `tracking_mode` là `lot` hoặc `lot_serial`.
 - Lot hết hạn không được gợi ý xuất thường.
 - Có quyền đặc biệt mới được xuất lô hết hạn hoặc bypass FEFO.
 - Hệ thống phải có cảnh báo:
@@ -98,6 +105,11 @@ Phase 1:
 Phase 2+:
 - có thể bổ sung **actual cost by lot movement** để báo cáo lợi nhuận chính xác hơn.
 
+## 9A. Serial readiness
+- Kiến trúc phải cho phép sau này gắn serial vào sales order item / stock movement.
+- Nếu bật serial cho một item, không được đánh dấu serial là `sold` nếu chưa có movement hoặc allocation hợp lệ.
+- Serial có thể gắn với lot để vừa truy vết FEFO vừa truy vết từng đơn vị.
+
 ## 10. Audit bắt buộc
 Các action phải log:
 - create/update/delete item
@@ -107,6 +119,8 @@ Các action phải log:
 - create goods receipt
 - create goods issue
 - FEFO override
+- lot allocation override
+- serial assignment / serial status change
 - stock adjustment
 - role/permission changes
 - user/shop config changes
