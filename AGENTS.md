@@ -1,99 +1,89 @@
-# AGENTS.md
+# AGENTS.md — Meal Prep Ops Platform
 
-## Project overview
-- Repo: `meal-fit`
-- Stack: Next.js 15 App Router, React 19, TypeScript, Tailwind CSS v4
-- Public storefront routes:
-  - `/`
-  - `/menu`
-  - `/product/[slug]`
-  - `/about`
-- Admin routes:
-  - `/admin`
-  - `/admin/menu`
-  - `/admin/menu/[productId]`
-  - `/admin/inventory`
-  - `/admin/orders`
-  - `/admin/orders/new`
-  - `/admin/analytics`
-  - `/admin/login`
+## Mục tiêu
+Build phần mềm vận hành thay Google Sheets cho mô hình Meal Prep, chạy trên **Next.js + Supabase**, có:
+- bán hàng / tạo đơn / bill
+- quản lý giá bán và giá vốn
+- khuyến mãi / mã giảm giá
+- quản lý tồn kho theo **lô + HSD + FEFO**
+- nhập kho / xuất kho / điều chỉnh kho
+- audit log toàn hệ thống
+- RBAC rõ ràng cho system admin / shop admin / employee
 
-## Current architecture
-- Public menu and product detail pages now read from the same admin data layer as `/admin`.
-- Data access lives in:
-  - `src/lib/admin/service.ts`
-  - `src/lib/admin/actions.ts`
-  - `src/lib/admin/demo-data.ts`
-  - `src/lib/supabase/server.ts`
-  - `src/lib/supabase/client.ts`
-- Admin supports two modes:
-  - `live`: Supabase env is present and authenticated `system_admin` / `shop_owner` / `staff` session exists
-  - `demo`: fallback mode using local mock data when Supabase is not configured
+## Nguồn sự thật nghiệp vụ
+Khi có xung đột giữa source code cũ và tài liệu này:
+1. `docs/BUSINESS_RULES.md`
+2. `docs/ORDER_PRICING_COST_RULES.md`
+3. `docs/INVENTORY_FEFO_RULES.md`
+4. `docs/SCHEMA_SPEC.md`
+5. `docs/RBAC.md`
 
-## Supabase rules
-- Base schema docs are in `docs/init/01_schema_supabase.sql` and `docs/init/02_seed_mealprep.sql`.
-- Local/dev seed data lives in:
-  - `supabase/seed.sql`
-- Inventory/profit extension migration is in:
-  - `supabase/migrations/20260316231500_inventory_profit_admin.sql`
-- Role alignment migration is in:
-  - `supabase/migrations/20260316230500_role_model_and_permissions.sql`
-- Do not expose recipe cost or internal inventory cost data to public storefront queries.
-- Public storefront should only read product/category/content data needed for display.
-- Admin-only data:
-  - `inventory_items`
-  - `inventory_movements`
-  - `recipe_components`
-  - `orders`
-  - `order_items`
-- Current admin roles:
-  - `system_admin`
-  - `shop_owner`
-  - `staff`
-  - `viewer`
-- If you need new inventory/profit logic, prefer SQL functions/triggers in Supabase over duplicating calculation logic in the client.
+## Nguyên tắc bất biến
+1. **Không để dữ liệu lịch sử tự nhảy theo master hiện tại**.
+   - Giá món trong đơn phải là snapshot tại thời điểm tạo đơn.
+   - Giá vốn chuẩn trong đơn phải là snapshot tại thời điểm tạo đơn.
+   - Bill đã gửi/chốt không được tự đổi giá.
+2. **Mọi chuyển động kho phải đi qua stock movement**.
+   - Không cập nhật số tồn trực tiếp.
+   - Tồn hiện tại = tổng nhập / sản xuất vào - tổng xuất / hao hụt / điều chỉnh.
+3. **FEFO là rule mặc định cho hàng có HSD**.
+   - Xuất kho thành phẩm / nguyên liệu có HSD phải ưu tiên lô gần hết hạn nhất còn tồn.
+4. **Mọi thao tác quan trọng phải có audit log**.
+   - create / update / delete / approve / confirm / cancel / price override / stock override.
+5. **Dùng migration có version**.
+   - Không sửa tay DB production.
+   - Tất cả thay đổi schema phải đi qua SQL migration.
+6. **Ưu tiên soft delete / status hơn hard delete**.
+7. **Không dùng lookup động để render số tiền lịch sử**.
+   - Order item phải lưu snapshot.
 
-## UI and editing guidance
-- Preserve the existing public landing page style unless the task explicitly targets it.
-- The admin UI uses a warm light background with dark olive panels. Keep that visual language consistent.
-- For menu editing:
-  - `main_image_url` is the representative menu image
-  - variants carry pricing + cost profile
-  - BOM/recipe lines come from `recipe_components`
-- For order creation:
-  - frontend may preview totals
-  - source of truth for persisted totals should remain Supabase triggers
+## Kiến trúc mong muốn
+- Frontend: Next.js App Router
+- Backend DB/Auth: Supabase PostgreSQL + Supabase Auth
+- RLS theo shop/tenant
+- RPC / SQL function cho FEFO allocation, posting stock movement, order confirm
+- UI desktop-first nhưng responsive cho tablet/mobile
+- Tách module:
+  - master data
+  - sales
+  - pricing & promotions
+  - inventory
+  - reports
+  - administration / audit
 
-## Safe implementation patterns
-- Prefer extending `src/lib/admin/service.ts` for new reads instead of querying Supabase ad hoc inside pages.
-- Prefer extending `src/lib/admin/actions.ts` for writes instead of wiring direct client mutations.
-- Reuse these components before creating new ones:
-  - `AdminShell`
-  - `PageHeader`
-  - `MetricCard`
-  - `StatusPill`
-  - `InventoryAdjustmentForm`
-  - `OrderBuilder`
-  - `ProductEditorForm`
-- When adding new admin pages, place them under `src/app/admin/(panel)/...`.
-- Keep `/admin/login` outside the protected `(panel)` layout.
+## Coding rules cho Codex
+- Sinh code theo từng phase nhỏ, chạy được, không cố làm tất cả một lần.
+- Mỗi phase phải có:
+  - migration SQL
+  - type definitions
+  - repository/service layer
+  - page / form / table tối thiểu
+  - validation schema
+- Không hardcode text business rule trong UI; đưa vào constants hoặc docs.
+- Không hardcode role check rải rác; tập trung permission codes.
+- Với money:
+  - lưu integer minor unit hoặc numeric(18,2); thống nhất một cách toàn hệ thống.
+- Với quantity:
+  - dùng numeric đủ lớn, tránh float.
+- Với datetime:
+  - lưu UTC.
+- Với audit:
+  - luôn lưu actor_user_id, shop_id, action, entity, entity_id, before_json, after_json.
+- Với price:
+  - luôn tách master price và order snapshot.
 
-## Public storefront cautions
-- `/menu` and `/product/[slug]` must continue to work without a live Supabase connection by falling back to demo data.
-- If you change product slugs in data, also verify links from the home page carousel in `src/app/page.tsx`.
-- Remote product images may come from Supabase Storage. If image hosts change, update `next.config.js`.
+## Không được làm
+- Không trừ tồn bằng cách cập nhật một cột `stock_on_hand` trực tiếp mà không có movement.
+- Không để order item join động vào bảng giá để render bill.
+- Không cho edit order đã confirmed mà không lưu lịch sử.
+- Không cho delete lot đã có movement.
+- Không cho bypass FEFO mà không ghi reason.
 
-## Validation
-- Use:
-  - `./node_modules/.bin/tsc --noEmit`
-  - `yarn build`
-- If TypeScript errors mention missing `.next/types`, run a fresh build once before assuming app code is broken.
-
-## Files worth reading first
-- `src/lib/admin/service.ts`
-- `src/lib/admin/actions.ts`
-- `src/features/admin/components/ProductEditorForm.tsx`
-- `src/features/admin/components/OrderBuilder.tsx`
-- `src/app/menu/page.tsx`
-- `src/app/product/[slug]/page.tsx`
-- `docs/init/04_supabase_mcp_mapping.md`
+## Definition of done
+Một phase được xem là xong khi:
+- migration chạy được
+- UI CRUD cơ bản hoạt động
+- RLS/permission áp dụng được
+- audit log có dữ liệu
+- test manual flow chính chạy qua được
+- docs liên quan đã cập nhật
