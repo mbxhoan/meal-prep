@@ -6,6 +6,14 @@ import type {
   UserShopRoleRecord,
   EmployeeRecord as RbacEmployeeRecord,
 } from "@/lib/rbac";
+import type {
+  InventoryBarcodeType,
+  InventoryItemTrackingFields,
+  InventoryLotRecord,
+  InventoryMovementTrackingFields,
+  InventorySerialRecord,
+  InventoryTrackingMode,
+} from "@/lib/inventory";
 
 export type AdminMode = "demo" | "live";
 export type AdminRole = ProfileRoleCode;
@@ -26,6 +34,7 @@ export type InventoryMovementType =
   | "adjustment"
   | "waste"
   | "order_consumption";
+export type { InventoryBarcodeType, InventoryTrackingMode };
 
 export interface AdminIdentity {
   id: string;
@@ -118,6 +127,13 @@ export interface InventoryItem {
   notes: string;
   updatedAt: string;
   isLowStock: boolean;
+  barcode?: InventoryItemTrackingFields["barcode"];
+  barcodeType?: InventoryItemTrackingFields["barcodeType"];
+  trackingMode?: InventoryItemTrackingFields["trackingMode"];
+  isExpirable?: InventoryItemTrackingFields["isExpirable"];
+  isFefoEnabled?: InventoryItemTrackingFields["isFefoEnabled"];
+  requiresUnitLabel?: InventoryItemTrackingFields["requiresUnitLabel"];
+  defaultShelfLifeDays?: InventoryItemTrackingFields["defaultShelfLifeDays"];
 }
 
 export interface InventoryMovement {
@@ -128,9 +144,15 @@ export interface InventoryMovement {
   unitCost: number | null;
   notes: string;
   createdAt: string;
+  lotId?: InventoryMovementTrackingFields["lotId"];
+  serialId?: InventoryMovementTrackingFields["serialId"];
+  referenceType?: InventoryMovementTrackingFields["referenceType"];
+  referenceId?: InventoryMovementTrackingFields["referenceId"];
 }
 
 export type EmployeeRecord = RbacEmployeeRecord;
+export type InventoryLot = InventoryLotRecord;
+export type InventorySerial = InventorySerialRecord;
 
 export interface RoleOption {
   code: RoleCode;

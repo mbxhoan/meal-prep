@@ -171,6 +171,7 @@ export async function recordInventoryMovementAction(
     quantityDelta: number;
     unitCost: number | null;
     notes: string;
+    serialId?: string | null;
   };
 
   let payload: Payload;
@@ -194,14 +195,20 @@ export async function recordInventoryMovementAction(
       return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở demo mode.");
     }
 
-    const { error } = await supabase.from("inventory_movements").insert({
+    const movementRow: Record<string, unknown> = {
       inventory_item_id: payload.inventoryItemId,
       movement_type: payload.movementType,
       quantity_delta: sanitizeNumber(payload.quantityDelta),
       unit_cost:
         payload.unitCost == null ? null : sanitizeNumber(payload.unitCost),
       notes: payload.notes,
-    });
+    };
+
+    if (payload.serialId) {
+      movementRow.serial_id = payload.serialId;
+    }
+
+    const { error } = await supabase.from("inventory_movements").insert(movementRow);
 
     if (error) {
       return actionError(error.message, "live");

@@ -18,6 +18,7 @@ Deliverables:
 - user profile / employee profile
 - audit_logs nền
 - docs/schema update cho `tracking_mode`, item barcode, lot barcode, serial readiness
+- foundation inventory tracking được ghép non-breaking trên schema hiện có; serial UI / scan / allocation vẫn defer
 
 ## Phase 1 — Master data
 Mục tiêu:
@@ -41,6 +42,7 @@ Bao gồm:
 
 Ghi chú:
 - Phase 1 dùng lại `shops`, `employees`, `user_shop_roles`, `audit_logs` từ Phase 0.
+- Foundation `tracking_mode` / barcode / serial readiness đã có sẵn ở lớp schema; Phase 3 chủ yếu bổ sung flow lot/receipt/issue và traceability thực thi.
 
 ## Phase 2 — Sales core
 Mục tiêu:
@@ -72,6 +74,7 @@ Bao gồm:
 - FEFO suggestion
 - lot barcode support
 - serial table blueprint hoặc implementation readiness
+- serial scan UI, serial allocation, và auto-issue vẫn defer sang phase sau
 
 ## Phase 4 — Sales x Inventory integration
 Mục tiêu:

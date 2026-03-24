@@ -71,6 +71,8 @@ Bắt buộc hỗ trợ ở kiến trúc:
 - FEFO theo lot
 - stock movement có thể tham chiếu lot
 
+Triển khai hiện tại giữ compatibility với schema cũ, nên foundation này được mở rộng non-breaking trước; serial scan UI, serial allocation và auto-issue sẽ đi ở phase sau.
+
 ### Phase sau
 Có thể bật thêm:
 - `inventory_serials`

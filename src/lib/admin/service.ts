@@ -15,6 +15,7 @@ import type {
   MenuProduct,
   OrderRecord,
 } from "@/lib/admin/types";
+import { normalizeInventoryItemTrackingFields } from "@/lib/inventory";
 import { RBAC_PERMISSION_CODES } from "@/lib/rbac";
 import { getRbacAccessContext } from "@/lib/rbac/server";
 import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
@@ -157,6 +158,7 @@ function normalizeProduct(product: Record<string, unknown>): MenuProduct {
 function normalizeInventoryItem(row: Record<string, unknown>): InventoryItem {
   const onHand = safeNumber(row.current_quantity);
   const reorderPoint = safeNumber(row.reorder_point);
+  const trackingFields = normalizeInventoryItemTrackingFields(row);
 
   return {
     id: String(row.id),
@@ -171,6 +173,7 @@ function normalizeInventoryItem(row: Record<string, unknown>): InventoryItem {
     notes: String(row.notes ?? ""),
     updatedAt: String(row.updated_at ?? new Date().toISOString()),
     isLowStock: onHand <= reorderPoint,
+    ...trackingFields,
   };
 }
 
@@ -302,9 +305,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
         .limit(12),
       supabase
         .from("inventory_items")
-        .select(
-          "id, name, sku, unit, current_quantity, reorder_point, average_unit_cost, last_purchase_cost, supplier_name, notes, updated_at",
-        )
+        .select("*")
         .order("updated_at", { ascending: false }),
       supabase.from("products").select("id", { count: "exact", head: true }),
     ]);
@@ -382,9 +383,7 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
 
     const { data, error } = await supabase
       .from("inventory_items")
-      .select(
-        "id, name, sku, unit, current_quantity, reorder_point, average_unit_cost, last_purchase_cost, supplier_name, notes, updated_at",
-      )
+      .select("*")
       .order("updated_at", { ascending: false });
 
     if (error) {
