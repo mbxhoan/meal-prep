@@ -33,9 +33,8 @@
 - `menu_item_variants`
 - `price_books`
 - `price_book_items`
-- `coupons`
+- `coupons` và `payment_methods` để Phase sau
 - `promotion_programs`
-- `payment_methods`
 - `stock_adjustment_reasons`
 - `shop_configs`
 
@@ -74,13 +73,17 @@
 
 ### items
 - `sku`
+- `name`
 - `barcode` nullable
 - `barcode_type` nullable
 - `tracking_mode` check in (`none`, `lot`, `serial`, `lot_serial`)
-- `is_expirable boolean not null default false`
-- `is_fefo_enabled boolean not null default false`
+- `is_expirable boolean not null default true`
+- `is_fefo_enabled boolean not null default true`
 - `requires_unit_label boolean not null default false`
 - `default_shelf_life_days integer nullable`
+- `minimum_stock_qty numeric(18,3) not null default 0`
+- `is_active boolean not null default true`
+- `notes`
 
 ### inventory_lots
 - `item_id`
@@ -139,6 +142,7 @@
 
 ## Ràng buộc quan trọng
 - unique `(shop_id, code)` cho nhiều bảng
+- unique `(shop_id, sku)` cho items
 - unique `(shop_id, barcode)` cho items nếu dùng barcode nội bộ
 - unique `(shop_id, lot_barcode)` cho inventory_lots nếu shop dùng barcode lô
 - unique `(shop_id, serial_no)` cho inventory_serials

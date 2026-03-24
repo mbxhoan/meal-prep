@@ -46,7 +46,7 @@
 - code
 - name
 - address
-- default flag
+- is_default
 
 ### 10. item_groups
 Ví dụ:
@@ -75,18 +75,26 @@ Ví dụ:
 ### 13. items
 Đây là SKU/hàng hóa tồn kho.
 Các field chính:
-- item_code
+- sku
 - barcode
+- barcode_type
 - name
 - item_group_id
 - item_type_id
 - base_unit_id
-- shelf_life_days_default
-- lot_tracked
-- fefo_enabled
+- tracking_mode
+- is_expirable
+- is_fefo_enabled
+- requires_unit_label
+- default_shelf_life_days
 - minimum_stock_qty
-- active
+- is_active
 - notes
+
+Gợi ý rule:
+- meal prep phase đầu ưu tiên `tracking_mode = lot`
+- `barcode` là barcode cấp item master
+- `default_shelf_life_days` phục vụ FEFO / HSD ở phase sau
 
 ### 14. menu_items
 Đây là món bán cho khách.
@@ -94,8 +102,9 @@ Tách khỏi `items` để rõ nghiệp vụ.
 Field gợi ý:
 - code
 - name
-- active
 - notes
+- sort_order
+- is_active
 
 ### 15. menu_item_variants
 Ví dụ:
@@ -105,10 +114,12 @@ Ví dụ:
 
 Field:
 - menu_item_id
-- weight_label
+- label
 - weight_grams
 - linked_inventory_item_id (nếu 1 gói bán tương ứng 1 item tồn kho)
-- active
+- sort_order
+- notes
+- is_active
 
 ### 16. price_books
 - code
@@ -116,6 +127,8 @@ Field:
 - effective_from
 - effective_to
 - status
+- notes
+- is_active
 
 ### 17. price_book_items
 - price_book_id
@@ -123,8 +136,11 @@ Field:
 - sale_price
 - standard_cost
 - target_margin_percent (optional)
+- notes
+- is_active
 
 ### 18. coupons
+Deferred sang phase sau.
 - code
 - type
 - value
@@ -152,6 +168,7 @@ Ví dụ:
 - internal_use
 
 ### 21. payment_methods
+Deferred sang phase sau.
 Ví dụ:
 - cash
 - bank_transfer

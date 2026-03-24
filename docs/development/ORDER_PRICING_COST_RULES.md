@@ -19,7 +19,7 @@ Giải quyết triệt để vấn đề đã gặp ở Google Sheets:
 `sales_order_items` phải lưu snapshot:
 - menu_item_variant_id
 - item_name_snapshot
-- weight_label_snapshot
+- variant_label_snapshot
 - weight_grams_snapshot
 - unit_price_snapshot
 - standard_cost_snapshot

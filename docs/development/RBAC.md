@@ -26,6 +26,11 @@ Nhân viên tác nghiệp theo quyền được cấp.
 - `master.customer.update`
 - `master.customer.delete`
 
+- `master.lookup.read`
+- `master.lookup.create`
+- `master.lookup.update`
+- `master.lookup.delete`
+
 - `master.employee.read`
 - `master.employee.create`
 - `master.employee.update`
@@ -38,19 +43,23 @@ Nhân viên tác nghiệp theo quyền được cấp.
 - `master.menu.read`
 - `master.menu.create`
 - `master.menu.update`
+- `master.menu.delete`
 
 - `master.price_book.read`
 - `master.price_book.create`
 - `master.price_book.update`
+- `master.price_book.delete`
 - `master.price_book.activate`
 
 - `master.warehouse.read`
 - `master.warehouse.create`
 - `master.warehouse.update`
+- `master.warehouse.delete`
 
 - `master.supplier.read`
 - `master.supplier.create`
 - `master.supplier.update`
+- `master.supplier.delete`
 
 ### Sales
 - `sales.order.read`
@@ -107,6 +116,7 @@ Gần full trong phạm vi shop, trừ các `system.*`.
 ### employee
 Có thể bắt đầu với:
 - read master cần thiết
+- read lookup cho item/menu/price book options
 - create/update draft order
 - send order
 - read bill

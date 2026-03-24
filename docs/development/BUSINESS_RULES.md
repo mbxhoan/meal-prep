@@ -136,6 +136,6 @@ Mã hiển thị:
 - goods_receipt_no: `GR-YYYYMM-0001`
 - goods_issue_no: `GI-YYYYMM-0001`
 - lot_no: có thể user nhập hoặc auto sinh
-- item_code/sku: theo rule shop
+- sku: theo rule shop
 
 DB vẫn dùng UUID làm khóa chính.

@@ -73,8 +73,9 @@ Sổ cái kho, unified ledger
 
 ## Rule FEFO
 Áp dụng cho item có:
-- lot_tracked = true
-- fefo_enabled = true
+- `tracking_mode` là `lot` hoặc `lot_serial`
+- `is_expirable = true`
+- `is_fefo_enabled = true`
 
 Thuật toán gợi ý:
 1. lấy các lot còn tồn > 0

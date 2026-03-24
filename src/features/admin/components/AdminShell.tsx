@@ -13,12 +13,17 @@ import {
   FaChartLine,
   FaClipboardList,
   FaHouse,
+  FaListUl,
   FaStore,
   FaUserShield,
   FaUtensils,
   FaXmark,
 } from "react-icons/fa6";
 import type { AdminContext } from "@/lib/admin/types";
+import {
+  MASTER_DATA_ENTITY_CONFIGS,
+  isMasterDataEntityKey,
+} from "@/lib/master-data/config";
 import { PROFILE_ROLE_LABELS, type PermissionCode } from "@/lib/rbac/constants";
 import { LogoutButton } from "@/features/admin/components/LogoutButton";
 import { StatusPill } from "@/features/admin/components/StatusPill";
@@ -32,6 +37,12 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: FaHouse },
+  {
+    href: "/admin/master-data",
+    label: "Danh mục",
+    icon: FaListUl,
+    permission: "master.lookup.read",
+  },
   {
     href: "/admin/menu",
     label: "Thực đơn",
@@ -162,6 +173,29 @@ function getHeaderConfig(pathname: string): HeaderConfig {
       description:
         "Xem margin thay đổi theo ngày và theo từng kênh bán.",
     };
+  }
+
+  if (pathname === "/admin/master-data") {
+    return {
+      eyebrow: "Master data",
+      title: "Danh mục nền tảng Phase 1",
+      description:
+        "Quản lý customer, supplier, warehouse, item, menu và price book.",
+    };
+  }
+
+  if (pathname.startsWith("/admin/master-data/")) {
+    const entity = pathname.split("/")[3];
+
+    if (entity && isMasterDataEntityKey(entity)) {
+      const config = MASTER_DATA_ENTITY_CONFIGS[entity];
+
+      return {
+        eyebrow: "Master data",
+        title: config.title,
+        description: config.description,
+      };
+    }
   }
 
   if (pathname === "/admin/settings/roles") {

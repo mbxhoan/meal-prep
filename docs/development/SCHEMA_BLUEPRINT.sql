@@ -134,45 +134,53 @@ create table if not exists public.units (
 create table if not exists public.items (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references public.shops(id) on delete cascade,
-  code text not null,
-  barcode text,
   name text not null,
+  sku text not null,
+  barcode text,
+  barcode_type text,
+  tracking_mode text not null default 'lot',
   item_group_id uuid references public.item_groups(id),
   item_type_id uuid references public.item_types(id),
   base_unit_id uuid references public.units(id),
-  lot_tracked boolean not null default false,
-  fefo_enabled boolean not null default false,
-  shelf_life_days_default int,
-  minimum_stock_qty numeric(18,3) default 0,
+  is_expirable boolean not null default true,
+  is_fefo_enabled boolean not null default true,
+  requires_unit_label boolean not null default false,
+  default_shelf_life_days int,
+  minimum_stock_qty numeric(18,3) not null default 0,
   is_active boolean not null default true,
-  note text,
+  notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (shop_id, code),
+  unique (shop_id, sku),
   unique (shop_id, barcode)
 );
 
 create table if not exists public.menu_items (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references public.shops(id) on delete cascade,
-  code text,
   name text not null,
+  code text not null,
+  notes text,
+  sort_order integer not null default 0,
   is_active boolean not null default true,
-  note text,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (shop_id, code)
 );
 
 create table if not exists public.menu_item_variants (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references public.shops(id) on delete cascade,
-  menu_item_id uuid not null references public.menu_items(id) on delete restrict,
-  code text,
-  weight_label text not null,
+  menu_item_id uuid not null references public.menu_items(id) on delete cascade,
+  label text not null,
   weight_grams numeric(18,3),
   linked_inventory_item_id uuid references public.items(id),
+  sort_order integer not null default 0,
   is_active boolean not null default true,
-  unique (shop_id, code)
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (shop_id, menu_item_id, label)
 );
 
 create table if not exists public.price_books (
@@ -180,10 +188,13 @@ create table if not exists public.price_books (
   shop_id uuid not null references public.shops(id) on delete cascade,
   code text not null,
   name text not null,
-  effective_from timestamptz,
-  effective_to timestamptz,
+  effective_from date,
+  effective_to date,
   status text not null default 'draft',
+  notes text,
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (shop_id, code)
 );
 
@@ -194,7 +205,11 @@ create table if not exists public.price_book_items (
   menu_item_variant_id uuid not null references public.menu_item_variants(id) on delete restrict,
   sale_price numeric(18,2) not null default 0,
   standard_cost numeric(18,2) not null default 0,
-  target_margin_percent numeric(9,4),
+  target_margin_percent numeric(9,4) not null default 0,
+  notes text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (price_book_id, menu_item_variant_id)
 );
 
@@ -267,7 +282,7 @@ create table if not exists public.sales_order_items (
   sales_order_id uuid not null references public.sales_orders(id) on delete cascade,
   menu_item_variant_id uuid references public.menu_item_variants(id),
   item_name_snapshot text not null,
-  weight_label_snapshot text,
+  variant_label_snapshot text,
   weight_grams_snapshot numeric(18,3),
   quantity numeric(18,3) not null default 0,
   unit_price_snapshot numeric(18,2) not null default 0,
@@ -300,7 +315,7 @@ create table if not exists public.inventory_lots (
   warehouse_id uuid not null references public.warehouses(id) on delete restrict,
   supplier_id uuid references public.suppliers(id),
   lot_no text not null,
-  barcode text,
+  lot_barcode text,
   manufactured_at timestamptz,
   expired_at timestamptz,
   received_at timestamptz,

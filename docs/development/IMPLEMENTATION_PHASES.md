@@ -26,7 +26,6 @@ Mục tiêu:
 
 Bao gồm:
 - customers
-- employees
 - suppliers
 - warehouses
 - item_groups
@@ -37,12 +36,12 @@ Bao gồm:
 - menu_item_variants
 - price_books
 - price_book_items
-- payment_methods
-- coupons (basic)
 
 Ghi chú:
 - Phase 1 dùng lại `shops`, `employees`, `user_shop_roles`, `audit_logs` từ Phase 0.
 - Foundation `tracking_mode` / barcode / serial readiness đã có sẵn ở lớp schema; Phase 3 chủ yếu bổ sung flow lot/receipt/issue và traceability thực thi.
+- `payment_methods` và `coupons` chuyển sang phase sau để giữ phạm vi Phase 1 gọn và ổn định.
+- `items` là master data canonical cho phase sau; lớp inventory admin hiện tại vẫn đang đọc `inventory_items` legacy và sẽ được nối dần ở Phase 3+.
 
 ## Phase 2 — Sales core
 Mục tiêu:
