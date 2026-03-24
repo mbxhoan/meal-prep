@@ -1,4 +1,8 @@
-import type { InventoryMovementType, OrderStatus } from "@/lib/admin/types";
+import type {
+  InventoryMovementType,
+  OrderStatus,
+  PaymentStatus,
+} from "@/lib/admin/types";
 
 type PillTone =
   | "success"
@@ -23,12 +27,36 @@ export function statusTone(status: OrderStatus): PillTone {
       return "success";
     case "confirmed":
       return "accent";
+    case "sent":
+      return "info";
+    case "preparing":
+      return "accent";
+    case "ready":
+      return "success";
+    case "delivered":
+      return "muted";
     case "draft":
       return "warning";
     case "cancelled":
       return "danger";
     default:
       return "muted";
+  }
+}
+
+export function paymentStatusTone(status: PaymentStatus): PillTone {
+  switch (status) {
+    case "paid":
+      return "success";
+    case "partial":
+      return "warning";
+    case "refunded":
+      return "info";
+    case "void":
+      return "muted";
+    case "unpaid":
+    default:
+      return "danger";
   }
 }
 

@@ -65,9 +65,23 @@ Giải quyết triệt để vấn đề đã gặp ở Google Sheets:
 - order_discount_value
 - order_discount_amount
 - shipping_fee
+- other_fee
 - total_amount
+- total_revenue
+- total_cogs
+- gross_profit
+- gross_margin
 - coupon_code_snapshot
 - promotion_snapshot_json
+
+Payment status của order được derive từ `sales_payments`:
+- `unpaid`
+- `partial`
+- `paid`
+- `refunded`
+- `void`
+
+Timeline sent/confirmed/cancel nên được ghi vào `sales_order_status_logs`.
 
 ## Rule thay đổi giá nguyên liệu đầu vào
 Nếu nguyên liệu tăng giá:
@@ -100,4 +114,5 @@ Tách permission:
 BILL view chỉ đọc từ:
 - `sales_orders`
 - `sales_order_items`
+- `sales_payments` chỉ để cộng tổng thanh toán và trạng thái payment
 tuyệt đối không lookup động từ bảng giá.

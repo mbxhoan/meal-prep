@@ -46,6 +46,7 @@ function createDemoContext(): AdminContext {
       activeShopId: demoShop.id,
       activeShopName: demoShop.name,
     },
+    employee: null,
     shop: demoShop,
     shops: [demoShop],
     permissions: [...RBAC_PERMISSION_CODES],
@@ -178,57 +179,161 @@ function normalizeInventoryItem(row: Record<string, unknown>): InventoryItem {
 }
 
 function normalizeOrder(row: Record<string, unknown>): OrderRecord {
-  const items = Array.isArray(row.order_items)
-    ? row.order_items.map((entry) => {
+  const items = Array.isArray(row.sales_order_items)
+    ? row.sales_order_items.map((entry) => {
         const item = entry as Record<string, unknown>;
-        const product =
-          item.products &&
-          typeof item.products === "object" &&
-          !Array.isArray(item.products)
-            ? (item.products as Record<string, unknown>)
-            : {};
-        const variant =
-          item.product_variants &&
-          typeof item.product_variants === "object" &&
-          !Array.isArray(item.product_variants)
-            ? (item.product_variants as Record<string, unknown>)
-            : {};
 
         return {
           id: String(item.id),
-          orderId: String(item.order_id),
-          productId: String(item.product_id ?? product.id ?? ""),
-          productName: String(product.name ?? "Menu item"),
-          variantId: String(item.variant_id ?? variant.id ?? ""),
-          variantLabel: String(variant.label ?? ""),
+          orderId: String(item.sales_order_id ?? row.id ?? ""),
+          productId: String(
+            item.menu_item_variant_id ??
+              item.legacy_product_variant_id ??
+              item.id ??
+              "",
+          ),
+          productName: String(item.item_name_snapshot ?? "Menu item"),
+          variantId: String(
+            item.menu_item_variant_id ??
+              item.legacy_product_variant_id ??
+              item.id ??
+              "",
+          ),
+          variantLabel: String(item.variant_label_snapshot ?? ""),
           quantity: safeNumber(item.quantity, 1),
-          unitPrice: safeNumber(item.unit_price),
-          unitCogs: safeNumber(item.unit_cogs),
-          lineRevenue: safeNumber(item.line_revenue),
-          lineCogs: safeNumber(item.line_cogs),
-          lineProfit: safeNumber(item.line_profit),
+          unitPrice: safeNumber(item.unit_price_snapshot),
+          unitCogs: safeNumber(item.standard_cost_snapshot),
+          lineRevenue: safeNumber(item.line_total_after_discount),
+          lineCogs: safeNumber(item.line_cost_total),
+          lineProfit: safeNumber(item.line_profit_total),
+          itemNameSnapshot: String(item.item_name_snapshot ?? "Menu item"),
+          variantLabelSnapshot:
+            item.variant_label_snapshot == null
+              ? null
+              : String(item.variant_label_snapshot),
+          weightGramsSnapshot:
+            item.weight_grams_snapshot == null
+              ? null
+              : safeNumber(item.weight_grams_snapshot),
+          unitPriceSnapshot: safeNumber(item.unit_price_snapshot),
+          standardCostSnapshot: safeNumber(item.standard_cost_snapshot),
+          lineDiscountType:
+            item.line_discount_type == null
+              ? null
+              : String(item.line_discount_type),
+          lineDiscountValue:
+            item.line_discount_value == null
+              ? null
+              : safeNumber(item.line_discount_value),
+          lineDiscountAmount: safeNumber(item.line_discount_amount),
+          lineTotalBeforeDiscount: safeNumber(item.line_total_before_discount),
+          lineTotalAfterDiscount: safeNumber(item.line_total_after_discount),
+          lineCostTotal: safeNumber(item.line_cost_total),
+          lineProfitTotal: safeNumber(item.line_profit_total),
+          legacyProductVariantId:
+            item.legacy_product_variant_id == null
+              ? null
+              : String(item.legacy_product_variant_id),
+          menuItemVariantId:
+            item.menu_item_variant_id == null
+              ? null
+              : String(item.menu_item_variant_id),
+          priceBookItemIdSnapshot:
+            item.price_book_item_id_snapshot == null
+              ? null
+              : String(item.price_book_item_id_snapshot),
         };
       })
-    : [];
+    : Array.isArray(row.order_items)
+      ? row.order_items.map((entry) => {
+          const item = entry as Record<string, unknown>;
+          const product =
+            item.products &&
+            typeof item.products === "object" &&
+            !Array.isArray(item.products)
+              ? (item.products as Record<string, unknown>)
+              : {};
+          const variant =
+            item.product_variants &&
+            typeof item.product_variants === "object" &&
+            !Array.isArray(item.product_variants)
+              ? (item.product_variants as Record<string, unknown>)
+              : {};
+
+          return {
+            id: String(item.id),
+            orderId: String(item.order_id),
+            productId: String(item.product_id ?? product.id ?? ""),
+            productName: String(product.name ?? "Menu item"),
+            variantId: String(item.variant_id ?? variant.id ?? ""),
+            variantLabel: String(variant.label ?? ""),
+            quantity: safeNumber(item.quantity, 1),
+            unitPrice: safeNumber(item.unit_price),
+            unitCogs: safeNumber(item.unit_cogs),
+            lineRevenue: safeNumber(item.line_revenue),
+            lineCogs: safeNumber(item.line_cogs),
+            lineProfit: safeNumber(item.line_profit),
+          };
+      })
+      : [];
+  const customerName = row.customer_name_snapshot ?? row.customer_name;
+  const customerPhone = row.customer_phone_snapshot ?? row.customer_phone;
+  const customerAddress = row.customer_address_snapshot ?? row.customer_address;
+  const orderNumber = row.order_no ?? row.order_number;
+  const note = row.notes ?? row.note;
+  const subtotalBeforeDiscount = safeNumber(
+    row.subtotal_before_discount ?? row.subtotal,
+  );
+  const discountAmount = safeNumber(
+    row.order_discount_amount ?? row.discount_amount,
+  );
+  const totalAmount = safeNumber(row.total_amount ?? row.total_revenue);
+  const totalRevenue = safeNumber(row.total_revenue ?? row.total_amount);
 
   return {
     id: String(row.id),
-    orderNumber: String(row.order_number ?? ""),
-    customerName: String(row.customer_name ?? "Khách lẻ"),
-    customerPhone:
-      row.customer_phone == null ? null : String(row.customer_phone),
+    orderNumber: String(orderNumber ?? ""),
+    customerName: String(customerName ?? "Khách lẻ"),
+    customerPhone: customerPhone == null ? null : String(customerPhone),
+    customerAddress: customerAddress == null ? null : String(customerAddress),
     salesChannel: String(row.sales_channel ?? "manual") as OrderRecord["salesChannel"],
     status: String(row.status ?? "draft") as OrderRecord["status"],
-    note: row.note == null ? null : String(row.note),
-    subtotal: safeNumber(row.subtotal),
-    discountAmount: safeNumber(row.discount_amount),
+    paymentStatus: String(row.payment_status ?? "unpaid") as NonNullable<
+      OrderRecord["paymentStatus"]
+    >,
+    note: note == null ? null : String(note),
+    subtotal: subtotalBeforeDiscount,
+    subtotalBeforeDiscount,
+    discountAmount,
+    orderDiscountType:
+      row.order_discount_type == null
+        ? null
+        : String(row.order_discount_type),
+    orderDiscountValue:
+      row.order_discount_value == null
+        ? null
+        : safeNumber(row.order_discount_value),
+    orderDiscountAmount: discountAmount,
     shippingFee: safeNumber(row.shipping_fee),
     otherFee: safeNumber(row.other_fee),
-    totalRevenue: safeNumber(row.total_revenue),
+    totalAmount,
+    totalRevenue,
     totalCogs: safeNumber(row.total_cogs),
     grossProfit: safeNumber(row.gross_profit),
     grossMargin: safeNumber(row.gross_margin),
     orderedAt: String(row.ordered_at ?? row.created_at ?? new Date().toISOString()),
+    sentAt:
+      row.sent_at == null ? null : String(row.sent_at),
+    confirmedAt:
+      row.confirmed_at == null ? null : String(row.confirmed_at),
+    priceBookIdSnapshot:
+      row.price_book_id_snapshot == null
+        ? null
+        : String(row.price_book_id_snapshot),
+    priceBookCodeSnapshot:
+      row.price_book_code_snapshot == null
+        ? null
+        : String(row.price_book_code_snapshot),
     inventoryAppliedAt:
       row.inventory_applied_at == null
         ? null
@@ -249,6 +354,7 @@ export const getAdminContext = cache(async (): Promise<AdminContext> => {
       configured: true,
       mode: "live",
       user: null,
+      employee: null,
       shop: null,
       shops: [],
       permissions: [],
@@ -270,6 +376,7 @@ export const getAdminContext = cache(async (): Promise<AdminContext> => {
       activeShopId: context.activeShop?.id ?? null,
       activeShopName: context.activeShop?.name ?? null,
     },
+    employee: context.employee,
     shop: context.activeShop,
     shops: context.shops,
     permissions: context.permissions,
@@ -294,33 +401,31 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
-    const [ordersResponse, inventoryResponse, productsResponse] = await Promise.all([
-      supabase
-        .from("orders")
-        .select(
-          "id, order_number, customer_name, customer_phone, sales_channel, status, note, subtotal, discount_amount, shipping_fee, other_fee, total_revenue, total_cogs, gross_profit, gross_margin, ordered_at, inventory_applied_at, order_items(id, order_id, product_id, variant_id, quantity, unit_price, unit_cogs, line_revenue, line_cogs, line_profit, products(id, name), product_variants(id, label))",
-        )
-        .gte("ordered_at", since.toISOString())
-        .order("ordered_at", { ascending: false })
-        .limit(12),
+    const [orders, inventoryResponse, menuItemsResponse, productsResponse] = await Promise.all([
+      getOrders(),
       supabase
         .from("inventory_items")
         .select("*")
         .order("updated_at", { ascending: false }),
+      supabase
+        .from("menu_items")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .is("deleted_at", null),
       supabase.from("products").select("id", { count: "exact", head: true }),
     ]);
 
-    if (ordersResponse.error || inventoryResponse.error || productsResponse.error) {
+    if (inventoryResponse.error) {
       return getDemoDashboardSnapshot();
     }
 
-    const orders = (ordersResponse.data ?? []).map((row) =>
-      normalizeOrder(row as Record<string, unknown>),
-    );
     const inventoryItems = (inventoryResponse.data ?? []).map((row) =>
       normalizeInventoryItem(row as Record<string, unknown>),
     );
-    const effectiveOrders = orders.filter(
+    const recentOrders30d = orders.filter(
+      (order) => new Date(order.orderedAt).getTime() >= since.getTime(),
+    );
+    const effectiveOrders = recentOrders30d.filter(
       (order) => order.status !== "draft" && order.status !== "cancelled",
     );
     const revenue30d = effectiveOrders.reduce(
@@ -353,10 +458,14 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       grossMargin30d: revenue30d > 0 ? profit30d / revenue30d : 0,
       avgOrderValue:
         effectiveOrders.length > 0 ? revenue30d / effectiveOrders.length : 0,
-      menuCount: productsResponse.count ?? 0,
+      menuCount:
+        menuItemsResponse.count != null && menuItemsResponse.count > 0
+          ? menuItemsResponse.count
+          : productsResponse.count ?? 0,
       lowStockCount: inventoryItems.filter((item) => item.isLowStock).length,
       openOrders: orders.filter(
-        (order) => order.status === "draft" || order.status === "confirmed",
+        (order) =>
+          order.status !== "completed" && order.status !== "cancelled",
       ).length,
       recentOrders: orders.slice(0, 5),
       lowStockItems: inventoryItems.filter((item) => item.isLowStock).slice(0, 4),
@@ -452,24 +561,44 @@ export async function getOrders(): Promise<OrderRecord[]> {
   }
 
   try {
+    const context = await getAdminContext();
+
+    if (!context.shop) {
+      return [];
+    }
+
     const supabase = await createSupabaseServerClient();
 
     if (!supabase) {
       return demoOrders;
     }
 
-    const { data, error } = await supabase
+    const salesResponse = await supabase
+      .from("sales_orders")
+      .select(
+        "id, shop_id, order_no, sales_channel, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total)",
+      )
+      .eq("shop_id", context.shop.id)
+      .order("ordered_at", { ascending: false });
+
+    if (!salesResponse.error && (salesResponse.data ?? []).length > 0) {
+      return (salesResponse.data ?? []).map((row) =>
+        normalizeOrder(row as Record<string, unknown>),
+      );
+    }
+
+    const legacyResponse = await supabase
       .from("orders")
       .select(
         "id, order_number, customer_name, customer_phone, sales_channel, status, note, subtotal, discount_amount, shipping_fee, other_fee, total_revenue, total_cogs, gross_profit, gross_margin, ordered_at, inventory_applied_at, order_items(id, order_id, product_id, variant_id, quantity, unit_price, unit_cogs, line_revenue, line_cogs, line_profit, products(id, name), product_variants(id, label))",
       )
       .order("ordered_at", { ascending: false });
 
-    if (error) {
+    if (legacyResponse.error) {
       return demoOrders;
     }
 
-    return (data ?? []).map((row) =>
+    return (legacyResponse.data ?? []).map((row) =>
       normalizeOrder(row as Record<string, unknown>),
     );
   } catch {

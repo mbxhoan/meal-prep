@@ -26,9 +26,19 @@ export type SalesChannel =
   | "manual";
 export type OrderStatus =
   | "draft"
+  | "sent"
   | "confirmed"
+  | "preparing"
+  | "ready"
+  | "delivered"
   | "completed"
   | "cancelled";
+export type PaymentStatus =
+  | "unpaid"
+  | "partial"
+  | "paid"
+  | "refunded"
+  | "void";
 export type InventoryMovementType =
   | "purchase"
   | "adjustment"
@@ -50,6 +60,7 @@ export interface AdminContext {
   configured: boolean;
   mode: AdminMode;
   user: AdminIdentity | null;
+  employee: EmployeeRecord | null;
   shop: ShopContext | null;
   shops: ShopContext[];
   permissions: PermissionCode[];
@@ -184,6 +195,21 @@ export interface OrderItem {
   lineRevenue: number;
   lineCogs: number;
   lineProfit: number;
+  itemNameSnapshot?: string;
+  variantLabelSnapshot?: string | null;
+  weightGramsSnapshot?: number | null;
+  unitPriceSnapshot?: number;
+  standardCostSnapshot?: number;
+  lineDiscountType?: string | null;
+  lineDiscountValue?: number | null;
+  lineDiscountAmount?: number;
+  lineTotalBeforeDiscount?: number;
+  lineTotalAfterDiscount?: number;
+  lineCostTotal?: number;
+  lineProfitTotal?: number;
+  legacyProductVariantId?: string | null;
+  menuItemVariantId?: string | null;
+  priceBookItemIdSnapshot?: string | null;
 }
 
 export interface OrderRecord {
@@ -191,18 +217,29 @@ export interface OrderRecord {
   orderNumber: string;
   customerName: string;
   customerPhone: string | null;
+  customerAddress?: string | null;
   salesChannel: SalesChannel;
   status: OrderStatus;
+  paymentStatus?: PaymentStatus;
   note: string | null;
   subtotal: number;
+  subtotalBeforeDiscount?: number;
   discountAmount: number;
+  orderDiscountType?: string | null;
+  orderDiscountValue?: number | null;
+  orderDiscountAmount?: number;
   shippingFee: number;
   otherFee: number;
+  totalAmount?: number;
   totalRevenue: number;
   totalCogs: number;
   grossProfit: number;
   grossMargin: number;
   orderedAt: string;
+  sentAt?: string | null;
+  confirmedAt?: string | null;
+  priceBookIdSnapshot?: string | null;
+  priceBookCodeSnapshot?: string | null;
   inventoryAppliedAt: string | null;
   items: OrderItem[];
 }
@@ -277,6 +314,7 @@ export interface MenuProductPayload {
 export interface OrderPayload {
   customerName: string;
   customerPhone: string;
+  customerAddress: string;
   salesChannel: SalesChannel;
   status: OrderStatus;
   discountAmount: number;

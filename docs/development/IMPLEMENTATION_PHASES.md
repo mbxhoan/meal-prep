@@ -13,6 +13,7 @@ Deliverables:
 - employee profile link auth user
 - auth context + shop context helpers
 - audit_logs nền
+- shop_configs foundation cho default price book và các knob stock/FEFO cấp shop
 - middleware / permission helpers
 - seed default permissions + roles
 - user profile / employee profile
@@ -50,12 +51,15 @@ Mục tiêu:
 Bao gồm:
 - sales_orders
 - sales_order_items
+- sales_order_status_logs
+- sales_payments
 - bill page
 - snapshot giá
 - discount cơ bản
 - shipping fee
 - payment status
 - order status logs
+- default price book lấy từ `shop_configs.default_price_book_id` khi có, fallback sang price book active mới nhất nếu shop chưa cấu hình
 
 Rule bắt buộc:
 - order sent/confirmed không auto nhảy giá

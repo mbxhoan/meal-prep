@@ -1,5 +1,7 @@
+import Link from "next/link";
 import {
   StatusPill,
+  paymentStatusTone,
   statusTone,
 } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/admin/format";
@@ -19,17 +21,24 @@ export default async function AdminOrdersPage() {
                 <th className="px-4 py-3 font-medium">Khách</th>
                 <th className="px-4 py-3 font-medium">Items</th>
                 <th className="px-4 py-3 font-medium">Revenue</th>
+                <th className="px-4 py-3 font-medium">Paid</th>
                 <th className="px-4 py-3 font-medium">COGS</th>
                 <th className="px-4 py-3 font-medium">Profit</th>
                 <th className="px-4 py-3 font-medium">Margin</th>
                 <th className="px-4 py-3 font-medium">Trạng thái</th>
+                <th className="px-4 py-3 font-medium">Bill</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {orders.map((order) => (
                 <tr key={order.id}>
                   <td className="px-4 py-4 align-top">
-                    <p className="font-medium text-slate-900">{order.orderNumber}</p>
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="font-medium text-slate-900 transition hover:text-[#18352d]"
+                    >
+                      {order.orderNumber}
+                    </Link>
                     <p className="mt-1 text-slate-500">{formatDate(order.orderedAt)}</p>
                   </td>
                   <td className="px-4 py-4 align-top">
@@ -41,6 +50,12 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="px-4 py-4 align-top font-medium text-slate-900">
                     {formatCurrency(order.totalRevenue)}
+                  </td>
+                  <td className="px-4 py-4 align-top">
+                    <StatusPill
+                      label={order.paymentStatus ?? "unpaid"}
+                      tone={paymentStatusTone(order.paymentStatus ?? "unpaid")}
+                    />
                   </td>
                   <td className="px-4 py-4 align-top text-slate-500">
                     {formatCurrency(order.totalCogs)}
@@ -56,6 +71,14 @@ export default async function AdminOrdersPage() {
                       label={order.status}
                       tone={statusTone(order.status)}
                     />
+                  </td>
+                  <td className="px-4 py-4 align-top">
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    >
+                      Mở bill
+                    </Link>
                   </td>
                 </tr>
               ))}

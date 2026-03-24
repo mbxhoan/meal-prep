@@ -253,6 +253,7 @@ create table if not exists public.sales_orders (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references public.shops(id) on delete cascade,
   order_no text not null,
+  sales_channel text not null default 'manual',
   ordered_at timestamptz not null default now(),
   customer_id uuid references public.customers(id),
   customer_name_snapshot text,
@@ -261,12 +262,18 @@ create table if not exists public.sales_orders (
   employee_id uuid references public.employees(id),
   status text not null default 'draft',
   payment_status text not null default 'unpaid',
+  price_book_id_snapshot uuid references public.price_books(id) on delete set null,
   subtotal_before_discount numeric(18,2) not null default 0,
   order_discount_type text,
   order_discount_value numeric(18,2),
   order_discount_amount numeric(18,2) not null default 0,
   shipping_fee numeric(18,2) not null default 0,
+  other_fee numeric(18,2) not null default 0,
   total_amount numeric(18,2) not null default 0,
+  total_revenue numeric(18,2) not null default 0,
+  total_cogs numeric(18,2) not null default 0,
+  gross_profit numeric(18,2) not null default 0,
+  gross_margin numeric(18,4) not null default 0,
   coupon_code_snapshot text,
   notes text,
   sent_at timestamptz,
@@ -281,6 +288,8 @@ create table if not exists public.sales_order_items (
   shop_id uuid not null references public.shops(id) on delete cascade,
   sales_order_id uuid not null references public.sales_orders(id) on delete cascade,
   menu_item_variant_id uuid references public.menu_item_variants(id),
+  legacy_product_variant_id uuid references public.product_variants(id) on delete set null,
+  price_book_item_id_snapshot uuid references public.price_book_items(id) on delete set null,
   item_name_snapshot text not null,
   variant_label_snapshot text,
   weight_grams_snapshot numeric(18,3),
@@ -297,11 +306,23 @@ create table if not exists public.sales_order_items (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.sales_order_status_logs (
+  id uuid primary key default gen_random_uuid(),
+  shop_id uuid not null references public.shops(id) on delete cascade,
+  sales_order_id uuid not null references public.sales_orders(id) on delete cascade,
+  from_status text,
+  to_status text not null,
+  action text not null,
+  note text,
+  changed_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.sales_payments (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references public.shops(id) on delete cascade,
   sales_order_id uuid not null references public.sales_orders(id) on delete cascade,
-  payment_method_id uuid references public.payment_methods(id),
+  payment_method_id uuid,
   amount numeric(18,2) not null default 0,
   paid_at timestamptz not null default now(),
   note text,

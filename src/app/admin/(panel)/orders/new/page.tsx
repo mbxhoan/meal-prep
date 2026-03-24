@@ -1,12 +1,12 @@
 import { OrderBuilder } from "@/features/admin/components";
-import { getMenuProducts } from "@/lib/admin/service";
+import { getSalesOrderBuilderData } from "@/lib/sales/service";
 
 export default async function AdminNewOrderPage() {
-  const products = await getMenuProducts();
+  const builderData = await getSalesOrderBuilderData();
 
   return (
     <div className="space-y-5 pb-8">
-      <OrderBuilder products={products} />
+      <OrderBuilder products={builderData.products} />
     </div>
   );
 }

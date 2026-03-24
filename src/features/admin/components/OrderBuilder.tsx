@@ -36,8 +36,9 @@ function buildVariantIndex(products: MenuProduct[]) {
 export function OrderBuilder({ products }: { products: MenuProduct[] }) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [salesChannel, setSalesChannel] = useState<SalesChannel>("website");
-  const [status, setStatus] = useState<OrderStatus>("confirmed");
+  const [status, setStatus] = useState<OrderStatus>("draft");
   const [discountAmount, setDiscountAmount] = useState("0");
   const [shippingFee, setShippingFee] = useState("25000");
   const [otherFee, setOtherFee] = useState("0");
@@ -90,13 +91,14 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
         type="hidden"
         name="payload"
         value={JSON.stringify({
-          customerName,
-          customerPhone,
-          salesChannel,
-          status,
-          discountAmount: Number(discountAmount || 0),
-          shippingFee: Number(shippingFee || 0),
-          otherFee: Number(otherFee || 0),
+        customerName,
+        customerPhone,
+        customerAddress,
+        salesChannel,
+        status,
+        discountAmount: Number(discountAmount || 0),
+        shippingFee: Number(shippingFee || 0),
+        otherFee: Number(otherFee || 0),
           note,
           items: lines.map((line) => ({
             variantId: line.variantId,
@@ -133,6 +135,17 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                   placeholder="090..."
                 />
               </label>
+              <label className="block md:col-span-2">
+                <span className="mb-2 block text-sm font-medium text-slate-700">
+                  Địa chỉ giao hàng
+                </span>
+                <input
+                  value={customerAddress}
+                  onChange={(event) => setCustomerAddress(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                  placeholder="Số nhà, đường, phường/xã..."
+                />
+              </label>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
                   Kênh bán
@@ -160,8 +173,13 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                 >
                   <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
                   <option value="confirmed">Confirmed</option>
+                  <option value="preparing">Preparing</option>
+                  <option value="ready">Ready</option>
+                  <option value="delivered">Delivered</option>
                   <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </label>
             </div>

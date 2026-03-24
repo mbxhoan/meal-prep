@@ -153,6 +153,19 @@ function getHeaderConfig(pathname: string): HeaderConfig {
     };
   }
 
+  if (pathname.startsWith("/admin/orders/")) {
+    return {
+      eyebrow: "Bill",
+      title: "Bill đơn hàng",
+      description:
+        "Xem snapshot giá, trạng thái thanh toán và lịch sử chốt đơn.",
+      action: {
+        href: "/admin/orders",
+        label: "Danh sách",
+      },
+    };
+  }
+
   if (pathname === "/admin/orders") {
     return {
       eyebrow: "Orders",

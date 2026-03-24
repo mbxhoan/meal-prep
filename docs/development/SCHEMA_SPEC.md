@@ -45,6 +45,66 @@
 - `sales_payments`
 - `sales_order_promotions`
 
+### sales_orders
+- `order_no`
+- `sales_channel`
+- `ordered_at`
+- `customer_id`
+- `customer_name_snapshot`
+- `customer_phone_snapshot`
+- `customer_address_snapshot`
+- `employee_id`
+- `status`
+- `payment_status`
+- `price_book_id_snapshot`
+- `subtotal_before_discount`
+- `order_discount_type`
+- `order_discount_value`
+- `order_discount_amount`
+- `shipping_fee`
+- `other_fee`
+- `total_amount`
+- `total_revenue`
+- `total_cogs`
+- `gross_profit`
+- `gross_margin`
+- `coupon_code_snapshot`
+- `notes`
+- `sent_at`
+- `confirmed_at`
+
+### sales_order_items
+- `menu_item_variant_id`
+- `legacy_product_variant_id` nullable
+- `price_book_item_id_snapshot` nullable
+- `item_name_snapshot`
+- `variant_label_snapshot`
+- `weight_grams_snapshot`
+- `quantity`
+- `unit_price_snapshot`
+- `standard_cost_snapshot`
+- `line_discount_type`
+- `line_discount_value`
+- `line_discount_amount`
+- `line_total_before_discount`
+- `line_total_after_discount`
+- `line_cost_total`
+- `line_profit_total`
+
+### sales_order_status_logs
+- `from_status`
+- `to_status`
+- `action`
+- `note`
+- `changed_by`
+
+### sales_payments
+- `sales_order_id`
+- `payment_method_id` nullable, phase sau
+- `amount`
+- `paid_at`
+- `note`
+
 ### Inventory
 - `inventory_lots`
 - `inventory_receipts`
@@ -124,6 +184,8 @@
 - menu_item 1-n menu_item_variants
 - price_book 1-n price_book_items
 - sales_order 1-n sales_order_items
+- sales_order 1-n sales_order_status_logs
+- sales_order 1-n sales_payments
 - item 1-n inventory_lots
 - item 1-n inventory_serials
 - inventory_lot 1-n inventory_serials (khi item là lot_serial hoặc serial gắn lot)

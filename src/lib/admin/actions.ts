@@ -5,8 +5,8 @@ import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase
 import type {
   ActionState,
   MenuProductPayload,
-  OrderPayload,
 } from "@/lib/admin/types";
+import { createSalesOrderAction } from "@/lib/sales/actions";
 
 const demoSuccess = (message: string): ActionState => ({
   status: "success",
@@ -40,16 +40,6 @@ function sanitizeNumber(value: unknown, fallback = 0) {
   const parsed = Number(value);
 
   return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function generateOrderNumber() {
-  const now = new Date();
-  const stamp = now
-    .toISOString()
-    .replace(/[-:TZ.]/g, "")
-    .slice(0, 12);
-
-  return `MP-${stamp}`;
 }
 
 export async function saveMenuProductAction(
@@ -230,86 +220,5 @@ export async function createOrderAction(
   _previousState: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  let payload: OrderPayload;
-
-  try {
-    payload = parseJsonField<OrderPayload>(formData, "payload");
-  } catch {
-    return actionError("Không đọc được dữ liệu đơn hàng.", "demo");
-  }
-
-  if (!isSupabaseConfigured()) {
-    return demoSuccess(
-      "Đơn hàng đã được mô phỏng. Khi nối Supabase thật, hệ thống sẽ tự tính doanh thu, COGS, gross profit và trừ tồn kho theo công thức.",
-    );
-  }
-
-  try {
-    const supabase = await createSupabaseServerClient();
-
-    if (!supabase) {
-      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở demo mode.");
-    }
-
-    const orderNumber = generateOrderNumber();
-    const { data: orderRow, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        order_number: orderNumber,
-        customer_name: payload.customerName,
-        customer_phone: payload.customerPhone || null,
-        sales_channel: payload.salesChannel,
-        status: "draft",
-        note: payload.note || null,
-        discount_amount: sanitizeNumber(payload.discountAmount),
-        shipping_fee: sanitizeNumber(payload.shippingFee),
-        other_fee: sanitizeNumber(payload.otherFee),
-      })
-      .select("id")
-      .single();
-
-    if (orderError || !orderRow) {
-      return actionError(orderError?.message ?? "Không tạo được đơn hàng.", "live");
-    }
-
-    const itemRows = payload.items.map((item) => ({
-      order_id: orderRow.id,
-      variant_id: item.variantId,
-      quantity: sanitizeNumber(item.quantity, 1),
-      unit_price: sanitizeNumber(item.unitPrice),
-    }));
-
-    const { error: itemError } = await supabase
-      .from("order_items")
-      .insert(itemRows);
-
-    if (itemError) {
-      return actionError(itemError.message, "live");
-    }
-
-    if (payload.status !== "draft") {
-      const { error: statusError } = await supabase
-        .from("orders")
-        .update({ status: payload.status })
-        .eq("id", orderRow.id);
-
-      if (statusError) {
-        return actionError(statusError.message, "live");
-      }
-    }
-
-    revalidatePath("/admin");
-    revalidatePath("/admin/orders");
-    revalidatePath("/admin/analytics");
-    revalidatePath("/admin/inventory");
-
-    return liveSuccess(
-      `Đã tạo đơn ${orderNumber}. Hệ thống sẽ tự tính cost và doanh thu bằng trigger trong Supabase.`,
-    );
-  } catch (error) {
-    return actionError(
-      error instanceof Error ? error.message : "Không tạo được đơn hàng.",
-      "live",
-    );
-  }
+  return createSalesOrderAction(_previousState, formData);
 }
