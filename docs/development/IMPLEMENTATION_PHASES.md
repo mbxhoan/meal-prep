@@ -78,6 +78,8 @@ Bao gồm:
 - lot barcode support
 - serial table blueprint hoặc implementation readiness
 - serial scan UI, serial allocation, và auto-issue vẫn defer sang phase sau
+- stock view theo shop dùng movement ledger làm nguồn sự thật
+- legacy `inventory_items.current_quantity` chỉ còn là lớp compatibility trong dữ liệu cũ, không dùng để render stock mới
 
 ## Phase 4 — Sales x Inventory integration
 Mục tiêu:

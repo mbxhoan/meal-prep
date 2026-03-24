@@ -32,6 +32,11 @@ Field chính:
 ### Stock movement
 Mỗi lần tăng/giảm tồn.
 
+Rule triển khai:
+- `inventory_movements` là nguồn sự thật
+- `v_stock_on_hand_by_item` và `v_stock_on_hand_by_lot` chỉ là view suy diễn theo `shop_id`
+- FEFO chỉ áp dụng cho lot còn tồn và còn hiệu lực HSD
+
 ## Table logic gợi ý
 ### inventory_receipts
 Header phiếu nhập

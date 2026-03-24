@@ -162,6 +162,7 @@
 - `warehouse_id`
 - `lot_id` nullable
 - `serial_id` nullable for future readiness
+- `movement_at`
 - `qty`
 - `uom_id` or snapshot unit if needed
 - `reference_type`, `reference_id`, `reference_line_id`
@@ -196,9 +197,9 @@
 - auth user 1-n user_shop_roles
 
 ## Materialized views / views gợi ý
-- `v_stock_on_hand_by_lot`
-- `v_stock_on_hand_by_item`
-- `v_fefo_candidates`
+- `v_stock_on_hand_by_lot` - có `shop_id`, `item_id`, `lot_id`, `on_hand`, `is_expired`
+- `v_stock_on_hand_by_item` - có `shop_id`, `item_id`, `on_hand`, `lot_count`, `stock_value`
+- `v_fefo_candidates` - partition theo `shop_id + item_id`
 - `v_sales_daily_summary`
 - `v_order_profit_summary`
 
