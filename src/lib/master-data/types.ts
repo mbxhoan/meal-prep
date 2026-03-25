@@ -2,6 +2,7 @@ import type { PermissionCode } from "@/lib/rbac";
 
 export const MASTER_DATA_ENTITY_KEYS = [
   "customers",
+  "employees",
   "suppliers",
   "warehouses",
   "item_groups",

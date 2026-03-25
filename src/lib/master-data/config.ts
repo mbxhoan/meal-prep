@@ -87,6 +87,49 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     searchFields: ["code", "name", "phone", "email", "address", "note"],
     optionLabelPaths: ["code", "name"],
   }),
+  employees: lookupConfig("employees", {
+    title: "Nhân viên",
+    description:
+      "Hồ sơ nhân sự, vai trò và thông tin liên hệ trong phạm vi shop.",
+    table: "employees",
+    permissions: {
+      read: "master.employee.read",
+      create: "master.employee.create",
+      update: "master.employee.update",
+      delete: "master.lookup.delete",
+    },
+    select:
+      "id, shop_id, user_id, primary_shop_id, employee_code, full_name, email, phone, job_title, is_active, notes, deleted_at, created_at, updated_at",
+    orderBy: { column: "updated_at", ascending: false },
+    fields: [
+      {
+        name: "employee_code",
+        label: "Mã nhân viên",
+        type: "text",
+        required: true,
+      },
+      { name: "full_name", label: "Họ và tên", type: "text", required: true },
+      { name: "email", label: "Email", type: "text" },
+      { name: "phone", label: "Số điện thoại", type: "text" },
+      { name: "job_title", label: "Chức danh", type: "text" },
+      {
+        name: "is_active",
+        label: "Đang hoạt động",
+        type: "checkbox",
+        defaultValue: true,
+      },
+      { name: "notes", label: "Ghi chú", type: "textarea" },
+    ],
+    columns: [
+      { key: "employee_code", label: "Mã" },
+      { key: "full_name", label: "Họ tên" },
+      { key: "phone", label: "Điện thoại" },
+      { key: "job_title", label: "Chức danh" },
+      { key: "is_active", label: "Trạng thái", type: "boolean" },
+    ],
+    searchFields: ["employee_code", "full_name", "email", "phone", "job_title", "notes"],
+    optionLabelPaths: ["employee_code", "full_name"],
+  }),
   suppliers: lookupConfig("suppliers", {
     title: "Nhà cung cấp",
     description: "Danh sách nhà cung cấp nguyên liệu, bao bì và hàng hoá.",

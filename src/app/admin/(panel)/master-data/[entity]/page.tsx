@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { MasterDataCrudPage } from "@/features/master-data/components/MasterDataCrudPage";
+import { EmployeeDirectoryPage } from "@/features/master-data/components/EmployeeDirectoryPage";
 import {
   MASTER_DATA_ENTITY_CONFIGS,
   isMasterDataEntityKey,
@@ -33,6 +34,14 @@ export default async function MasterDataEntityPage({
 
   if (!context.permissions.includes(config.permissions.read)) {
     redirect("/admin/master-data");
+  }
+
+  if (entityKey === "employees") {
+    if (!context.shop) {
+      notFound();
+    }
+
+    return <EmployeeDirectoryPage shopName={context.shop.name} />;
   }
 
   const pageData = await getMasterDataPageData(entityKey);

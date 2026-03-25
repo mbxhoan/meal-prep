@@ -2,6 +2,16 @@
 -- Canonical RBAC + auth/shop context + audit base.
 
 create extension if not exists pgcrypto;
+create sequence if not exists public.roles_id_seq as bigint;
+create sequence if not exists public.permissions_id_seq as bigint;
+
+do $$
+begin
+  if to_regtype('public.app_scope_type') is null then
+    create type public.app_scope_type as enum ('system', 'company', 'event', 'self');
+  end if;
+end
+$$;
 
 do $$
 begin
@@ -109,19 +119,77 @@ for each row
 execute function public.set_updated_at();
 
 create table if not exists public.roles (
-  id uuid primary key default gen_random_uuid(),
-  code text not null unique,
+  id bigint primary key default nextval('public.roles_id_seq'::regclass),
+  key text unique,
+  code text unique,
   name text not null,
+  default_scope app_scope_type not null default 'company',
   scope text not null check (scope in ('global', 'shop')),
   description text,
+  is_system_role boolean not null default false,
   is_system boolean not null default false,
   sort_order integer not null default 0,
   is_active boolean not null default true,
+  metadata jsonb not null default '{}'::jsonb,
   created_by uuid references auth.users(id) on delete set null,
   updated_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table if exists public.roles
+  add column if not exists key text,
+  add column if not exists code text,
+  add column if not exists default_scope app_scope_type not null default 'company',
+  add column if not exists scope text,
+  add column if not exists is_system_role boolean not null default false,
+  add column if not exists is_system boolean not null default false,
+  add column if not exists sort_order integer not null default 0,
+  add column if not exists metadata jsonb not null default '{}'::jsonb;
+
+alter table if exists public.roles
+  alter column key drop not null;
+
+update public.roles
+set
+  key = coalesce(key, code),
+  code = coalesce(code, key),
+  scope = coalesce(
+    scope,
+    case
+      when coalesce(code, key) = 'system_admin' then 'global'
+      else 'shop'
+    end
+  ),
+  is_system_role = coalesce(is_system_role, is_system),
+  is_system = coalesce(is_system, is_system_role),
+  sort_order = coalesce(sort_order, 0),
+  metadata = coalesce(metadata, '{}'::jsonb)
+where key is null or code is null or scope is null or is_system is null or is_system_role is null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'roles'
+      and column_name = 'id'
+      and is_identity = 'NO'
+  ) then
+    alter table public.roles
+      alter column id set default nextval('public.roles_id_seq'::regclass);
+
+    perform setval(
+      'public.roles_id_seq',
+      greatest(coalesce((select max(id) from public.roles), 0), 1),
+      true
+    );
+  end if;
+end
+$$;
+
+create unique index if not exists uq_roles_code on public.roles (code);
 
 drop trigger if exists trg_roles_updated_at on public.roles;
 create trigger trg_roles_updated_at
@@ -130,9 +198,12 @@ for each row
 execute function public.set_updated_at();
 
 create table if not exists public.permissions (
-  id uuid primary key default gen_random_uuid(),
-  code text not null unique,
+  id bigint primary key default nextval('public.permissions_id_seq'::regclass),
+  key text unique,
+  code text unique,
   name text not null,
+  resource text,
+  action text,
   module text not null,
   description text,
   sort_order integer not null default 0,
@@ -143,6 +214,57 @@ create table if not exists public.permissions (
   updated_at timestamptz not null default now()
 );
 
+alter table if exists public.permissions
+  add column if not exists key text,
+  add column if not exists code text,
+  add column if not exists name text,
+  add column if not exists resource text,
+  add column if not exists action text,
+  add column if not exists module text,
+  add column if not exists sort_order integer not null default 0,
+  add column if not exists is_active boolean not null default true;
+
+alter table if exists public.permissions
+  alter column key drop not null;
+
+alter table if exists public.permissions
+  alter column resource drop not null,
+  alter column action drop not null;
+
+update public.permissions
+set
+  key = coalesce(key, code),
+  code = coalesce(code, key, case when resource is not null and action is not null then resource || '.' || action end),
+  name = coalesce(name, initcap(replace(coalesce(code, key, resource || '_' || action, 'permission'), '_', ' '))),
+  module = coalesce(module, resource, split_part(coalesce(code, key, ''), '.', 1), 'system'),
+  sort_order = coalesce(sort_order, 0),
+  is_active = coalesce(is_active, true)
+where key is null or code is null or name is null or module is null;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'permissions'
+      and column_name = 'id'
+      and is_identity = 'NO'
+  ) then
+    alter table public.permissions
+      alter column id set default nextval('public.permissions_id_seq'::regclass);
+
+    perform setval(
+      'public.permissions_id_seq',
+      greatest(coalesce((select max(id) from public.permissions), 0), 1),
+      true
+    );
+  end if;
+end
+$$;
+
+create unique index if not exists uq_permissions_code on public.permissions (code);
+
 drop trigger if exists trg_permissions_updated_at on public.permissions;
 create trigger trg_permissions_updated_at
 before update on public.permissions
@@ -150,8 +272,8 @@ for each row
 execute function public.set_updated_at();
 
 create table if not exists public.role_permissions (
-  role_id uuid not null references public.roles(id) on delete cascade,
-  permission_id uuid not null references public.permissions(id) on delete cascade,
+  role_id bigint not null references public.roles(id) on delete cascade,
+  permission_id bigint not null references public.permissions(id) on delete cascade,
   created_at timestamptz not null default now(),
   primary key (role_id, permission_id)
 );
@@ -160,7 +282,7 @@ create table if not exists public.user_shop_roles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   shop_id uuid references public.shops(id) on delete cascade,
-  role_id uuid not null references public.roles(id) on delete restrict,
+  role_id bigint not null references public.roles(id) on delete restrict,
   is_primary boolean not null default false,
   is_active boolean not null default true,
   assigned_by uuid references auth.users(id) on delete set null,
@@ -295,6 +417,10 @@ set name = excluded.name,
     is_active = excluded.is_active,
     updated_at = now();
 
+update public.roles
+set key = coalesce(key, code)
+where key is null;
+
 insert into public.permissions (code, name, module, sort_order, is_active)
 values
   ('system.shop.read', 'Read shops', 'system', 1, true),
@@ -367,6 +493,10 @@ set name = excluded.name,
     sort_order = excluded.sort_order,
     is_active = excluded.is_active,
     updated_at = now();
+
+update public.permissions
+set key = coalesce(key, code)
+where key is null;
 
 insert into public.role_permissions (role_id, permission_id)
 select roles.id, permissions.id

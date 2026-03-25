@@ -1,0 +1,19 @@
+id,product_name,category_name,category_slug,product_slug,current_product_id,source_row
+6f1f28dd-0c79-569d-ac43-1548329df8b8,Ức gà cajun,Gà,ga,uc-ga-cajun,72ea52a6-85a2-59b4-a21b-2c4c05b7dd1c,2
+97361735-2534-5e4a-9600-6e721ccccf7d,Ức gà ngũ vị,Gà,ga,uc-ga-ngu-vi,b85f8ec6-e7c5-55f3-8cca-d399e87ac639,3
+4e072fe3-2cf5-5224-b5fa-81e9b5d82898,Ức gà sả chanh,Gà,ga,uc-ga-sa-chanh,d302a87a-e73e-5157-9a34-28e1793312d8,4
+bbba61de-e6dd-5c3b-b408-e7654b19454b,Ứ́c gà gừng tỏi,Gà,ga,uc-ga-gung-toi,c657e7e7-c98f-5351-9e32-b3216e024970,5
+458d7086-c0fe-5f33-b529-aeeae0b90aab,Ức gà̀ cà ri,Cá,ca,uc-ga-ca-ri,2f84f6ea-5775-56b4-b67b-270ffe7988a9,6
+00e15c72-0403-5543-8f06-9647ca09304d,Cốt lết mè rang,Heo,heo,cot-let-me-rang,6ed7ffba-2e9c-5250-9888-ac89c9117d70,7
+90759bfb-a476-5af1-aed5-9dbb3b9c6dcd,Cốt lết gừng tỏi,Heo,heo,cot-let-gung-toi,86cba3a0-9452-54d7-82fb-a6ca6df1b2b3,8
+9df5e54b-164f-56e4-bc8d-b84b806ac790,Nạ̣c heo tây bắc,Heo,heo,nac-heo-tay-bac,61b4512f-64ac-5ac3-beaa-cb9430a77d9e,9
+efbdf7bd-3c5a-5363-bb6a-c7fd0351061d,Nạc heo sả nghệ,Heo,heo,nac-heo-sa-nghe,5c4d0e35-9213-5e12-9d86-6212d9669b3e,10
+29593ca6-b77a-51b5-a953-d2b78d1a6586,Nạ̣c heo ngũ vị,Heo,heo,nac-heo-ngu-vi,0b59619e-9a35-57ee-8415-bdac23b33d9d,11
+5c4fd829-a763-562d-a301-1f93dd2af7f2,Thăn bò ngũ vị,Bò,bo,than-bo-ngu-vi,2fd864c0-ee56-5f5c-a28f-095f0fd0c104,12
+81583478-d097-5fbc-b7d4-8e225a0ce41b,Thăn bò tây bắc,Bò,bo,than-bo-tay-bac,749027b3-7c8f-508f-bc61-053d92182c48,13
+9102c64b-faf3-5aa4-a2f3-1d890dcb3e41,Thăn bò̀ cajun,Bò,bo,than-bo-cajun,430a0021-4afa-597d-82da-e431fa36d833,14
+334f5d37-0c97-5054-85c0-2eeea65914f6,Tôm gừng tỏi,Tôm,tom,tom-gung-toi,61667315-c015-5fff-ab29-a116b59b9551,15
+1d45e3af-ce83-5062-807d-d0f5e9d89879,Tôm cajun,Tôm,tom,tom-cajun,c0d1df67-32b2-5ccd-943d-99640d8a5712,16
+9522b84d-c856-5977-b460-ed32003c1bd4,Cá thu cà ri,Cá,ca,ca-thu-ca-ri,f1bb339b-e834-504c-8ee7-f2264d3facda,17
+357d392d-0fca-5b86-a354-28d40522542a,Cá hồi cajun,Cá,ca,ca-hoi-cajun,7fa49b91-a38b-56b7-8cf9-0c6e037391ea,18
+a85ca312-f1ff-59ca-9ce9-7c8306eb3514,Cá hồi kiểu âu,Cá,ca,ca-hoi-kieu-au,b2712170-fc03-50cc-9dd4-72cffa43d644,19

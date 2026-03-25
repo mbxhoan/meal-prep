@@ -1,0 +1,2 @@
+id,receipt_no,receipt_date,item_code,barcode,item_name,item_type,warehouse_name,supplier_name,lot_code,lot_barcode,mfg_date,exp_date,qty,unit_cost,total_cost,notes,hsd_warning,source_row
+
