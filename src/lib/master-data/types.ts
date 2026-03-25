@@ -31,7 +31,8 @@ export type MasterDataFieldType =
   | "number"
   | "checkbox"
   | "select"
-  | "date";
+  | "date"
+  | "image";
 
 export interface MasterDataOption {
   value: string;
@@ -59,7 +60,8 @@ export type MasterDataColumnType =
   | "boolean"
   | "date"
   | "money"
-  | "percent";
+  | "percent"
+  | "image";
 
 export interface MasterDataColumnConfig {
   key: string;

@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FaArrowLeft, FaCheckCircle, FaShoppingCart } from "react-icons/fa";
 import { Footer } from "@/shared";
 import { formatCurrency } from "@/lib/admin/format";
 import { getMenuProductBySlug } from "@/lib/admin/service";
+import { SmartImage } from "@/shared";
 
 export default async function ProductDetailPage({
   params,
@@ -53,7 +53,7 @@ export default async function ProductDetailPage({
               <div className="bg-gradient-to-br from-gray-50 to-white p-6 md:p-8 flex flex-col items-center gap-6 border-r border-gray-100">
                 <div className="flex items-center justify-center min-h-[280px] w-full">
                   <div className="relative w-full max-w-[260px] aspect-square">
-                    <Image
+                    <SmartImage
                       src={product.mainImageUrl}
                       alt={product.name}
                       fill

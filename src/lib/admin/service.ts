@@ -13,6 +13,7 @@ import type {
   DashboardSnapshot,
   InventoryItem,
   MenuProduct,
+  MenuProductImage,
   OrderRecord,
 } from "@/lib/admin/types";
 import { normalizeInventoryItemTrackingFields } from "@/lib/inventory";
@@ -131,12 +132,30 @@ function normalizeProduct(product: Record<string, unknown>): MenuProduct {
         normalizeVariant(variant as Record<string, unknown>),
       )
     : [];
+  const productImages = Array.isArray(product.product_images)
+    ? (product.product_images as Record<string, unknown>[]).map(
+        (image, index): MenuProductImage => ({
+          id: String(image.id ?? ""),
+          productId: String(image.product_id ?? product.id ?? ""),
+          imageUrl: String(image.image_url ?? ""),
+          altText: String(image.alt_text ?? product.name ?? "Ảnh món"),
+          sortOrder:
+            image.sort_order == null ? index : safeNumber(image.sort_order, index),
+          isPrimary: Boolean(image.is_primary),
+        }),
+      )
+    : [];
   const category =
     product.categories &&
     typeof product.categories === "object" &&
     !Array.isArray(product.categories)
       ? (product.categories as Record<string, unknown>)
       : {};
+  const primaryImageUrl =
+    productImages.find((image) => image.isPrimary)?.imageUrl ??
+    productImages[0]?.imageUrl ??
+    "";
+  const mainImageUrl = String(product.main_image_url ?? "").trim();
 
   return {
     id: String(product.id),
@@ -147,11 +166,12 @@ function normalizeProduct(product: Record<string, unknown>): MenuProduct {
     slug: String(product.slug ?? ""),
     shortDescription: String(product.short_description ?? ""),
     description: String(product.description ?? ""),
-    mainImageUrl: String(product.main_image_url ?? ""),
+    mainImageUrl: mainImageUrl.length > 0 ? mainImageUrl : primaryImageUrl,
     isFeatured: Boolean(product.is_featured),
     isPublished: product.is_published !== false,
     sortOrder: safeNumber(product.sort_order),
     updatedAt: String(product.updated_at ?? new Date().toISOString()),
+    images: productImages.sort((left, right) => left.sortOrder - right.sortOrder),
     variants: variants.sort((left, right) => left.sortOrder - right.sortOrder),
   };
 }
@@ -527,7 +547,7 @@ export async function getMenuProducts(): Promise<MenuProduct[]> {
     const { data, error } = await supabase
       .from("products")
       .select(
-        `id, category_id, name, slug, short_description, description, main_image_url, is_featured, is_published, sort_order, updated_at, categories(name), ${variantsSelect}`,
+        `id, category_id, name, slug, short_description, description, main_image_url, is_featured, is_published, sort_order, updated_at, categories(name), product_images(id, product_id, image_url, alt_text, sort_order, is_primary), ${variantsSelect}`,
       )
       .order("sort_order", { ascending: true });
 

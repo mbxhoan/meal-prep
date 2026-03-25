@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import { Footer } from "@/shared";
 import { formatCurrency } from "@/lib/admin/format";
 import { getMenuProducts } from "@/lib/admin/service";
+import { SmartImage } from "@/shared";
 
 export default async function MenuPage({
   searchParams,
@@ -101,7 +101,7 @@ export default async function MenuPage({
                       className="group bg-gray-50 rounded-2xl border border-gray-100 hover:border-orange-200 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] overflow-hidden"
                     >
                       <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-white p-4 flex items-center justify-center">
-                        <Image
+                        <SmartImage
                           src={product.mainImageUrl}
                           alt={product.name}
                           width={220}

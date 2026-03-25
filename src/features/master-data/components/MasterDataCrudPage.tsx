@@ -9,6 +9,7 @@ import {
   FaTrash,
 } from "react-icons/fa6";
 import { ExportExcelButton } from "@/features/admin/components/ExportExcelButton";
+import { ImageUploader } from "@/features/admin/components/ImageUploader";
 import {
   deleteMasterDataAction,
   saveMasterDataAction,
@@ -93,6 +94,8 @@ function formatColumnValue(
       }).format(Number(value) || 0);
     case "boolean":
       return Boolean(value) ? "Có" : "Không";
+    case "image":
+      return value ? "Có ảnh" : "Chưa có ảnh";
     default:
       return String(value);
   }
@@ -400,6 +403,28 @@ export function MasterDataCrudPage({
                         ))}
                       </select>
                     </label>
+                  );
+                }
+
+                if (field.type === "image") {
+                  return (
+                    <div key={field.name} className="md:col-span-2">
+                      <ImageUploader
+                        value={String(fieldValue ?? "")}
+                        onChange={(nextValue) =>
+                          handleFieldChange(field.name, nextValue)
+                        }
+                        pathPrefix={`master-data/${config.key}`}
+                        title={field.label}
+                        label={field.label}
+                        emptyText={`Chưa có ${field.label.toLowerCase()}.`}
+                        uploadLabel="Tải ảnh lên Supabase Storage"
+                        helpText={
+                          field.helpText ??
+                          `Dùng bucket product-media. Ảnh sẽ được lưu cho ${config.title.toLowerCase()}.`
+                        }
+                      />
+                    </div>
                   );
                 }
 

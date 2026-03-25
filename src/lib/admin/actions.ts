@@ -42,6 +42,40 @@ function sanitizeNumber(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function normalizeMenuProductImages(payload: MenuProductPayload) {
+  const images = (payload.images ?? [])
+    .map((image, index) => ({
+      imageUrl: String(image.imageUrl ?? "").trim(),
+      altText: String(image.altText ?? payload.name ?? "").trim(),
+      sortOrder: sanitizeNumber(image.sortOrder, index),
+      isPrimary: image.isPrimary === true,
+    }))
+    .filter((image) => image.imageUrl.length > 0)
+    .slice(0, 8);
+
+  if (images.length === 0 && payload.mainImageUrl.trim().length > 0) {
+    images.push({
+      imageUrl: payload.mainImageUrl.trim(),
+      altText: payload.name,
+      sortOrder: 0,
+      isPrimary: true,
+    });
+  }
+
+  if (images.length === 0) {
+    return [];
+  }
+
+  const primaryIndex = images.findIndex((image) => image.isPrimary);
+  const resolvedPrimaryIndex = primaryIndex >= 0 ? primaryIndex : 0;
+
+  return images.map((image, index) => ({
+    ...image,
+    sortOrder: index,
+    isPrimary: index === resolvedPrimaryIndex,
+  }));
+}
+
 export async function saveMenuProductAction(
   _previousState: ActionState,
   formData: FormData,
@@ -67,6 +101,9 @@ export async function saveMenuProductAction(
       return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
     }
 
+    const images = normalizeMenuProductImages(payload);
+    const primaryImageUrl = images.find((image) => image.isPrimary)?.imageUrl ?? "";
+
     const { error: productError } = await supabase.from("products").upsert(
       {
         id: payload.id,
@@ -75,7 +112,7 @@ export async function saveMenuProductAction(
         slug: payload.slug,
         short_description: payload.shortDescription,
         description: payload.description,
-        main_image_url: payload.mainImageUrl,
+        main_image_url: primaryImageUrl.length > 0 ? primaryImageUrl : null,
         is_featured: payload.isFeatured,
         is_published: payload.isPublished,
         sort_order: sanitizeNumber(payload.sortOrder, 0),
@@ -85,6 +122,33 @@ export async function saveMenuProductAction(
 
     if (productError) {
       return actionError(productError.message, "live");
+    }
+
+    const { error: imageDeleteError } = await supabase
+      .from("product_images")
+      .delete()
+      .eq("product_id", payload.id);
+
+    if (imageDeleteError) {
+      return actionError(imageDeleteError.message, "live");
+    }
+
+    if (images.length > 0) {
+      const { error: imageInsertError } = await supabase
+        .from("product_images")
+        .insert(
+          images.map((image) => ({
+            product_id: payload.id,
+            image_url: image.imageUrl,
+            alt_text: image.altText.length > 0 ? image.altText : payload.name,
+            sort_order: image.sortOrder,
+            is_primary: image.isPrimary,
+          })),
+        );
+
+      if (imageInsertError) {
+        return actionError(imageInsertError.message, "live");
+      }
     }
 
     const variantRows = payload.variants.map((variant) => ({
@@ -141,6 +205,10 @@ export async function saveMenuProductAction(
     revalidatePath("/admin");
     revalidatePath("/admin/menu");
     revalidatePath(`/admin/menu/${payload.id}`);
+    revalidatePath("/menu");
+    if (payload.slug) {
+      revalidatePath(`/product/${payload.slug}`);
+    }
 
     return liveSuccess("Đã lưu thực đơn, cost profile và công thức định lượng.");
   } catch (error) {

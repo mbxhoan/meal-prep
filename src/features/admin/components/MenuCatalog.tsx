@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FaPenToSquare } from "react-icons/fa6";
@@ -9,6 +8,7 @@ import { StatusPill } from "@/features/admin/components/StatusPill";
 import { ViewModeToggle } from "@/features/admin/components/ViewModeToggle";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/admin/format";
 import type { MenuProduct } from "@/lib/admin/types";
+import { SmartImage } from "@/shared";
 
 function pickDefaultVariant(product: MenuProduct) {
   return product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
@@ -90,7 +90,7 @@ export function MenuCatalog({ products }: { products: MenuProduct[] }) {
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex min-w-0 gap-4">
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[20px] border border-slate-100 bg-white md:h-24 md:w-24">
-                      <Image
+                      <SmartImage
                         src={product.mainImageUrl}
                         alt={product.name}
                         fill
@@ -184,7 +184,7 @@ export function MenuCatalog({ products }: { products: MenuProduct[] }) {
                   </div>
                   <div className="flex gap-4">
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[20px] border border-slate-100 bg-white md:h-24 md:w-24">
-                      <Image
+                      <SmartImage
                         src={product.mainImageUrl}
                         alt={product.name}
                         fill

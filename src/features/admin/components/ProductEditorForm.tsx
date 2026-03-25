@@ -9,6 +9,7 @@ import type {
   AdminCategory,
   InventoryItem,
   MenuProduct,
+  MenuProductImage,
   MenuVariant,
   RecipeComponent,
 } from "@/lib/admin/types";
@@ -20,6 +21,68 @@ const initialState = {
 } as const;
 
 type VariantState = MenuVariant;
+
+function makeEmptyGalleryImage(
+  productId: string,
+  index: number,
+  isPrimary = false,
+): MenuProductImage {
+  return {
+    id: crypto.randomUUID(),
+    productId,
+    imageUrl: "",
+    altText: "",
+    sortOrder: index,
+    isPrimary,
+  };
+}
+
+function normalizeGalleryImages(images: MenuProductImage[]) {
+  const normalized = images.slice(0, 8).map((image, index) => ({
+    ...image,
+    imageUrl: image.imageUrl.trim(),
+    altText: image.altText.trim(),
+    sortOrder: index,
+  }));
+
+  const primaryIndex = normalized.findIndex(
+    (image) => image.isPrimary && image.imageUrl.length > 0,
+  );
+  const firstFilledIndex = normalized.findIndex(
+    (image) => image.imageUrl.length > 0,
+  );
+  const resolvedPrimaryIndex =
+    primaryIndex >= 0 ? primaryIndex : firstFilledIndex;
+
+  return normalized.map((image, index) => ({
+    ...image,
+    isPrimary:
+      resolvedPrimaryIndex >= 0
+        ? index === resolvedPrimaryIndex
+        : index === 0 && normalized.length > 0,
+  }));
+}
+
+function buildInitialGallery(product: MenuProduct): MenuProductImage[] {
+  const existingImages = product.images ?? [];
+  const sourceImages =
+    existingImages.length > 0
+      ? existingImages
+      : product.mainImageUrl
+        ? [
+            {
+              id: crypto.randomUUID(),
+              productId: product.id,
+              imageUrl: product.mainImageUrl,
+              altText: product.name,
+              sortOrder: 0,
+              isPrimary: true,
+            },
+          ]
+        : [makeEmptyGalleryImage(product.id, 0, true)];
+
+  return normalizeGalleryImages(sourceImages);
+}
 
 function makeEmptyVariant(productId: string): VariantState {
   return {
@@ -104,7 +167,9 @@ export function ProductEditorForm({
   const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
   const [shortDescription, setShortDescription] = useState(product.shortDescription);
   const [description, setDescription] = useState(product.description);
-  const [mainImageUrl, setMainImageUrl] = useState(product.mainImageUrl);
+  const [galleryImages, setGalleryImages] = useState<MenuProductImage[]>(() =>
+    buildInitialGallery(product),
+  );
   const [isFeatured, setIsFeatured] = useState(product.isFeatured);
   const [isPublished, setIsPublished] = useState(product.isPublished);
   const [sortOrder, setSortOrder] = useState(product.sortOrder);
@@ -112,6 +177,17 @@ export function ProductEditorForm({
     product.variants.map((variant) => recalculateVariantCosts(variant, inventoryIndex)),
   );
   const [state, action, pending] = useActionState(saveMenuProductAction, initialState);
+  const mainImageUrl = useMemo(() => {
+    const primaryImage = galleryImages.find(
+      (image) => image.isPrimary && image.imageUrl.trim().length > 0,
+    );
+
+    return (
+      primaryImage?.imageUrl ??
+      galleryImages.find((image) => image.imageUrl.trim().length > 0)?.imageUrl ??
+      ""
+    );
+  }, [galleryImages]);
 
   function updateVariant(variantId: string, updater: (variant: VariantState) => VariantState) {
     setVariants((current) =>
@@ -119,6 +195,41 @@ export function ProductEditorForm({
         variant.id === variantId
           ? recalculateVariantCosts(updater(variant), inventoryIndex)
           : variant,
+      ),
+    );
+  }
+
+  function updateGalleryImage(
+    imageId: string,
+    updater: (image: MenuProductImage) => MenuProductImage,
+  ) {
+    setGalleryImages((current) =>
+      normalizeGalleryImages(
+        current.map((image) => (image.id === imageId ? updater(image) : image)),
+      ),
+    );
+  }
+
+  function addGalleryImage() {
+    setGalleryImages((current) => {
+      if (current.length >= 8) {
+        return current;
+      }
+
+      return normalizeGalleryImages([
+        ...current,
+        makeEmptyGalleryImage(product.id, current.length, current.length === 0),
+      ]);
+    });
+  }
+
+  function setPrimaryGalleryImage(imageId: string) {
+    setGalleryImages((current) =>
+      normalizeGalleryImages(
+        current.map((image) => ({
+          ...image,
+          isPrimary: image.id === imageId,
+        })),
       ),
     );
   }
@@ -162,6 +273,13 @@ export function ProductEditorForm({
           shortDescription,
           description,
           mainImageUrl,
+          images: galleryImages.map((image, index) => ({
+            id: image.id,
+            imageUrl: image.imageUrl,
+            altText: image.altText || `${name} ${index + 1}`,
+            sortOrder: index,
+            isPrimary: image.isPrimary,
+          })),
           isFeatured,
           isPublished,
           sortOrder,
@@ -703,18 +821,82 @@ export function ProductEditorForm({
 
         <div className="space-y-6">
           <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Ảnh đại diện
-            </p>
-            <h2 className="mt-2 text-lg font-semibold text-slate-900">
-              Ảnh đại diện thực đơn
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-500">
-              Ảnh này được dùng làm ảnh thu nhỏ ở trang thực đơn và cũng là ảnh
-              chính khi vào chi tiết sản phẩm.
-            </p>
-            <div className="mt-5">
-              <ImageUploader value={mainImageUrl} onChange={setMainImageUrl} />
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+                  Bộ ảnh món
+                </p>
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">
+                  Tối đa 8 ảnh, 1 ảnh đại diện
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-500">
+                  Ảnh đại diện sẽ dùng cho trang thực đơn và trang chi tiết.
+                  Các ảnh còn lại là gallery tham khảo cho món.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={addGalleryImage}
+                disabled={galleryImages.length >= 8}
+                title="Thêm ảnh"
+                aria-label="Thêm ảnh"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <FaPlus className="text-sm" />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {galleryImages.map((image, index) => (
+                <div
+                  key={image.id}
+                  className="rounded-[26px] border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        Ảnh {index + 1}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">
+                        {image.isPrimary ? "Ảnh đại diện" : "Ảnh phụ"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryGalleryImage(image.id)}
+                      disabled={
+                        image.isPrimary || image.imageUrl.trim().length === 0
+                      }
+                      className="rounded-full border border-[#18352d]/20 bg-white px-4 py-2 text-xs font-medium text-[#18352d] transition hover:border-[#18352d]/40 hover:bg-[#18352d]/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Đặt làm ảnh đại diện
+                    </button>
+                  </div>
+                  <div className="mt-4">
+                    <ImageUploader
+                      value={image.imageUrl}
+                      onChange={(nextValue) =>
+                        updateGalleryImage(image.id, (current) => ({
+                          ...current,
+                          imageUrl: nextValue,
+                          altText: current.altText || name,
+                        }))
+                      }
+                      pathPrefix={`products/${product.id}/images`}
+                      title={`Ảnh món ${index + 1}`}
+                      label="URL ảnh"
+                      emptyText="Chưa có ảnh cho slot này"
+                      uploadLabel="Tải ảnh lên Supabase Storage"
+                      helpText={
+                        <>
+                          Dùng bucket <code>product-media</code>. Bạn có thể
+                          dán URL bất kỳ hoặc upload trực tiếp.
+                        </>
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

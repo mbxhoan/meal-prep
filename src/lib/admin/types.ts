@@ -122,7 +122,17 @@ export interface MenuProduct {
   isPublished: boolean;
   sortOrder: number;
   updatedAt: string;
+  images?: MenuProductImage[];
   variants: MenuVariant[];
+}
+
+export interface MenuProductImage {
+  id: string;
+  productId: string;
+  imageUrl: string;
+  altText: string;
+  sortOrder: number;
+  isPrimary: boolean;
 }
 
 export interface InventoryItem {
@@ -287,6 +297,13 @@ export interface MenuProductPayload {
   shortDescription: string;
   description: string;
   mainImageUrl: string;
+  images?: Array<{
+    id?: string;
+    imageUrl: string;
+    altText: string;
+    sortOrder: number;
+    isPrimary: boolean;
+  }>;
   isFeatured: boolean;
   isPublished: boolean;
   sortOrder: number;

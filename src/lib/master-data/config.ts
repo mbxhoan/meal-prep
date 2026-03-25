@@ -332,7 +332,8 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   items: lookupConfig("items", {
     title: "Hàng hóa",
-    description: "Mã hàng tồn kho, chế độ theo dõi, mã vạch và cờ FEFO.",
+    description:
+      "Mã hàng tồn kho, ảnh nhận diện, chế độ theo dõi, mã vạch và cờ FEFO.",
     table: "items",
     permissions: {
       read: "master.item.read",
@@ -341,11 +342,17 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       delete: "master.item.delete",
     },
     select:
-      "id, shop_id, sku, name, barcode, barcode_type, tracking_mode, item_group_id, item_groups(code, name), item_type_id, item_types(code, name), base_unit_id, units(code, name), is_expirable, is_fefo_enabled, requires_unit_label, default_shelf_life_days, minimum_stock_qty, is_active, notes, deleted_at, created_at, updated_at",
+      "id, shop_id, sku, name, image_url, barcode, barcode_type, tracking_mode, item_group_id, item_groups(code, name), item_type_id, item_types(code, name), base_unit_id, units(code, name), is_expirable, is_fefo_enabled, requires_unit_label, default_shelf_life_days, minimum_stock_qty, is_active, notes, deleted_at, created_at, updated_at",
     orderBy: { column: "updated_at", ascending: false },
     fields: [
       { name: "sku", label: "Mã hàng", type: "text", required: true },
       { name: "name", label: "Tên hàng hóa", type: "text", required: true },
+      {
+        name: "image_url",
+        label: "Ảnh hàng hóa",
+        type: "image",
+        helpText: "Ảnh này hiển thị trên danh sách hàng hóa và giúp nhận diện nhanh nguyên liệu / gia vị.",
+      },
       { name: "barcode", label: "Mã vạch", type: "text" },
       {
         name: "barcode_type",
@@ -426,6 +433,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     columns: [
       { key: "sku", label: "Mã hàng" },
       { key: "name", label: "Tên" },
+      { key: "image_url", label: "Ảnh", type: "image" },
       { key: "item_groups.name", label: "Nhóm" },
       { key: "item_types.name", label: "Loại" },
       { key: "units.code", label: "Đơn vị" },
@@ -437,7 +445,8 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   menu_items: lookupConfig("menu_items", {
     title: "Món bán",
-    description: "Món bán cho khách, tách riêng khỏi mã hàng tồn kho.",
+    description:
+      "Món bán cho khách, có ảnh đại diện riêng, tách riêng khỏi mã hàng tồn kho.",
     table: "menu_items",
     permissions: {
       read: "master.menu.read",
@@ -446,11 +455,17 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       delete: "master.menu.delete",
     },
     select:
-      "id, shop_id, code, name, notes, sort_order, is_active, deleted_at, created_at, updated_at",
+      "id, shop_id, code, name, image_url, notes, sort_order, is_active, deleted_at, created_at, updated_at",
     orderBy: { column: "sort_order", ascending: true },
     fields: [
       { name: "code", label: "Mã món", type: "text", required: true },
       { name: "name", label: "Tên món", type: "text", required: true },
+      {
+        name: "image_url",
+        label: "Ảnh món",
+        type: "image",
+        helpText: "Ảnh này hiển thị trên màn hình danh sách món và giúp nhận diện món nhanh hơn.",
+      },
       {
         name: "sort_order",
         label: "Thứ tự",
@@ -470,6 +485,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     columns: [
       { key: "code", label: "Mã" },
       { key: "name", label: "Tên" },
+      { key: "image_url", label: "Ảnh", type: "image" },
       { key: "sort_order", label: "Thứ tự", type: "number" },
       { key: "is_active", label: "Trạng thái", type: "boolean" },
     ],
