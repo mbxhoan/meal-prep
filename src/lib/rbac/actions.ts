@@ -48,7 +48,7 @@ export async function assignUserShopRoleAction(
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã mô phỏng phân quyền trong demo mode.");
+    return demoSuccess("Đã mô phỏng phân quyền trong chế độ demo.");
   }
 
   try {
@@ -56,7 +56,7 @@ export async function assignUserShopRoleAction(
     const supabase = await createSupabaseServerClient();
 
     if (!supabase) {
-      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở demo mode.");
+      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
     }
 
     const { error } = await supabase.rpc("assign_user_shop_role", {
@@ -87,4 +87,3 @@ export async function assignUserShopRoleAction(
     );
   }
 }
-

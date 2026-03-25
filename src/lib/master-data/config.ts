@@ -21,14 +21,29 @@ function lookupConfig(
 export const INVENTORY_BARCODE_TYPE_OPTIONS = INVENTORY_BARCODE_TYPES.map(
   (value) => ({
     value,
-    label: value,
+    label:
+      {
+        code128: "Mã 128",
+        code39: "Mã 39",
+        ean13: "EAN-13",
+        ean8: "EAN-8",
+        qr: "Mã QR",
+        itf14: "ITF-14",
+        data_matrix: "Ma trận dữ liệu",
+      }[value] ?? value,
   }),
 );
 
 export const INVENTORY_TRACKING_MODE_OPTIONS = INVENTORY_TRACKING_MODES.map(
   (value) => ({
     value,
-    label: value,
+    label:
+      {
+        none: "Không theo dõi",
+        lot: "Theo lô",
+        serial: "Theo serial",
+        lot_serial: "Theo lô + serial",
+      }[value] ?? value,
   }),
 );
 
@@ -151,7 +166,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   item_groups: lookupConfig("item_groups", {
     title: "Nhóm hàng",
-    description: "Phân nhóm item theo nghiệp vụ và báo cáo.",
+    description: "Phân nhóm hàng hóa theo nghiệp vụ và báo cáo.",
     table: "item_groups",
     permissions: {
       read: "master.lookup.read",
@@ -233,7 +248,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   units: lookupConfig("units", {
     title: "Đơn vị tính",
-    description: "Đơn vị chuẩn cho item và BOM.",
+    description: "Đơn vị chuẩn cho hàng hóa và công thức định lượng.",
     table: "units",
     permissions: {
       read: "master.lookup.read",
@@ -274,7 +289,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   items: lookupConfig("items", {
     title: "Hàng hóa",
-    description: "SKU tồn kho, tracking mode, barcode và FEFO flags.",
+    description: "Mã hàng tồn kho, chế độ theo dõi, mã vạch và cờ FEFO.",
     table: "items",
     permissions: {
       read: "master.item.read",
@@ -286,18 +301,18 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       "id, shop_id, sku, name, barcode, barcode_type, tracking_mode, item_group_id, item_groups(code, name), item_type_id, item_types(code, name), base_unit_id, units(code, name), is_expirable, is_fefo_enabled, requires_unit_label, default_shelf_life_days, minimum_stock_qty, is_active, notes, deleted_at, created_at, updated_at",
     orderBy: { column: "updated_at", ascending: false },
     fields: [
-      { name: "sku", label: "SKU", type: "text", required: true },
-      { name: "name", label: "Tên item", type: "text", required: true },
-      { name: "barcode", label: "Barcode", type: "text" },
+      { name: "sku", label: "Mã hàng", type: "text", required: true },
+      { name: "name", label: "Tên hàng hóa", type: "text", required: true },
+      { name: "barcode", label: "Mã vạch", type: "text" },
       {
         name: "barcode_type",
-        label: "Loại barcode",
+        label: "Loại mã vạch",
         type: "select",
         options: INVENTORY_BARCODE_TYPE_OPTIONS,
       },
       {
         name: "tracking_mode",
-        label: "Tracking mode",
+        label: "Chế độ theo dõi",
         type: "select",
         required: true,
         options: INVENTORY_TRACKING_MODE_OPTIONS,
@@ -366,12 +381,12 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       { name: "notes", label: "Ghi chú", type: "textarea" },
     ],
     columns: [
-      { key: "sku", label: "SKU" },
+      { key: "sku", label: "Mã hàng" },
       { key: "name", label: "Tên" },
       { key: "item_groups.name", label: "Nhóm" },
       { key: "item_types.name", label: "Loại" },
       { key: "units.code", label: "Đơn vị" },
-      { key: "tracking_mode", label: "Tracking", type: "text" },
+      { key: "tracking_mode", label: "Theo dõi", type: "text" },
       { key: "is_active", label: "Trạng thái", type: "boolean" },
     ],
     searchFields: ["sku", "name", "barcode", "notes", "item_groups.name", "item_types.name"],
@@ -379,7 +394,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   menu_items: lookupConfig("menu_items", {
     title: "Món bán",
-    description: "Món bán cho khách, tách riêng khỏi SKU tồn kho.",
+    description: "Món bán cho khách, tách riêng khỏi mã hàng tồn kho.",
     table: "menu_items",
     permissions: {
       read: "master.menu.read",
@@ -421,7 +436,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   menu_item_variants: lookupConfig("menu_item_variants", {
     title: "Biến thể món",
     description:
-      "Map món bán với biến thể; liên kết SKU ledger (inventory_items) để confirm đơn tự tạo phiếu xuất nháp theo FEFO.",
+      "Ghép món bán với biến thể; liên kết mã hàng kho để khi xác nhận đơn hệ thống tự tạo phiếu xuất nháp theo FEFO.",
     table: "menu_item_variants",
     permissions: {
       read: "master.menu.read",
@@ -450,13 +465,13 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       },
       {
         name: "linked_inventory_item_id",
-        label: "Item master (recipe)",
+        label: "Nguyên liệu gốc",
         type: "select",
         optionsSource: "items",
       },
       {
         name: "fulfillment_inventory_item_id",
-        label: "SKU xuất kho (FEFO)",
+        label: "Mã xuất kho (FEFO)",
         type: "select",
         optionsSource: "inventory_stock_items",
       },
@@ -480,8 +495,8 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       { key: "menu_items.name", label: "Món" },
       { key: "label", label: "Biến thể" },
       { key: "weight_grams", label: "Gram", type: "number" },
-      { key: "items.name", label: "Item master" },
-      { key: "fulfillment_stock.sku", label: "SKU xuất" },
+      { key: "items.name", label: "Nguyên liệu gốc" },
+      { key: "fulfillment_stock.sku", label: "Mã xuất" },
       { key: "is_active", label: "Trạng thái", type: "boolean" },
     ],
     searchFields: [
@@ -519,9 +534,9 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
         type: "select",
         required: true,
         options: [
-          { value: "draft", label: "draft" },
-          { value: "active", label: "active" },
-          { value: "archived", label: "archived" },
+          { value: "draft", label: "Bản nháp" },
+          { value: "active", label: "Đang áp dụng" },
+          { value: "archived", label: "Lưu trữ" },
         ],
         defaultValue: "draft",
       },
@@ -592,7 +607,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       },
       {
         name: "target_margin_percent",
-        label: "Margin mục tiêu (%)",
+        label: "Biên lợi nhuận mục tiêu (%)",
         type: "number",
         step: "0.01",
         min: 0,
@@ -611,7 +626,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       { key: "menu_item_variants.label", label: "Biến thể" },
       { key: "sale_price", label: "Giá bán", type: "money" },
       { key: "standard_cost", label: "Giá vốn", type: "money" },
-      { key: "target_margin_percent", label: "Margin", type: "percent" },
+      { key: "target_margin_percent", label: "Biên lợi nhuận", type: "percent" },
       { key: "is_active", label: "Trạng thái", type: "boolean" },
     ],
     searchFields: [

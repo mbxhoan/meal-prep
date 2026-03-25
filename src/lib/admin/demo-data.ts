@@ -258,9 +258,9 @@ export const demoMenuProducts: MenuProduct[] = [
     categoryName: demoCategories[0]?.name ?? "Gà",
     name: "Ức Gà Ướp Signature",
     slug: "marinated-chicken",
-    shortDescription: "Best seller giàu protein, lợi nhuận tốt và vòng quay kho nhanh.",
+    shortDescription: "Món bán chạy giàu protein, lợi nhuận tốt và vòng quay kho nhanh.",
     description:
-      "Ức gà tươi được ướp sốt signature và đóng gói hút chân không. Đây là SKU chủ lực dùng cho dashboard lợi nhuận.",
+      "Ức gà tươi được ướp sốt đặc trưng và đóng gói hút chân không. Đây là mã hàng chủ lực dùng cho bảng điều khiển lợi nhuận.",
     mainImageUrl: "/assets/products/chicken_nobg.png",
     isFeatured: true,
     isPublished: true,
@@ -336,7 +336,7 @@ export const demoMenuProducts: MenuProduct[] = [
     categoryName: demoCategories[1]?.name ?? "Bò",
     name: "Bò Thăn Áp Chảo",
     slug: "prime-beef",
-    shortDescription: "SKU premium, giá trị đơn cao nhưng sát mức tồn kho tối thiểu.",
+    shortDescription: "Mã hàng cao cấp, giá trị đơn cao nhưng sát mức tồn kho tối thiểu.",
     description:
       "Thăn bò cắt chuẩn phần ăn, có thể theo dõi lợi nhuận ngay khi nhập giá bò mới vào kho.",
     mainImageUrl: "/assets/products/beef_nobg.png",

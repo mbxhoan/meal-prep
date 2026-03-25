@@ -17,7 +17,7 @@ export const MASTER_DATA_ENTITY_KEYS = [
 export type MasterDataEntityKey =
   (typeof MASTER_DATA_ENTITY_KEYS)[number];
 
-/** Options loaded from tables that are not MasterDataEntityKey pages (e.g. stock SKU list). */
+/** Options loaded from tables that are not MasterDataEntityKey pages (e.g. danh sách mã hàng tồn kho). */
 export type MasterDataAuxOptionsSourceKey = "inventory_stock_items";
 
 export type MasterDataFieldOptionsSource =

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import { FaPlus, FaTrash } from "react-icons/fa6";
 import { ImageUploader } from "@/features/admin/components/ImageUploader";
 import { saveMenuProductAction } from "@/lib/admin/actions";
 import { formatCurrency, slugify } from "@/lib/admin/format";
@@ -24,7 +25,7 @@ function makeEmptyVariant(productId: string): VariantState {
   return {
     id: crypto.randomUUID(),
     productId,
-    label: "New variant",
+    label: "Biến thể mới",
     weightInGrams: null,
     price: 0,
     compareAtPrice: null,
@@ -187,23 +188,23 @@ export function ProductEditorForm({
       />
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="space-y-6">
-          <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="space-y-5">
+          <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Menu editor
+                  Biên tập thực đơn
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">
                   Chỉnh ảnh đại diện và thông tin thực đơn
                 </h2>
               </div>
               <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-500">
-                Product ID: {product.id.slice(0, 8)}...
+                Mã món: {product.id.slice(0, 8)}...
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
                   Tên món
@@ -222,7 +223,7 @@ export function ProductEditorForm({
               </label>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Slug
+                  Đường dẫn
                 </span>
                 <input
                   value={slug}
@@ -249,7 +250,7 @@ export function ProductEditorForm({
               </label>
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
-                  Sort order
+                  Thứ tự sắp xếp
                 </span>
                 <input
                   type="number"
@@ -291,7 +292,7 @@ export function ProductEditorForm({
                   checked={isFeatured}
                   onChange={(event) => setIsFeatured(event.target.checked)}
                 />
-                Featured
+                Nổi bật
               </label>
               <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                 <input
@@ -299,19 +300,19 @@ export function ProductEditorForm({
                   checked={isPublished}
                   onChange={(event) => setIsPublished(event.target.checked)}
                 />
-                Published
+                Đã đăng
               </label>
             </div>
           </div>
 
-          <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+          <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Cost model
+                  Mô hình chi phí
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-                  Giá bán, cost và recipe theo variant
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">
+                  Giá bán, giá vốn và công thức theo biến thể
                 </h2>
               </div>
               <button
@@ -319,22 +320,24 @@ export function ProductEditorForm({
                 onClick={() =>
                   setVariants((current) => [...current, makeEmptyVariant(product.id)])
                 }
-                className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                title="Thêm biến thể"
+                aria-label="Thêm biến thể"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white"
               >
-                Thêm variant
+                <FaPlus className="text-sm" />
               </button>
             </div>
 
-            <div className="mt-5 space-y-5">
+            <div className="mt-4 space-y-4">
               {variants.map((variant) => (
                 <div
                   key={variant.id}
-                  className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-5"
+                  className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4"
                 >
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Label
+                        Tên biến thể
                       </span>
                       <input
                         value={variant.label}
@@ -350,7 +353,7 @@ export function ProductEditorForm({
 
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Weight (g)
+                        Khối lượng (g)
                       </span>
                       <input
                         type="number"
@@ -386,7 +389,7 @@ export function ProductEditorForm({
 
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Compare at
+                        Giá so sánh
                       </span>
                       <input
                         type="number"
@@ -407,7 +410,7 @@ export function ProductEditorForm({
                   <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Packaging
+                        Bao bì
                       </span>
                       <input
                         type="number"
@@ -423,7 +426,7 @@ export function ProductEditorForm({
                     </label>
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Labor
+                        Nhân công
                       </span>
                       <input
                         type="number"
@@ -439,7 +442,7 @@ export function ProductEditorForm({
                     </label>
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Overhead
+                        Chi phí chung
                       </span>
                       <input
                         type="number"
@@ -455,7 +458,7 @@ export function ProductEditorForm({
                     </label>
                     <label className="block">
                       <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Sort
+                        Thứ tự
                       </span>
                       <input
                         type="number"
@@ -486,7 +489,7 @@ export function ProductEditorForm({
                           )
                         }
                       />
-                      Default
+                      Mặc định
                     </label>
                     <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
                       <input
@@ -499,7 +502,7 @@ export function ProductEditorForm({
                           }))
                         }
                       />
-                      Active
+                      Hoạt động
                     </label>
                     <button
                       type="button"
@@ -510,9 +513,11 @@ export function ProductEditorForm({
                             : current,
                         )
                       }
-                      className="inline-flex rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"
+                      title="Xóa biến thể"
+                      aria-label="Xóa biến thể"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
                     >
-                      Xoá variant
+                      <FaTrash className="text-sm" />
                     </button>
                   </div>
 
@@ -520,26 +525,29 @@ export function ProductEditorForm({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">
-                          Recipe components
+                          Thành phần công thức
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Ingredient cost được lấy từ tồn kho theo AVG cost hiện tại.
+                          Chi phí nguyên liệu được lấy từ tồn kho theo giá vốn
+                          bình quân hiện tại.
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => addRecipeComponent(variant.id)}
-                        className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700"
+                        title="Thêm nguyên liệu"
+                        aria-label="Thêm nguyên liệu"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700"
                       >
-                        Thêm nguyên liệu
+                        <FaPlus className="text-sm" />
                       </button>
                     </div>
 
                     <div className="mt-4 space-y-3">
                       {variant.recipeComponents.length === 0 ? (
                         <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                          Variant này chưa có BOM. Hãy thêm nguyên liệu để hệ thống
-                          tự tính recipe cost.
+                          Biến thể này chưa có công thức định lượng. Hãy thêm
+                          nguyên liệu để hệ thống tự tính chi phí công thức.
                         </p>
                       ) : null}
 
@@ -578,7 +586,7 @@ export function ProductEditorForm({
                           </label>
                           <label className="block">
                             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Qty / unit
+                              Số lượng / đơn vị
                             </span>
                             <input
                               type="number"
@@ -602,7 +610,7 @@ export function ProductEditorForm({
                           </label>
                           <label className="block">
                             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Waste %
+                              Hao hụt %
                             </span>
                             <input
                               type="number"
@@ -626,7 +634,7 @@ export function ProductEditorForm({
                           </label>
                           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
                             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Line cost
+                              Chi phí dòng
                             </p>
                             <p className="mt-2 font-medium text-slate-800">
                               {formatCurrency(component.lineCost)}
@@ -642,9 +650,11 @@ export function ProductEditorForm({
                                 ),
                               }))
                             }
-                            className="mt-6 inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"
+                            title="Xóa nguyên liệu"
+                            aria-label="Xóa nguyên liệu"
+                            className="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
                           >
-                            Xoá
+                            <FaTrash className="text-sm" />
                           </button>
                         </div>
                       ))}
@@ -654,7 +664,7 @@ export function ProductEditorForm({
                   <div className="mt-4 grid gap-3 rounded-[24px] bg-[#18352d] p-4 text-white md:grid-cols-4">
                     <div>
                       <p className="text-xs uppercase tracking-[0.14em] text-white/45">
-                        Recipe cost
+                        Chi phí công thức
                       </p>
                       <p className="mt-2 text-lg font-semibold">
                         {formatCurrency(variant.recipeCost)}
@@ -662,7 +672,7 @@ export function ProductEditorForm({
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.14em] text-white/45">
-                        Total COGS
+                        Tổng giá vốn
                       </p>
                       <p className="mt-2 text-lg font-semibold">
                         {formatCurrency(variant.totalCost)}
@@ -670,7 +680,7 @@ export function ProductEditorForm({
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.14em] text-white/45">
-                        Gross profit
+                        Lợi nhuận gộp
                       </p>
                       <p className="mt-2 text-lg font-semibold text-emerald-300">
                         {formatCurrency(variant.grossProfit)}
@@ -678,7 +688,7 @@ export function ProductEditorForm({
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.14em] text-white/45">
-                        Margin
+                        Biên lợi nhuận
                       </p>
                       <p className="mt-2 text-lg font-semibold">
                         {(variant.grossMargin * 100).toFixed(1)}%
@@ -692,32 +702,34 @@ export function ProductEditorForm({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+          <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Hero image
+              Ảnh đại diện
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+            <h2 className="mt-2 text-lg font-semibold text-slate-900">
               Ảnh đại diện thực đơn
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-500">
-              Ảnh này được dùng làm thumbnail ở trang menu và cũng là ảnh chính khi
-              vào chi tiết sản phẩm.
+              Ảnh này được dùng làm ảnh thu nhỏ ở trang thực đơn và cũng là ảnh
+              chính khi vào chi tiết sản phẩm.
             </p>
             <div className="mt-5">
               <ImageUploader value={mainImageUrl} onChange={setMainImageUrl} />
             </div>
           </div>
 
-          <div className="rounded-[30px] border border-[#18352d]/10 bg-[#18352d] p-6 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
+          <div className="rounded-[30px] border border-[#18352d]/10 bg-[#18352d] p-5 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
             <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-              Save flow
+              Luồng lưu
             </p>
-            <h2 className="mt-3 text-2xl font-semibold">Lưu menu + cost profile</h2>
+            <h2 className="mt-3 text-lg font-semibold">
+              Lưu thực đơn + hồ sơ chi phí
+            </h2>
             <p className="mt-3 text-sm leading-7 text-white/70">
-              Khi bạn lưu, frontend sẽ upsert vào <code>products</code>,{" "}
+              Khi bạn lưu, hệ thống sẽ ghi vào <code>products</code>,{" "}
               <code>product_variants</code> và <code>recipe_components</code>. Khi
-              tạo đơn mới, Supabase trigger sẽ dùng các giá trị này để tính COGS và
-              gross profit tự động.
+              tạo đơn mới, trigger của Supabase sẽ dùng các giá trị này để tính
+              giá vốn và lợi nhuận gộp tự động.
             </p>
             <button
               type="submit"

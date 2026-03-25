@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import LoadingSpinner from "@/shared/components/LoadingSpinner";
 import { PROFILE_ROLE_LABELS } from "@/lib/rbac/constants";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
@@ -12,7 +13,7 @@ export function LoginForm({ reason }: { reason?: string }) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(
     reason === "permission" || reason === "role"
-      ? "Tài khoản của bạn chưa được gán quyền truy cập admin hoặc shop hợp lệ."
+      ? "Tài khoản của bạn chưa được gán quyền truy cập quản trị hoặc shop hợp lệ."
       : null,
   );
   const [pending, setPending] = useState(false);
@@ -21,31 +22,31 @@ export function LoginForm({ reason }: { reason?: string }) {
   return (
     <div className="mx-auto w-full max-w-[460px] rounded-[36px] border border-white/60 bg-white/90 p-8 shadow-[0_25px_90px_-45px_rgba(15,23,42,0.65)] backdrop-blur">
       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#51724f]">
-        MealFit Admin
+        Quản trị MealFit
       </p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+      <h1 className="mt-3 text-lg font-semibold tracking-tight text-slate-900">
         Đăng nhập quản trị
       </h1>
       <p className="mt-3 text-sm leading-7 text-slate-500">
-        Dùng tài khoản Supabase đã được gán role{" "}
+        Dùng tài khoản Supabase đã được gán vai trò{" "}
         <code>{PROFILE_ROLE_LABELS.system_admin}</code>,{" "}
         <code>{PROFILE_ROLE_LABELS.shop_admin}</code> hoặc{" "}
         <code>{PROFILE_ROLE_LABELS.employee}</code>. Nếu chưa cấu hình môi
-        trường, bạn vẫn có thể mở dashboard ở demo mode.
+        trường, bạn vẫn có thể mở bảng điều khiển ở chế độ demo.
       </p>
 
       {!configured ? (
         <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-800">
-          <p className="font-medium">Supabase env chưa có.</p>
+          <p className="font-medium">Chưa có biến môi trường Supabase.</p>
           <p className="mt-2">
-            Hệ thống đã tự rơi về demo mode để bạn kiểm tra UI, cost flow và order
-            builder.
+            Hệ thống đã tự chuyển sang chế độ demo để bạn kiểm tra giao diện,
+            luồng chi phí và tạo đơn.
           </p>
           <Link
             href="/admin"
             className="mt-4 inline-flex rounded-full bg-[#18352d] px-5 py-3 font-medium text-white transition hover:opacity-90"
           >
-            Vào dashboard demo
+            Vào bảng điều khiển demo
           </Link>
         </div>
       ) : (
@@ -89,7 +90,7 @@ export function LoginForm({ reason }: { reason?: string }) {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[#51724f] focus:bg-white"
-              placeholder="admin@mealfit.vn"
+              placeholder="quantri@mealfit.vn"
             />
           </label>
 
@@ -118,7 +119,14 @@ export function LoginForm({ reason }: { reason?: string }) {
             disabled={pending}
             className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "Đang đăng nhập..." : "Đăng nhập"}
+            {pending ? (
+              <span className="inline-flex items-center gap-2">
+                <LoadingSpinner size={16} borderWidth={2} />
+                Đang đăng nhập...
+              </span>
+            ) : (
+              "Đăng nhập"
+            )}
           </button>
         </form>
       )}

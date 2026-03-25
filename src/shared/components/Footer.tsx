@@ -14,7 +14,7 @@ export default function Footer() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Brand */}
               <div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">MEAL FIT</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-3">MEAL FIT</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">
                   {language === "vi"
                     ? "Thực phẩm chế biến sẵn cao cấp, tẩm ướp hoàn hảo cho lối sống năng động của bạn."

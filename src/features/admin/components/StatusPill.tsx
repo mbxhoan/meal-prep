@@ -44,6 +44,29 @@ export function statusTone(status: OrderStatus): PillTone {
   }
 }
 
+export function formatOrderStatusLabel(status: OrderStatus) {
+  switch (status) {
+    case "draft":
+      return "Bản nháp";
+    case "sent":
+      return "Đã gửi";
+    case "confirmed":
+      return "Đã xác nhận";
+    case "preparing":
+      return "Đang chuẩn bị";
+    case "ready":
+      return "Sẵn sàng";
+    case "delivered":
+      return "Đã giao";
+    case "completed":
+      return "Hoàn tất";
+    case "cancelled":
+      return "Đã hủy";
+    default:
+      return status;
+  }
+}
+
 export function paymentStatusTone(status: PaymentStatus): PillTone {
   switch (status) {
     case "paid":
@@ -57,6 +80,22 @@ export function paymentStatusTone(status: PaymentStatus): PillTone {
     case "unpaid":
     default:
       return "danger";
+  }
+}
+
+export function formatPaymentStatusLabel(status: PaymentStatus) {
+  switch (status) {
+    case "paid":
+      return "Đã thanh toán";
+    case "partial":
+      return "Thanh toán một phần";
+    case "refunded":
+      return "Đã hoàn tiền";
+    case "void":
+      return "Đã hủy";
+    case "unpaid":
+    default:
+      return "Chưa thanh toán";
   }
 }
 
@@ -75,6 +114,21 @@ export function movementTone(type: InventoryMovementType): PillTone {
   }
 }
 
+export function formatInventoryMovementTypeLabel(type: InventoryMovementType) {
+  switch (type) {
+    case "purchase":
+      return "Nhập kho";
+    case "adjustment":
+      return "Điều chỉnh";
+    case "waste":
+      return "Hao hụt";
+    case "order_consumption":
+      return "Xuất cho đơn";
+    default:
+      return type;
+  }
+}
+
 export function StatusPill({
   label,
   tone = "muted",
@@ -84,7 +138,7 @@ export function StatusPill({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${toneMap[tone]}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${toneMap[tone]}`}
     >
       {label}
     </span>

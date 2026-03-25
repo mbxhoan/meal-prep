@@ -56,14 +56,14 @@ export function RoleAssignmentForm({
     return (
       <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Role management
+          Quản lý phân quyền
         </p>
-        <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-          Chưa có Supabase để quản lý phân quyền
+        <h2 className="mt-1 text-lg font-semibold text-slate-900">
+          Chưa có Supabase để quản lý vai trò
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-          Bật môi trường Supabase rồi quay lại màn này để gán role cho user theo
-          shop.
+          Bật môi trường Supabase rồi quay lại màn này để gán vai trò cho người
+          dùng theo shop.
         </p>
       </div>
     );
@@ -77,10 +77,10 @@ export function RoleAssignmentForm({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Role assignment
+              Gán phân quyền
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-              Gán role cho user
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">
+              Gán vai trò cho người dùng
             </h2>
           </div>
           <StatusPill label={selectedRoleLabel} tone="accent" />
@@ -91,7 +91,7 @@ export function RoleAssignmentForm({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-700">
-              User
+              Người dùng
             </span>
             <select
               value={selectedUserId}
@@ -108,7 +108,7 @@ export function RoleAssignmentForm({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-700">
-              Role
+              Vai trò
             </span>
             <select
               value={selectedRoleCode}
@@ -125,13 +125,13 @@ export function RoleAssignmentForm({
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-700">
-              Shop
+              Cửa hàng
             </span>
             <select
               value={selectedShopId}
               onChange={(event) => setSelectedShopId(event.target.value)}
               disabled={!canPickShop}
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               {directory.shops.map((shop) => (
                 <option key={shop.id} value={shop.id}>
@@ -141,8 +141,8 @@ export function RoleAssignmentForm({
             </select>
             <p className="mt-2 text-xs leading-6 text-slate-500">
               {canPickShop
-                ? "Shop role sẽ được gán theo shop đã chọn."
-                : "system_admin là quyền global, nên shop sẽ được bỏ qua."}
+                ? "Vai trò shop sẽ được gán theo cửa hàng đã chọn."
+                : "Quản trị hệ thống là quyền toàn hệ thống, nên cửa hàng sẽ được bỏ qua."}
             </p>
           </label>
 
@@ -153,21 +153,21 @@ export function RoleAssignmentForm({
               onChange={(event) => setIsPrimary(event.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-[#18352d] focus:ring-[#18352d]"
             />
-            <span>Đặt làm role chính</span>
+            <span>Đặt làm vai trò chính</span>
           </label>
 
           {selectedUser ? (
             <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
               <p className="font-medium text-slate-900">
-                {selectedUser.fullName ?? selectedUser.email ?? "User"}
+                {selectedUser.fullName ?? selectedUser.email ?? "Người dùng"}
               </p>
               <p className="mt-1">
                 {selectedUser.employee
-                  ? `Employee: ${selectedUser.employee.fullName}`
-                  : "Chưa có employee profile."}
+                  ? `Nhân viên: ${selectedUser.employee.fullName}`
+                  : "Chưa có hồ sơ nhân viên."}
               </p>
               <p className="mt-1">
-                Role hiện tại: {PROFILE_ROLE_LABELS[selectedUser.profileRole]}
+                Vai trò hiện tại: {PROFILE_ROLE_LABELS[selectedUser.profileRole]}
               </p>
             </div>
           ) : null}
@@ -189,17 +189,17 @@ export function RoleAssignmentForm({
             disabled={pending || !selectedUserId}
             className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? "Đang lưu..." : "Gán role"}
+            {pending ? "Đang lưu..." : "Gán vai trò"}
           </button>
         </form>
       </section>
 
       <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Directory
+          Danh bạ
         </p>
-        <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-          User và assignment hiện tại
+        <h2 className="mt-1 text-lg font-semibold text-slate-900">
+          Người dùng và gán vai trò hiện tại
         </h2>
         <div className="mt-5 space-y-3">
           {directory.users.map((user) => (
@@ -210,15 +210,15 @@ export function RoleAssignmentForm({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-medium text-slate-900">
-                    {user.fullName ?? user.email ?? user.id}
+                    {user.fullName ?? user.email ?? "Người dùng"}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {user.email ?? "No email"} ·{" "}
+                    {user.email ?? "Chưa có email"} ·{" "}
                     {PROFILE_ROLE_LABELS[user.profileRole]}
                   </p>
                 </div>
                 <StatusPill
-                  label={user.assignments.length > 0 ? "Assigned" : "No role"}
+                  label={user.assignments.length > 0 ? "Đã gán" : "Chưa có vai trò"}
                   tone={user.assignments.length > 0 ? "success" : "warning"}
                 />
               </div>
@@ -238,10 +238,10 @@ export function RoleAssignmentForm({
                       </span>
                       <div className="flex items-center gap-2">
                         {assignment.isPrimary ? (
-                          <StatusPill label="Primary" tone="accent" />
+                          <StatusPill label="Chính" tone="accent" />
                         ) : null}
                         <StatusPill
-                          label={assignment.isActive ? "Active" : "Inactive"}
+                          label={assignment.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
                           tone={assignment.isActive ? "success" : "muted"}
                         />
                       </div>
@@ -249,7 +249,7 @@ export function RoleAssignmentForm({
                   ))
                 ) : (
                   <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
-                    Chưa có user_shop_role nào.
+                    Chưa có bản ghi gán vai trò nào.
                   </p>
                 )}
               </div>

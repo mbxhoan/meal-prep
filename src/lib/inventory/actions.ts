@@ -56,7 +56,7 @@ export async function saveInventoryReceiptAction(
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã lưu phiếu nhập trong demo mode.");
+    return demoSuccess("Đã lưu phiếu nhập trong chế độ demo.");
   }
 
   try {
@@ -72,7 +72,7 @@ export async function saveInventoryReceiptAction(
 
     return liveSuccess(
       payload.postImmediately
-        ? `Đã nhập kho và post phiếu ${payload.receiptNo}.`
+        ? `Đã nhập kho và ghi sổ phiếu ${payload.receiptNo}.`
         : `Đã lưu nháp phiếu ${payload.receiptNo}.`,
     );
   } catch (error) {
@@ -98,11 +98,11 @@ export async function postInventoryReceiptAction(
   try {
     payload = parseJsonField<Payload>(formData, "payload");
   } catch {
-    return actionError("Không đọc được dữ liệu post phiếu nhập.", "demo");
+    return actionError("Không đọc được dữ liệu ghi sổ phiếu nhập.", "demo");
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã post phiếu nhập trong demo mode.");
+    return demoSuccess("Đã ghi sổ phiếu nhập trong chế độ demo.");
   }
 
   try {
@@ -111,16 +111,16 @@ export async function postInventoryReceiptAction(
     revalidatePath("/admin/inventory");
     return liveSuccess(
       payload.receiptNo
-        ? `Đã post phiếu ${payload.receiptNo}.`
-        : "Đã post phiếu nhập.",
+        ? `Đã ghi sổ phiếu ${payload.receiptNo}.`
+        : "Đã ghi sổ phiếu nhập.",
     );
   } catch (error) {
     if (error instanceof PermissionDeniedError) {
-      return actionError("Bạn không có quyền post phiếu nhập.", "live");
+      return actionError("Bạn không có quyền ghi sổ phiếu nhập.", "live");
     }
 
     return actionError(
-      error instanceof Error ? error.message : "Không post được phiếu nhập.",
+      error instanceof Error ? error.message : "Không ghi sổ được phiếu nhập.",
       "live",
     );
   }
@@ -139,7 +139,7 @@ export async function saveInventoryIssueAction(
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã lưu phiếu xuất trong demo mode.");
+    return demoSuccess("Đã lưu phiếu xuất trong chế độ demo.");
   }
 
   try {
@@ -154,7 +154,7 @@ export async function saveInventoryIssueAction(
 
     return liveSuccess(
       payload.postImmediately
-        ? `Đã xuất kho và post phiếu ${payload.issueNo}.`
+        ? `Đã xuất kho và ghi sổ phiếu ${payload.issueNo}.`
         : `Đã lưu nháp phiếu ${payload.issueNo}.`,
     );
   } catch (error) {
@@ -180,11 +180,11 @@ export async function postInventoryIssueAction(
   try {
     payload = parseJsonField<Payload>(formData, "payload");
   } catch {
-    return actionError("Không đọc được dữ liệu post phiếu xuất.", "demo");
+    return actionError("Không đọc được dữ liệu ghi sổ phiếu xuất.", "demo");
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã post phiếu xuất trong demo mode.");
+    return demoSuccess("Đã ghi sổ phiếu xuất trong chế độ demo.");
   }
 
   try {
@@ -193,16 +193,16 @@ export async function postInventoryIssueAction(
     revalidatePath("/admin/inventory");
     return liveSuccess(
       payload.issueNo
-        ? `Đã post phiếu ${payload.issueNo}.`
-        : "Đã post phiếu xuất.",
+        ? `Đã ghi sổ phiếu ${payload.issueNo}.`
+        : "Đã ghi sổ phiếu xuất.",
     );
   } catch (error) {
     if (error instanceof PermissionDeniedError) {
-      return actionError("Bạn không có quyền post phiếu xuất.", "live");
+      return actionError("Bạn không có quyền ghi sổ phiếu xuất.", "live");
     }
 
     return actionError(
-      error instanceof Error ? error.message : "Không post được phiếu xuất.",
+      error instanceof Error ? error.message : "Không ghi sổ được phiếu xuất.",
       "live",
     );
   }

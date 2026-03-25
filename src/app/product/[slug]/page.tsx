@@ -94,7 +94,7 @@ export default async function ProductDetailPage({
 
               <div className="p-6 md:p-8">
                 <div className="flex items-start justify-between gap-4 mb-4">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
+                  <h1 className="text-lg md:text-xl font-bold text-gray-800 leading-tight">
                     {product.name}
                   </h1>
                   <span className="shrink-0 bg-orange-50 text-orange-600 font-bold px-4 py-2 rounded-2xl text-sm border border-orange-100">
@@ -107,7 +107,7 @@ export default async function ProductDetailPage({
                 </p>
 
                 <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
-                  <span className="text-sm text-gray-400 block mb-1">Giá / Price</span>
+                  <span className="text-sm text-gray-400 block mb-1">Giá bán</span>
                   <span className="text-lg font-bold text-orange-500 italic">
                     📦 Từ {formatCurrency(lowestPrice)}
                   </span>
@@ -147,9 +147,9 @@ export default async function ProductDetailPage({
                   </h2>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      "Ảnh đại diện đồng bộ từ admin",
-                      "Giá bán quản lý theo variant",
-                      "Danh mục có thể đổi từ dashboard",
+                      "Ảnh đại diện đồng bộ từ trang quản trị",
+                      "Giá bán quản lý theo biến thể",
+                      "Danh mục có thể đổi từ bảng điều khiển",
                       "Sẵn sàng cho theo dõi lợi nhuận",
                     ].map((benefit) => (
                       <div

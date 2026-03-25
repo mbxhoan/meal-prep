@@ -54,7 +54,7 @@ export async function createSalesOrderAction(
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đơn hàng đã được mô phỏng trong demo mode.");
+    return demoSuccess("Đơn hàng đã được mô phỏng trong chế độ demo.");
   }
 
   try {
@@ -93,11 +93,11 @@ export async function refreshSalesOrderPriceAction(
   try {
     payload = parseJsonField<Payload>(formData, "payload");
   } catch {
-    return actionError("Không đọc được dữ liệu refresh giá.", "demo");
+    return actionError("Không đọc được dữ liệu làm mới giá.", "demo");
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã refresh giá trong demo mode.");
+    return demoSuccess("Đã làm mới giá trong chế độ demo.");
   }
 
   try {
@@ -111,11 +111,11 @@ export async function refreshSalesOrderPriceAction(
     redirect(`/admin/orders/${payload.orderId}`);
   } catch (error) {
     if (error instanceof PermissionDeniedError) {
-      return actionError("Bạn không có quyền refresh giá.", "live");
+      return actionError("Bạn không có quyền làm mới giá.", "live");
     }
 
     return actionError(
-      error instanceof Error ? error.message : "Không refresh được giá.",
+      error instanceof Error ? error.message : "Không làm mới được giá.",
       "live",
     );
   }
@@ -139,7 +139,7 @@ export async function updateSalesOrderStatusAction(
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã cập nhật trạng thái trong demo mode.");
+    return demoSuccess("Đã cập nhật trạng thái trong chế độ demo.");
   }
 
   try {
@@ -184,7 +184,7 @@ export async function recordSalesPaymentAction(
   }
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess("Đã ghi nhận thanh toán trong demo mode.");
+    return demoSuccess("Đã ghi nhận thanh toán trong chế độ demo.");
   }
 
   try {

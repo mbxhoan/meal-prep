@@ -63,7 +63,7 @@ export async function saveMasterDataAction(
     : config.permissions.create;
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess(`Đã lưu ${config.title.toLowerCase()} trong demo mode.`);
+    return demoSuccess(`Đã lưu ${config.title.toLowerCase()} trong chế độ demo.`);
   }
 
   try {
@@ -103,7 +103,7 @@ export async function deleteMasterDataAction(
   const config = getMasterDataEntityConfig(payload.entity);
 
   if (!isSupabaseConfigured()) {
-    return demoSuccess(`Đã xoá ${config.title.toLowerCase()} trong demo mode.`);
+    return demoSuccess(`Đã xoá ${config.title.toLowerCase()} trong chế độ demo.`);
   }
 
   try {

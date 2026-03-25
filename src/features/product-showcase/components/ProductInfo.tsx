@@ -111,7 +111,7 @@ export default function ProductInfo({
             <h1
               ref={titleRef}
               className={`text-shadow-xs ${
-                isMobile ? "text-4xl mb-2" : "text-5xl mb-4"
+                isMobile ? "text-lg mb-2" : "text-xl mb-3"
               } font-light text-white`}
               style={{
                 textShadow: "0px 2px 10px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.8)"
@@ -122,7 +122,7 @@ export default function ProductInfo({
             <p
               ref={descriptionRef}
               className={`text-white ${
-                isMobile ? "text-base line-clamp-3" : "text-xl"
+                isMobile ? "text-sm line-clamp-3" : "text-base"
               } text-shadow-xs`}
               style={{
                 textShadow: "0px 2px 8px rgba(0,0,0,0.9), 0px 1px 2px rgba(0,0,0,0.9)"

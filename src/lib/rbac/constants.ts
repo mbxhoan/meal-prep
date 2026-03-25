@@ -102,13 +102,13 @@ export const ROLE_DEFINITIONS: Record<
   }
 > = {
   system_admin: {
-    label: "System admin",
+    label: "Quản trị hệ thống",
     scope: "global",
-    description: "Toàn quyền trên toàn hệ thống và toàn bộ shop.",
+    description: "Toàn quyền trên toàn hệ thống và mọi shop.",
     permissionCodes: RBAC_PERMISSION_CODES,
   },
   shop_admin: {
-    label: "Shop admin",
+    label: "Quản trị shop",
     scope: "shop",
     description: "Quản trị nghiệp vụ trong phạm vi shop được gán.",
     permissionCodes: RBAC_PERMISSION_CODES.filter(
@@ -116,7 +116,7 @@ export const ROLE_DEFINITIONS: Record<
     ) as PermissionCode[],
   },
   employee: {
-    label: "Employee",
+    label: "Nhân viên",
     scope: "shop",
     description: "Nhân sự tác nghiệp theo quyền được cấp.",
     permissionCodes: [
@@ -165,41 +165,41 @@ export const PROFILE_ROLE_LABELS: Record<ProfileRoleCode, string> = {
   system_admin: ROLE_DEFINITIONS.system_admin.label,
   shop_admin: ROLE_DEFINITIONS.shop_admin.label,
   employee: ROLE_DEFINITIONS.employee.label,
-  viewer: "Viewer",
+  viewer: "Người xem",
 };
 
 export const PERMISSION_GROUPS = [
   {
     code: "system",
-    label: "System",
+    label: "Hệ thống",
     permissions: RBAC_PERMISSION_CODES.filter((permission) =>
       permission.startsWith("system."),
     ),
   },
   {
     code: "master",
-    label: "Master data",
+    label: "Danh mục",
     permissions: RBAC_PERMISSION_CODES.filter((permission) =>
       permission.startsWith("master."),
     ),
   },
   {
     code: "sales",
-    label: "Sales",
+    label: "Bán hàng",
     permissions: RBAC_PERMISSION_CODES.filter((permission) =>
       permission.startsWith("sales."),
     ),
   },
   {
     code: "inventory",
-    label: "Inventory",
+    label: "Tồn kho",
     permissions: RBAC_PERMISSION_CODES.filter((permission) =>
       permission.startsWith("inventory."),
     ),
   },
   {
     code: "report",
-    label: "Reports",
+    label: "Báo cáo",
     permissions: RBAC_PERMISSION_CODES.filter((permission) =>
       permission.startsWith("report."),
     ),

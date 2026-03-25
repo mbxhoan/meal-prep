@@ -1,32 +1,98 @@
 import Link from "next/link";
+import { FaArrowRight } from "react-icons/fa6";
 import {
+  ExportExcelButton,
   StatusPill,
+  formatOrderStatusLabel,
+  formatPaymentStatusLabel,
   paymentStatusTone,
   statusTone,
 } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatPercent } from "@/lib/admin/format";
 import { getOrders } from "@/lib/admin/service";
 
+function formatSalesChannelLabel(channel: string) {
+  switch (channel) {
+    case "website":
+      return "Trang web";
+    case "facebook":
+      return "Facebook";
+    case "zalo":
+      return "Zalo";
+    case "store":
+      return "Cửa hàng";
+    case "grab":
+      return "Grab / ứng dụng";
+    case "manual":
+      return "Thủ công";
+    default:
+      return channel;
+  }
+}
+
 export default async function AdminOrdersPage() {
   const orders = await getOrders();
+  const exportRows = orders.map((order) => ({
+    đơn_hàng: order.orderNumber,
+    khách_hàng: order.customerName,
+    kênh_bán: formatSalesChannelLabel(order.salesChannel),
+    số_dòng: order.items.length,
+    doanh_thu: formatCurrency(order.totalRevenue),
+    thanh_toán: formatPaymentStatusLabel(order.paymentStatus ?? "unpaid"),
+    giá_vốn: formatCurrency(order.totalCogs),
+    lợi_nhuận: formatCurrency(order.grossProfit),
+    biên_lợi_nhuận: formatPercent(order.grossMargin),
+    trạng_thái: formatOrderStatusLabel(order.status),
+  }));
 
   return (
-    <div className="space-y-5 pb-8">
-      <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-        <div className="overflow-hidden rounded-[26px] border border-slate-200">
+    <div className="space-y-4 pb-8">
+      <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Đơn hàng
+            </p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">
+              Danh sách đơn hàng và lời lãi theo từng đơn
+            </h2>
+          </div>
+          <ExportExcelButton
+            filename={`don-hang-${new Date().toISOString().slice(0, 10)}`}
+            sheetName="Đơn hàng"
+            title="Xuất Excel đơn hàng"
+            columns={[
+              { key: "đơn_hàng", label: "Đơn hàng" },
+              { key: "khách_hàng", label: "Khách hàng" },
+              { key: "kênh_bán", label: "Kênh bán" },
+              { key: "số_dòng", label: "Số dòng" },
+              { key: "doanh_thu", label: "Doanh thu" },
+              { key: "thanh_toán", label: "Thanh toán" },
+              { key: "giá_vốn", label: "Giá vốn" },
+              { key: "lợi_nhuận", label: "Lợi nhuận" },
+              { key: "biên_lợi_nhuận", label: "Biên lợi nhuận" },
+              { key: "trạng_thái", label: "Trạng thái" },
+            ]}
+            rows={exportRows}
+          />
+        </div>
+      </section>
+
+      <div className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <div className="overflow-hidden rounded-[24px] border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">
               <tr>
-                <th className="px-4 py-3 font-medium">Đơn</th>
-                <th className="px-4 py-3 font-medium">Khách</th>
-                <th className="px-4 py-3 font-medium">Items</th>
-                <th className="px-4 py-3 font-medium">Revenue</th>
-                <th className="px-4 py-3 font-medium">Paid</th>
-                <th className="px-4 py-3 font-medium">COGS</th>
-                <th className="px-4 py-3 font-medium">Profit</th>
-                <th className="px-4 py-3 font-medium">Margin</th>
+                <th className="px-4 py-3 font-medium">Đơn hàng</th>
+                <th className="px-4 py-3 font-medium">Khách hàng</th>
+                <th className="px-4 py-3 font-medium">Số dòng</th>
+                <th className="px-4 py-3 font-medium">Doanh thu</th>
+                <th className="px-4 py-3 font-medium">Thanh toán</th>
+                <th className="px-4 py-3 font-medium">Giá vốn</th>
+                <th className="px-4 py-3 font-medium">Lợi nhuận</th>
+                <th className="px-4 py-3 font-medium">Biên LN</th>
                 <th className="px-4 py-3 font-medium">Trạng thái</th>
-                <th className="px-4 py-3 font-medium">Bill</th>
+                <th className="px-4 py-3 font-medium">Hóa đơn</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -43,17 +109,19 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="px-4 py-4 align-top">
                     <p className="font-medium text-slate-800">{order.customerName}</p>
-                    <p className="mt-1 text-slate-500">{order.salesChannel}</p>
+                    <p className="mt-1 text-slate-500">
+                      {formatSalesChannelLabel(order.salesChannel)}
+                    </p>
                   </td>
                   <td className="px-4 py-4 align-top text-slate-500">
-                    {order.items.length} lines
+                    {order.items.length} dòng
                   </td>
                   <td className="px-4 py-4 align-top font-medium text-slate-900">
                     {formatCurrency(order.totalRevenue)}
                   </td>
                   <td className="px-4 py-4 align-top">
                     <StatusPill
-                      label={order.paymentStatus ?? "unpaid"}
+                      label={formatPaymentStatusLabel(order.paymentStatus ?? "unpaid")}
                       tone={paymentStatusTone(order.paymentStatus ?? "unpaid")}
                     />
                   </td>
@@ -68,16 +136,18 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="px-4 py-4 align-top">
                     <StatusPill
-                      label={order.status}
+                      label={formatOrderStatusLabel(order.status)}
                       tone={statusTone(order.status)}
                     />
                   </td>
                   <td className="px-4 py-4 align-top">
                     <Link
                       href={`/admin/orders/${order.id}`}
-                      className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                      title="Mở hóa đơn"
+                      aria-label="Mở hóa đơn"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white"
                     >
-                      Mở bill
+                      <FaArrowRight className="text-xs" />
                     </Link>
                   </td>
                 </tr>

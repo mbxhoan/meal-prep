@@ -15,40 +15,41 @@ export default async function AdminLoginPage({
       <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_460px] lg:items-center">
         <div className="rounded-[40px] border border-white/60 bg-[#18352d] p-8 text-white shadow-[0_30px_90px_-45px_rgba(15,23,42,0.85)] md:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">
-            MealFit Control Tower
+            Trung tâm điều hành MealFit
           </p>
-          <h1 className="mt-5 max-w-xl text-4xl font-semibold tracking-tight md:text-5xl">
-            Quản lý tồn kho, đơn hàng, doanh thu và gross profit từ một nơi.
+          <h1 className="mt-5 max-w-xl text-lg font-semibold tracking-tight md:text-[20px]">
+            Quản lý tồn kho, đơn hàng, doanh thu và lợi nhuận gộp từ một nơi.
           </h1>
-          <p className="mt-6 max-w-2xl text-base leading-8 text-white/72">
-            Admin này tập trung vào 4 flow chính: lưu cost nguyên liệu, map recipe
-            cho từng menu, tạo đơn để hệ thống tự tính COGS và theo dõi tồn kho sau
-            bán hàng.
+          <p className="mt-6 max-w-2xl text-sm leading-7 text-white/72">
+            Bảng điều khiển này tập trung vào 4 luồng chính: lưu giá vốn nguyên
+            liệu, ghép công thức cho từng món, tạo đơn để hệ thống tự tính giá
+            vốn và theo dõi tồn kho sau bán hàng.
           </p>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[28px] border border-white/10 bg-white/6 p-5">
-              <p className="text-sm font-medium">1. Tồn kho và cost bình quân</p>
-              <p className="mt-2 text-sm leading-7 text-white/65">
-                Ghi nhập kho, điều chỉnh và hao hụt ngay trên dashboard kho.
+          <div className="mt-8 grid gap-3 md:grid-cols-2">
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <p className="text-sm font-medium">1. Tồn kho và giá vốn bình quân</p>
+              <p className="mt-2 text-sm leading-6 text-white/65">
+                Ghi nhập kho, điều chỉnh và hao hụt ngay trên bảng điều khiển kho.
               </p>
             </div>
-            <div className="rounded-[28px] border border-white/10 bg-white/6 p-5">
-              <p className="text-sm font-medium">2. Menu editor có ảnh đại diện</p>
-              <p className="mt-2 text-sm leading-7 text-white/65">
-                Chỉnh ảnh thumbnail, giá bán và cost profile của từng variant.
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <p className="text-sm font-medium">2. Biên tập thực đơn có ảnh đại diện</p>
+              <p className="mt-2 text-sm leading-6 text-white/65">
+                Chỉnh ảnh đại diện, giá bán và hồ sơ chi phí của từng biến thể.
               </p>
             </div>
-            <div className="rounded-[28px] border border-white/10 bg-white/6 p-5">
-              <p className="text-sm font-medium">3. Order builder tự tính COGS</p>
-              <p className="mt-2 text-sm leading-7 text-white/65">
-                Chốt đơn xong là có revenue, total cost và gross profit ngay.
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <p className="text-sm font-medium">3. Tạo đơn tự tính giá vốn</p>
+              <p className="mt-2 text-sm leading-6 text-white/65">
+                Chốt đơn xong là có doanh thu, tổng giá vốn và lợi nhuận gộp ngay.
               </p>
             </div>
-            <div className="rounded-[28px] border border-white/10 bg-white/6 p-5">
-              <p className="text-sm font-medium">4. Analytics theo ngày</p>
-              <p className="mt-2 text-sm leading-7 text-white/65">
-                Theo dõi margin và SKU nào đang mang nhiều lợi nhuận nhất.
+            <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
+              <p className="text-sm font-medium">4. Báo cáo theo ngày</p>
+              <p className="mt-2 text-sm leading-6 text-white/65">
+                Theo dõi biên lợi nhuận và mặt hàng nào đang mang nhiều lợi
+                nhuận nhất.
               </p>
             </div>
           </div>

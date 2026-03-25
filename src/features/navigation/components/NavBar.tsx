@@ -99,7 +99,7 @@ export default function NavBar({
     >
       {/* Logo */}
       <div
-        className="text-2xl uppercase font-bold cursor-default"
+        className="text-lg uppercase font-bold cursor-default"
         style={{
           color: textColor,
           fontWeight: 900,

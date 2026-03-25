@@ -6,73 +6,118 @@ import {
   FaUtensils,
 } from "react-icons/fa6";
 import {
+  ExportExcelButton,
   MetricCard,
   StatusPill,
+  formatOrderStatusLabel,
   statusTone,
 } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatPercent, formatQuantity } from "@/lib/admin/format";
 import { getDashboardSnapshot } from "@/lib/admin/service";
 
+function formatSalesChannelLabel(channel: string) {
+  switch (channel) {
+    case "website":
+      return "Trang web";
+    case "facebook":
+      return "Facebook";
+    case "zalo":
+      return "Zalo";
+    case "store":
+      return "Cửa hàng";
+    case "grab":
+      return "Grab / ứng dụng";
+    case "manual":
+      return "Thủ công";
+    default:
+      return channel;
+  }
+}
+
 export default async function AdminDashboardPage() {
   const snapshot = await getDashboardSnapshot();
+  const recentOrderExportRows = snapshot.recentOrders.map((order) => ({
+    đơn_hàng: order.orderNumber,
+    khách_hàng: order.customerName,
+    kênh_bán: formatSalesChannelLabel(order.salesChannel),
+    doanh_thu: formatCurrency(order.totalRevenue),
+    lợi_nhuận: formatCurrency(order.grossProfit),
+    trạng_thái: formatOrderStatusLabel(order.status),
+  }));
 
   return (
-    <div className="space-y-5 pb-8">
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-4 pb-8">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Revenue 30d"
+          label="Doanh thu 30 ngày"
           value={formatCurrency(snapshot.revenue30d)}
-          hint="Đã loại trừ order draft và cancelled."
+          hint="Đã loại trừ đơn bản nháp và đã hủy."
           icon={<FaMoneyBillTrendUp />}
         />
         <MetricCard
-          label="Gross Profit 30d"
+          label="Lợi nhuận gộp 30 ngày"
           value={formatCurrency(snapshot.profit30d)}
-          hint={`Gross margin hiện tại ${formatPercent(snapshot.grossMargin30d)} trên revenue đã chốt.`}
+          hint={`Biên lợi nhuận hiện tại ${formatPercent(snapshot.grossMargin30d)} trên doanh thu đã chốt.`}
           icon={<FaClipboardList />}
         />
         <MetricCard
-          label="Active Menu"
+          label="Món đang bán"
           value={`${snapshot.menuCount} món`}
-          hint="Menu count lấy từ catalog đang bán trong admin."
+          hint="Số món đang bán trong danh mục quản trị."
           icon={<FaUtensils />}
         />
         <MetricCard
-          label="Low Stock"
+          label="Tồn thấp"
           value={`${snapshot.lowStockCount} nguyên liệu`}
           hint={`${snapshot.openOrders} đơn đang mở cần theo dõi tồn kho trước khi xác nhận.`}
           icon={<FaBoxArchive />}
         />
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+      <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                Recent orders
+                Đơn gần nhất
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+              <h2 className="mt-1 text-lg font-semibold text-slate-900">
                 Đơn gần nhất và lợi nhuận theo đơn
               </h2>
             </div>
-            <Link
-              href="/admin/orders"
-              className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
-            >
-              Xem tất cả
-            </Link>
+            <div className="flex items-center gap-2">
+              <ExportExcelButton
+                filename={`don-gan-nhat-${new Date().toISOString().slice(0, 10)}`}
+                sheetName="Đơn gần nhất"
+                title="Xuất Excel đơn gần nhất"
+                columns={[
+                  { key: "đơn_hàng", label: "Đơn hàng" },
+                  { key: "khách_hàng", label: "Khách hàng" },
+                  { key: "kênh_bán", label: "Kênh bán" },
+                  { key: "doanh_thu", label: "Doanh thu" },
+                  { key: "lợi_nhuận", label: "Lợi nhuận" },
+                  { key: "trạng_thái", label: "Trạng thái" },
+                ]}
+                rows={recentOrderExportRows}
+              />
+              <Link
+                href="/admin/orders"
+                className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+              >
+                Xem tất cả
+              </Link>
+            </div>
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-[26px] border border-slate-200">
+          <div className="mt-5 overflow-hidden rounded-[24px] border border-slate-200">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Đơn</th>
-                  <th className="px-4 py-3 font-medium">Khách</th>
+                  <th className="px-4 py-3 font-medium">Đơn hàng</th>
+                  <th className="px-4 py-3 font-medium">Khách hàng</th>
                   <th className="px-4 py-3 font-medium">Kênh</th>
-                  <th className="px-4 py-3 font-medium">Revenue</th>
-                  <th className="px-4 py-3 font-medium">Profit</th>
+                  <th className="px-4 py-3 font-medium">Doanh thu</th>
+                  <th className="px-4 py-3 font-medium">Lợi nhuận</th>
                   <th className="px-4 py-3 font-medium">Trạng thái</th>
                 </tr>
               </thead>
@@ -87,7 +132,7 @@ export default async function AdminDashboardPage() {
                       {order.customerName}
                     </td>
                     <td className="px-4 py-4 align-top text-slate-500">
-                      {order.salesChannel}
+                      {formatSalesChannelLabel(order.salesChannel)}
                     </td>
                     <td className="px-4 py-4 align-top font-medium text-slate-900">
                       {formatCurrency(order.totalRevenue)}
@@ -97,7 +142,7 @@ export default async function AdminDashboardPage() {
                     </td>
                     <td className="px-4 py-4 align-top">
                       <StatusPill
-                        label={order.status}
+                        label={formatOrderStatusLabel(order.status)}
                         tone={statusTone(order.status)}
                       />
                     </td>
@@ -109,13 +154,13 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="space-y-5">
-          <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+          <div className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Low stock
+                  Tồn thấp
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+                <h2 className="mt-1 text-lg font-semibold text-slate-900">
                   Ưu tiên nhập thêm
                 </h2>
               </div>
@@ -140,14 +185,14 @@ export default async function AdminDashboardPage() {
                         {item.supplierName}
                       </p>
                     </div>
-                    <StatusPill label="Low stock" tone="warning" />
+                    <StatusPill label="Tồn thấp" tone="warning" />
                   </div>
                   <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
-                    <span>On hand</span>
+                    <span>Tồn hiện tại</span>
                     <span>{formatQuantity(item.onHand, item.unit)}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
-                    <span>Reorder point</span>
+                    <span>Mức đặt hàng</span>
                     <span>{formatQuantity(item.reorderPoint, item.unit)}</span>
                   </div>
                 </div>
@@ -155,27 +200,29 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-[#18352d]/10 bg-[#18352d] p-6 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
+          <div className="rounded-[28px] border border-[#18352d]/10 bg-[#18352d] p-5 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
-              Best sellers
+              Bán chạy
             </p>
-            <h2 className="mt-2 text-2xl font-semibold">SKU mang nhiều tiền nhất</h2>
+            <h2 className="mt-1 text-lg font-semibold">
+              Mặt hàng mang nhiều doanh thu nhất
+            </h2>
             <div className="mt-5 space-y-4">
               {snapshot.bestSellers.map((item) => (
                 <div
                   key={item.productId}
-                  className="rounded-[24px] border border-white/10 bg-white/6 px-4 py-4"
+                  className="rounded-[22px] border border-white/10 bg-white/6 px-4 py-4"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-medium">{item.productName}</p>
                     <span className="text-sm text-white/65">{item.quantity} suất</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-sm text-white/65">
-                    <span>Revenue</span>
+                    <span>Doanh thu</span>
                     <span>{formatCurrency(item.revenue)}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm text-emerald-300">
-                    <span>Profit</span>
+                    <span>Lợi nhuận</span>
                     <span>{formatCurrency(item.profit)}</span>
                   </div>
                 </div>

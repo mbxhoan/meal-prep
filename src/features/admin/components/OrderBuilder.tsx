@@ -1,8 +1,10 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import { FaPlus, FaTrash } from "react-icons/fa6";
 import { createOrderAction } from "@/lib/admin/actions";
 import { formatCurrency, roundCurrency } from "@/lib/admin/format";
+import { formatOrderStatusLabel } from "@/features/admin/components/StatusPill";
 import type { MenuProduct, MenuVariant, OrderStatus, SalesChannel } from "@/lib/admin/types";
 
 const initialState = {
@@ -91,14 +93,14 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
         type="hidden"
         name="payload"
         value={JSON.stringify({
-        customerName,
-        customerPhone,
-        customerAddress,
-        salesChannel,
-        status,
-        discountAmount: Number(discountAmount || 0),
-        shippingFee: Number(shippingFee || 0),
-        otherFee: Number(otherFee || 0),
+          customerName,
+          customerPhone,
+          customerAddress,
+          salesChannel,
+          status,
+          discountAmount: Number(discountAmount || 0),
+          shippingFee: Number(shippingFee || 0),
+          otherFee: Number(otherFee || 0),
           note,
           items: lines.map((line) => ({
             variantId: line.variantId,
@@ -108,9 +110,9 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
         })}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.65fr_0.95fr]">
-        <div className="space-y-6">
-          <section className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+      <div className="grid gap-5 xl:grid-cols-[1.65fr_0.95fr]">
+        <div className="space-y-5">
+          <section className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
@@ -121,7 +123,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-                  placeholder="Nguyen Van A"
+                  placeholder="Nguyễn Văn A"
                 />
               </label>
               <label className="block">
@@ -155,12 +157,12 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                   onChange={(event) => setSalesChannel(event.target.value as SalesChannel)}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                 >
-                  <option value="website">Website</option>
+                  <option value="website">Trang web</option>
                   <option value="facebook">Facebook</option>
                   <option value="zalo">Zalo</option>
                   <option value="store">Cửa hàng</option>
-                  <option value="grab">Grab / app</option>
-                  <option value="manual">Manual</option>
+                  <option value="grab">Grab / ứng dụng</option>
+                  <option value="manual">Thủ công</option>
                 </select>
               </label>
               <label className="block">
@@ -172,14 +174,13 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                   onChange={(event) => setStatus(event.target.value as OrderStatus)}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="sent">Sent</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="preparing">Preparing</option>
-                  <option value="ready">Ready</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  {(["draft", "sent", "confirmed", "preparing", "ready", "delivered", "completed", "cancelled"] as OrderStatus[]).map(
+                    (statusOption) => (
+                      <option key={statusOption} value={statusOption}>
+                        {formatOrderStatusLabel(statusOption)}
+                      </option>
+                    ),
+                  )}
                 </select>
               </label>
             </div>
@@ -198,14 +199,14 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
             </label>
           </section>
 
-          <section className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+          <section className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Order lines
+                  Dòng đơn
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-                  Menu và giá bán
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">
+                  Món và giá bán
                 </h2>
               </div>
               <button
@@ -225,13 +226,15 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                     },
                   ]);
                 }}
-                className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                title="Thêm món"
+                aria-label="Thêm món"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white"
               >
-                Thêm món
+                <FaPlus className="text-sm" />
               </button>
             </div>
 
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-4">
               {lines.map((line, index) => {
                 const summary = lineSummaries[index];
 
@@ -243,7 +246,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                     <div className="grid gap-4 lg:grid-cols-[1.6fr_0.5fr_0.8fr_auto]">
                       <label className="block">
                         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          Menu item
+                          Món
                         </span>
                         <select
                           value={line.variantId}
@@ -277,7 +280,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
 
                       <label className="block">
                         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                          Qty
+                          Số lượng
                         </span>
                         <input
                           type="number"
@@ -333,12 +336,14 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                           setLines((current) =>
                             current.length > 1
                               ? current.filter((entry) => entry.id !== line.id)
-                              : current,
+                            : current,
                           )
                         }
-                        className="mt-6 inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 transition hover:bg-rose-100"
+                        title="Xóa món"
+                        aria-label="Xóa món"
+                        className="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
                       >
-                        Xoá
+                        <FaTrash className="text-sm" />
                       </button>
                     </div>
 
@@ -353,7 +358,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                       </div>
                       <div>
                         <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
-                          Unit COGS
+                          Giá vốn đơn vị
                         </p>
                         <p className="mt-1 font-medium text-slate-800">
                           {formatCurrency(summary.unitCogs)}
@@ -361,7 +366,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                       </div>
                       <div>
                         <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
-                          Revenue
+                          Doanh thu
                         </p>
                         <p className="mt-1 font-medium text-slate-800">
                           {formatCurrency(summary.lineRevenue)}
@@ -369,7 +374,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                       </div>
                       <div>
                         <p className="text-xs uppercase tracking-[0.14em] text-slate-400">
-                          Profit
+                          Lợi nhuận
                         </p>
                         <p className="mt-1 font-medium text-emerald-700">
                           {formatCurrency(summary.lineProfit)}
@@ -383,25 +388,25 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
           </section>
         </div>
 
-        <aside className="space-y-6">
-          <section className="rounded-[30px] border border-[#18352d]/10 bg-[#18352d] p-6 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
+        <aside className="space-y-5">
+          <section className="rounded-[30px] border border-[#18352d]/10 bg-[#18352d] p-5 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
             <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-              Auto calculation
+              Tính tự động
             </p>
-            <h2 className="mt-3 text-2xl font-semibold">Doanh thu và gross profit</h2>
-            <div className="mt-6 space-y-4">
+            <h2 className="mt-3 text-lg font-semibold">Doanh thu và lợi nhuận gộp</h2>
+            <div className="mt-5 space-y-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-white/65">Tạm tính món</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/65">COGS</span>
+                <span className="text-white/65">Giá vốn</span>
                 <span>{formatCurrency(totalCogs)}</span>
               </div>
               <div className="grid gap-3">
                 <label className="block">
                   <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-white/45">
-                    Discount
+                    Giảm giá
                   </span>
                   <input
                     type="number"
@@ -413,7 +418,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-white/45">
-                    Shipping
+                    Phí giao hàng
                   </span>
                   <input
                     type="number"
@@ -425,7 +430,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                 </label>
                 <label className="block">
                   <span className="mb-2 block text-xs uppercase tracking-[0.14em] text-white/45">
-                    Other fee
+                    Phí khác
                   </span>
                   <input
                     type="number"
@@ -438,19 +443,19 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
               </div>
               <div className="rounded-[24px] border border-white/10 bg-white/6 p-4">
                 <div className="flex items-center justify-between text-sm text-white/70">
-                  <span>Total revenue</span>
+                  <span>Tổng doanh thu</span>
                   <span className="font-medium text-white">
                     {formatCurrency(totalRevenue)}
                   </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm text-white/70">
-                  <span>Gross profit</span>
+                  <span>Lợi nhuận gộp</span>
                   <span className="font-medium text-emerald-300">
                     {formatCurrency(grossProfit)}
                   </span>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-sm text-white/70">
-                  <span>Margin</span>
+                  <span>Biên lợi nhuận</span>
                   <span className="font-medium text-white">
                     {(grossMargin * 100).toFixed(1)}%
                   </span>

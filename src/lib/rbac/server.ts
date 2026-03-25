@@ -98,7 +98,7 @@ function normalizeRoleAssignment(row: Record<string, unknown>): UserShopRoleReco
     shopId: row.shop_id == null ? null : safeString(row.shop_id),
     roleId: safeString(row.role_id),
     roleCode: toRoleCode(role.code),
-    roleLabel: safeString(role.name, "Role"),
+    roleLabel: safeString(role.name, "Vai trò"),
     roleScope:
       role.scope === "global" || role.scope === "shop"
         ? role.scope
@@ -118,7 +118,7 @@ function normalizeRoleDefinition(row: Record<string, unknown>): RoleDefinitionRe
   return {
     id: safeString(row.id),
     code: toRoleCode(row.code),
-    label: safeString(row.name, "Role"),
+    label: safeString(row.name, "Vai trò"),
     scope: row.scope === "global" ? "global" : "shop",
     description: row.description == null ? null : safeString(row.description),
     isSystem: safeBoolean(row.is_system),
@@ -132,7 +132,7 @@ function normalizePermissionDefinition(
   return {
     id: safeString(row.id),
     code: safeString(row.code, "master.menu.read") as PermissionCode,
-    label: safeString(row.name, "Permission"),
+    label: safeString(row.name, "Quyền"),
     module: safeString(row.module, "general"),
     description: row.description == null ? null : safeString(row.description),
   };

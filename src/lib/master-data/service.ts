@@ -178,7 +178,7 @@ export const getMasterDataPageData = cache(async (
 
           return {
             key: source,
-            label: "Tồn kho (SKU)",
+            label: "Tồn kho (mã hàng)",
             options,
           } satisfies MasterDataOptionGroup;
         }

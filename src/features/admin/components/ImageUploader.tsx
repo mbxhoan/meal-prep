@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
+import {
+  createSupabaseBrowserClient,
+  isSupabaseConfigured,
+} from "@/lib/supabase/client";
 
 export function ImageUploader({
   value,
@@ -16,7 +19,10 @@ export function ImageUploader({
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const configured = isSupabaseConfigured();
-  const canPreview = useMemo(() => value.startsWith("/") || value.startsWith("http"), [value]);
+  const canPreview = useMemo(
+    () => value.startsWith("/") || value.startsWith("http"),
+    [value],
+  );
 
   return (
     <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
@@ -25,7 +31,7 @@ export function ImageUploader({
           {canPreview ? (
             <Image
               src={value}
-              alt="Preview"
+              alt="Ảnh xem trước"
               fill
               sizes="220px"
               className="object-contain p-4"
@@ -53,11 +59,11 @@ export function ImageUploader({
 
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4">
             <p className="text-sm font-medium text-slate-700">
-              Upload lên Supabase Storage
+              Tải lên Supabase Storage
             </p>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              Dùng bucket <code>{bucket}</code>. Nếu env chưa cấu hình, bạn vẫn có
-              thể dán URL ảnh thủ công.
+              Dùng bucket <code>{bucket}</code>. Nếu chưa cấu hình biến môi
+              trường, bạn vẫn có thể dán URL ảnh thủ công.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <input
@@ -69,7 +75,7 @@ export function ImageUploader({
                   const client = createSupabaseBrowserClient();
 
                   if (!file || !client) {
-                    setMessage("Supabase chưa sẵn sàng để upload.");
+                    setMessage("Supabase chưa sẵn sàng để tải lên.");
                     return;
                   }
 
@@ -91,13 +97,13 @@ export function ImageUploader({
                   const { data } = client.storage.from(bucket).getPublicUrl(filePath);
                   onChange(data.publicUrl);
                   setUploading(false);
-                  setMessage("Đã upload ảnh và cập nhật URL.");
+                  setMessage("Đã tải ảnh lên và cập nhật URL.");
                 }}
                 className="max-w-full text-sm text-slate-500"
               />
               {!configured ? (
                 <span className="text-xs text-amber-700">
-                  Thiếu env Supabase, upload bị tắt.
+                  Thiếu biến môi trường Supabase, chức năng tải lên bị tắt.
                 </span>
               ) : null}
             </div>

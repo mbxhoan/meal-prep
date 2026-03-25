@@ -38,10 +38,10 @@ export default function AboutPage() {
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
             {/* Hero Header */}
             <div className="bg-gradient-to-r from-orange-500 to-red-500 px-8 md:px-12 py-14 text-center">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-3">
+              <h1 className="text-xl md:text-[20px] font-bold text-white mb-3">
                 {t("about.title")}
               </h1>
-              <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg text-white/80 max-w-2xl mx-auto">
                 {t("about.subtitle")}
               </p>
             </div>
@@ -55,7 +55,7 @@ export default function AboutPage() {
 
             {/* Mission */}
             <section className="px-8 md:px-12 py-10 border-b border-gray-100">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">
+              <h2 className="text-lg md:text-[20px] font-bold text-gray-800 mb-4 text-center">
                 {t("about.mission")}
               </h2>
               <p className="text-base text-gray-500 text-center max-w-3xl mx-auto leading-relaxed">
@@ -91,7 +91,7 @@ export default function AboutPage() {
             <section className="text-center pb-12 px-8">
               <Link
                 href="/menu"
-                className="inline-block px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-full hover:opacity-90 transition-opacity text-lg shadow-lg shadow-orange-500/20"
+                className="inline-block px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-full hover:opacity-90 transition-opacity text-base shadow-lg shadow-orange-500/20"
               >
                 {t("menu.title")} →
               </Link>

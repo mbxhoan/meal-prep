@@ -49,11 +49,12 @@ export function InventoryAdjustmentForm({ item }: { item: InventoryItem }) {
         <div>
           <p className="text-sm font-semibold text-slate-900">{item.name}</p>
           <p className="mt-1 text-sm text-slate-500">
-            On hand {item.onHand} {item.unit} · AVG {formatCurrency(item.averageUnitCost)}
+            Tồn hiện tại {item.onHand} {item.unit} · Giá vốn TB{" "}
+            {formatCurrency(item.averageUnitCost)}
           </p>
         </div>
         <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-500">
-          SKU {item.sku}
+          Mã hàng {item.sku}
         </div>
       </div>
 
@@ -88,7 +89,7 @@ export function InventoryAdjustmentForm({ item }: { item: InventoryItem }) {
 
         <label className="block">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-            Giá nhập / unit
+            Giá nhập / đơn vị
           </span>
           <input
             type="number"

@@ -2,6 +2,14 @@
 
 import { useActionState, useMemo, useState } from "react";
 import {
+  FaBoxArchive,
+  FaPenToSquare,
+  FaPlus,
+  FaRotateLeft,
+  FaTrash,
+} from "react-icons/fa6";
+import { ExportExcelButton } from "@/features/admin/components/ExportExcelButton";
+import {
   deleteMasterDataAction,
   saveMasterDataAction,
 } from "@/lib/master-data/actions";
@@ -17,6 +25,7 @@ import type {
 import { StatusPill } from "@/features/admin/components/StatusPill";
 import { formatCurrency, formatDate } from "@/lib/admin/format";
 import type { ActionState } from "@/lib/admin/types";
+import type { ExportExcelColumn } from "@/features/admin/components/ExportExcelButton";
 
 const initialState: ActionState = {
   status: "idle",
@@ -55,9 +64,20 @@ function buildDraftFromRow(
 function formatColumnValue(
   value: unknown,
   type: MasterDataEntityConfig["columns"][number]["type"],
+  fieldConfig?: MasterDataEntityConfig["fields"][number],
 ) {
   if (value == null || value === "") {
     return "—";
+  }
+
+  if (fieldConfig?.options?.length) {
+    const matched = fieldConfig.options.find(
+      (option) => option.value === String(value),
+    );
+
+    if (matched) {
+      return matched.label;
+    }
   }
 
   switch (type) {
@@ -72,7 +92,7 @@ function formatColumnValue(
         maximumFractionDigits: 2,
       }).format(Number(value) || 0);
     case "boolean":
-      return String(Boolean(value));
+      return Boolean(value) ? "Có" : "Không";
     default:
       return String(value);
   }
@@ -156,6 +176,10 @@ export function MasterDataCrudPage({
     return map;
   }, [optionGroups]);
 
+  const fieldLookup = useMemo(() => {
+    return new Map(config.fields.map((field) => [field.name, field]));
+  }, [config.fields]);
+
   const handleBeginCreate = () => {
     setSelectedId(null);
     setDraft(buildDraftFromRow(config, null));
@@ -179,47 +203,84 @@ export function MasterDataCrudPage({
     values: draft,
   });
 
+  const exportColumns: ExportExcelColumn[] = config.columns.map((column) => ({
+    key: column.key,
+    label: column.label,
+  }));
+
+  const exportRows = filteredRows.map((row) =>
+    Object.fromEntries(
+      config.columns.map((column) => {
+        const fieldConfig = fieldLookup.get(column.key);
+
+        return [
+          column.key,
+          formatColumnValue(
+            resolvePath(row, column.key),
+            column.type,
+            fieldConfig,
+          ),
+        ];
+      }),
+    ),
+  );
+
   return (
-    <div className="space-y-5">
-      <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+    <div className="space-y-4">
+      <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               {shopName}
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">
               {config.title}
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
               {config.description}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill
-              label={showArchived ? "Đang xem cả archived" : "Chỉ active"}
+              label={`${filteredRows.length} bản ghi`}
+              tone="success"
+            />
+            <StatusPill
+              label={showArchived ? "Đang xem lưu trữ" : "Chỉ dữ liệu hoạt động"}
               tone={showArchived ? "warning" : "success"}
             />
             <button
               type="button"
               onClick={() => setShowArchived((current) => !current)}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+              title={showArchived ? "Ẩn dữ liệu lưu trữ" : "Hiện dữ liệu lưu trữ"}
+              aria-label={showArchived ? "Ẩn dữ liệu lưu trữ" : "Hiện dữ liệu lưu trữ"}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
             >
-              {showArchived ? "Ẩn archived" : "Hiện archived"}
+              <FaBoxArchive />
             </button>
+            <ExportExcelButton
+              filename={`${config.key}-${new Date().toISOString().slice(0, 10)}`}
+              sheetName={config.title}
+              title={`Xuất Excel ${config.title}`}
+              columns={exportColumns}
+              rows={exportRows}
+            />
             {canCreate ? (
               <button
                 type="button"
                 onClick={handleBeginCreate}
-                className="rounded-full bg-[#18352d] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                title="Tạo mới"
+                aria-label="Tạo mới"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#18352d] text-white transition hover:opacity-90"
               >
-                Tạo mới
+                <FaPlus />
               </button>
             ) : null}
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)] lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-3 rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)] lg:grid-cols-[1.15fr_0.85fr]">
         <label className="block">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
             Tìm kiếm
@@ -237,30 +298,32 @@ export function MasterDataCrudPage({
           </p>
           <p className="mt-1">
             {canUpdate
-              ? "Chọn một dòng để sửa. Delete sẽ chuyển sang archived."
+              ? "Chọn một dòng để sửa. Xoá sẽ chuyển sang lưu trữ."
               : "Bạn chỉ có quyền xem dữ liệu."}
           </p>
         </div>
       </section>
 
       {canCreate || canUpdate ? (
-        <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                Form
+                Biểu mẫu
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 {selectedRow ? "Chỉnh sửa bản ghi" : "Tạo bản ghi mới"}
-              </h2>
+              </h3>
             </div>
             {selectedRow ? (
               <button
                 type="button"
                 onClick={handleBeginCreate}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                title="Làm mới biểu mẫu"
+                aria-label="Làm mới biểu mẫu"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
               >
-                Reset form
+                <FaRotateLeft />
               </button>
             ) : null}
           </div>
@@ -398,15 +461,15 @@ export function MasterDataCrudPage({
         </section>
       ) : null}
 
-      <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+      <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               Danh sách
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">
               {config.title}
-            </h2>
+            </h3>
           </div>
         </div>
 
@@ -434,13 +497,14 @@ export function MasterDataCrudPage({
                     <td key={column.key} className="px-4 py-4 text-slate-700">
                       {column.type === "boolean" ? (
                         <StatusPill
-                          label={Boolean(resolvePath(row, column.key)) ? "Active" : "Inactive"}
+                          label={Boolean(resolvePath(row, column.key)) ? "Đang hoạt động" : "Ngừng hoạt động"}
                           tone={Boolean(resolvePath(row, column.key)) ? "success" : "muted"}
                         />
                       ) : (
                         formatColumnValue(
                           resolvePath(row, column.key),
                           column.type,
+                          fieldLookup.get(column.key),
                         )
                       )}
                     </td>
@@ -451,9 +515,11 @@ export function MasterDataCrudPage({
                         <button
                           type="button"
                           onClick={() => handleBeginEdit(row)}
-                          className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+                          title="Chỉnh sửa"
+                          aria-label="Chỉnh sửa"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                         >
-                          Sửa
+                          <FaPenToSquare />
                         </button>
                       ) : null}
                       {canDelete ? (
@@ -479,9 +545,11 @@ export function MasterDataCrudPage({
                           />
                           <button
                             type="submit"
-                            className="rounded-full border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-600 transition hover:border-rose-300 hover:bg-rose-50"
+                            title="Xoá"
+                            aria-label="Xoá"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50"
                           >
-                            Xoá
+                            <FaTrash />
                           </button>
                         </form>
                       ) : null}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { StatusPill } from "@/features/admin/components";
+import { ExportExcelButton, StatusPill } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/admin/format";
 import {
   postInventoryIssueAction,
@@ -58,11 +58,30 @@ function formatStatusTone(status: string): PillTone {
 function formatStatusLabel(status: string) {
   switch (status) {
     case "posted":
-      return "Posted";
+      return "Đã ghi sổ";
     case "cancelled":
-      return "Cancelled";
+      return "Đã hủy";
     default:
-      return "Draft";
+      return "Bản nháp";
+  }
+}
+
+function formatMovementTypeLabel(type: string) {
+  switch (type) {
+    case "purchase":
+      return "Nhập kho";
+    case "receipt":
+      return "Phiếu nhập";
+    case "issue":
+      return "Phiếu xuất";
+    case "adjustment":
+      return "Điều chỉnh";
+    case "waste":
+      return "Hao hụt";
+    case "order_consumption":
+      return "Xuất cho đơn";
+    default:
+      return type;
   }
 }
 
@@ -215,6 +234,65 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
     queryTerm.length === 0 ? true : lotMatches(item, queryTerm),
   );
 
+  const stockItemExportRows = filteredStockByItem.map((item) => ({
+    mặt_hàng: item.itemName,
+    sku: item.sku,
+    đơn_vị: item.unit,
+    tồn_kho: formatQuantity(item.onHand, item.unit),
+    số_lô: item.lotCount,
+    mức_đặt_hàng: formatQuantity(item.reorderPoint, item.unit),
+    avg_cost: formatCurrency(item.averageUnitCost),
+    giá_trị_tồn: formatCurrency(item.stockValue),
+    trạng_thái: item.isLowStock ? "Tồn thấp" : "Bình thường",
+  }));
+
+  const stockLotExportRows = filteredStockByLot.map((lot) => ({
+    lô: lot.lotNo,
+    mã_vạch_lô: lot.lotBarcode ?? "",
+    mặt_hàng: lot.itemName,
+    sku: lot.sku,
+    kho: lot.warehouseName ?? "",
+    hạn_sử_dụng: lot.expiredAt ? formatDate(lot.expiredAt) : "Không có",
+    tồn_kho: formatQuantity(lot.onHand, lot.unit),
+    trạng_thái: lot.isExpired ? "Hết hạn" : lot.isFefoEnabled ? "FEFO" : "Bình thường",
+  }));
+
+  const receiptExportRows = filteredReceipts.map((receipt) => ({
+    số_phiếu: receipt.receiptNo,
+    kho: receipt.warehouseName ?? "",
+    nhà_cung_cấp: receipt.supplierName ?? "",
+    ngày_nhập: formatDate(receipt.receivedAt),
+    trạng_thái: formatStatusLabel(receipt.status),
+    số_dòng: receipt.items.length,
+    tổng_giá_trị: formatCurrency(totalLineValue(receipt.items)),
+  }));
+
+  const issueExportRows = filteredIssues.map((issue) => ({
+    số_phiếu: issue.issueNo,
+    kho: issue.warehouseName ?? "",
+    lý_do: issue.reasonCode ?? "",
+    ngày_xuất: formatDate(issue.issuedAt),
+    trạng_thái: formatStatusLabel(issue.status),
+    số_dòng: issue.items.length,
+    tổng_số_lượng: formatQuantity(
+      issue.items.reduce((sum, item) => sum + item.qtyIssued, 0),
+      itemLookup.get(issue.items[0]?.itemId ?? "")?.unit ?? "unit",
+    ),
+  }));
+
+  const movementExportRows = filteredMovements.map((movement) => ({
+    thời_gian: formatDate(movement.movementAt),
+    mặt_hàng: itemLookup.get(movement.itemId)?.itemName ?? movement.itemId,
+    loại: formatMovementTypeLabel(movement.movementType),
+    số_lượng: formatQuantity(
+      movement.quantityDelta,
+      itemLookup.get(movement.itemId)?.unit ?? "unit",
+    ),
+    lô: movement.lotId ?? "",
+    tham_chiếu: movement.referenceType ?? "",
+    ghi_chú: movement.notes ?? "",
+  }));
+
   const selectedReceiptItem = itemLookup.get(receiptItemId) ?? data.stockByItem[0] ?? null;
   const selectedIssueItem = itemLookup.get(issueItemId) ?? data.stockByItem[0] ?? null;
   const issueFefoOptions = useMemo(() => {
@@ -298,7 +376,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
         suggestedLotId: issueFefoOptions[0]?.lotId ?? null,
         fefoOverrideReason:
           issueLotId && issueFefoOptions[0] && issueLotId !== issueFefoOptions[0].lotId
-            ? issueNote || "Manual FEFO override"
+            ? issueNote || "Ghi đè FEFO thủ công"
             : null,
         note: issueNote || null,
       },
@@ -313,79 +391,162 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
   const expiredLotCount = data.stockByLot.filter((item) => item.isExpired).length;
 
   return (
-    <div className="space-y-6 pb-8">
-      <section className="grid gap-4 lg:grid-cols-4">
-        <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-            Stock value
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">
-            {formatCurrency(totalStockValue)}
-          </p>
+    <div className="space-y-4 pb-8">
+      <section className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-4">
+          <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Giá trị tồn
+            </p>
+            <p className="mt-2 text-base font-semibold text-slate-900">
+              {formatCurrency(totalStockValue)}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Mặt hàng / lô
+            </p>
+            <p className="mt-2 text-base font-semibold text-slate-900">
+              {data.stockByItem.length} / {data.stockByLot.length}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Tồn thấp / hết hạn
+            </p>
+            <p className="mt-2 text-base font-semibold text-slate-900">
+              {lowStockCount} / {expiredLotCount}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Giao dịch gần nhất
+            </p>
+            <p className="mt-2 text-base font-semibold text-slate-900">
+              {data.movements[0] ? formatDate(data.movements[0].movementAt) : "Không có"}
+            </p>
+          </div>
         </div>
-        <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-            Items / lots
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">
-            {data.stockByItem.length} / {data.stockByLot.length}
-          </p>
-        </div>
-        <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-            Low / expired
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">
-            {lowStockCount} / {expiredLotCount}
-          </p>
-        </div>
-        <div className="rounded-[30px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-            Latest movement
-          </p>
-          <p className="mt-3 text-3xl font-semibold text-slate-900">
-            {data.movements[0] ? formatDate(data.movements[0].movementAt) : "N/A"}
-          </p>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ExportExcelButton
+            filename={`ton-theo-item-${new Date().toISOString().slice(0, 10)}`}
+            sheetName="Tồn theo mặt hàng"
+            title="Xuất Excel tồn theo mặt hàng"
+            columns={[
+              { key: "mặt_hàng", label: "Mặt hàng" },
+              { key: "sku", label: "Mã hàng" },
+              { key: "đơn_vị", label: "Đơn vị" },
+              { key: "tồn_kho", label: "Tồn kho" },
+              { key: "số_lô", label: "Số lô" },
+              { key: "mức_đặt_hàng", label: "Mức đặt hàng" },
+              { key: "avg_cost", label: "Giá vốn TB" },
+              { key: "giá_trị_tồn", label: "Giá trị tồn" },
+              { key: "trạng_thái", label: "Trạng thái" },
+            ]}
+            rows={stockItemExportRows}
+          />
+          <ExportExcelButton
+            filename={`ton-theo-lo-${new Date().toISOString().slice(0, 10)}`}
+            sheetName="Tồn theo lô"
+            title="Xuất Excel tồn theo lô"
+            columns={[
+              { key: "lô", label: "Lô" },
+              { key: "mã_vạch_lô", label: "Mã vạch lô" },
+              { key: "mặt_hàng", label: "Mặt hàng" },
+              { key: "sku", label: "Mã hàng" },
+              { key: "kho", label: "Kho" },
+              { key: "hạn_sử_dụng", label: "Hạn sử dụng" },
+              { key: "tồn_kho", label: "Tồn kho" },
+              { key: "trạng_thái", label: "Trạng thái" },
+            ]}
+            rows={stockLotExportRows}
+          />
+          <ExportExcelButton
+            filename={`phieu-nhap-${new Date().toISOString().slice(0, 10)}`}
+            sheetName="Phiếu nhập"
+            title="Xuất Excel phiếu nhập"
+            columns={[
+              { key: "số_phiếu", label: "Số phiếu" },
+              { key: "kho", label: "Kho" },
+              { key: "nhà_cung_cấp", label: "Nhà cung cấp" },
+              { key: "ngày_nhập", label: "Ngày nhập" },
+              { key: "trạng_thái", label: "Trạng thái" },
+              { key: "số_dòng", label: "Số dòng" },
+              { key: "tổng_giá_trị", label: "Tổng giá trị" },
+            ]}
+            rows={receiptExportRows}
+          />
+          <ExportExcelButton
+            filename={`phieu-xuat-${new Date().toISOString().slice(0, 10)}`}
+            sheetName="Phiếu xuất"
+            title="Xuất Excel phiếu xuất"
+            columns={[
+              { key: "số_phiếu", label: "Số phiếu" },
+              { key: "kho", label: "Kho" },
+              { key: "lý_do", label: "Lý do" },
+              { key: "ngày_xuất", label: "Ngày xuất" },
+              { key: "trạng_thái", label: "Trạng thái" },
+              { key: "số_dòng", label: "Số dòng" },
+              { key: "tổng_số_lượng", label: "Tổng số lượng" },
+            ]}
+            rows={issueExportRows}
+          />
+          <ExportExcelButton
+            filename={`so-giao-dich-${new Date().toISOString().slice(0, 10)}`}
+            sheetName="Sổ giao dịch"
+            title="Xuất Excel sổ giao dịch"
+            columns={[
+              { key: "thời_gian", label: "Thời gian" },
+              { key: "mặt_hàng", label: "Mặt hàng" },
+              { key: "loại", label: "Loại" },
+              { key: "số_lượng", label: "Số lượng" },
+              { key: "lô", label: "Lô" },
+              { key: "tham_chiếu", label: "Tham chiếu" },
+              { key: "ghi_chú", label: "Ghi chú" },
+            ]}
+            rows={movementExportRows}
+          />
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+      <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Inventory core
+              Tồn kho cốt lõi
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-              Tồn theo item, lot, receipt và issue
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">
+              Tồn theo mặt hàng, lô, phiếu nhập và phiếu xuất
             </h2>
           </div>
           <label className="w-full max-w-md">
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-              Search
+              Tìm kiếm
             </span>
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              placeholder="Tìm item, lot, phiếu nhập/xuất..."
+              placeholder="Tìm mặt hàng, lô, phiếu nhập/xuất..."
             />
           </label>
         </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <form action={saveReceiptAction} className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <form action={saveReceiptAction} className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <input type="hidden" name="payload" value={receiptPayload} />
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                Inventory receipt
+                Phiếu nhập kho
               </p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 Tạo phiếu nhập
               </h3>
             </div>
-            <StatusPill label="Draft" tone="warning" />
+            <StatusPill label="Bản nháp" tone="warning" />
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -428,7 +589,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Supplier
+                Nhà cung cấp
               </span>
               <select
                 value={receiptSupplierId}
@@ -445,7 +606,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Item
+                Mặt hàng
               </span>
               <select
                 value={receiptItemId}
@@ -454,7 +615,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               >
                 {data.stockByItem.map((item) => (
                   <option key={item.itemId} value={item.itemId}>
-                    {item.itemName} · {item.sku}
+                    {item.itemName} · Mã {item.sku}
                   </option>
                 ))}
               </select>
@@ -474,7 +635,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Giá vốn / unit
+                Giá vốn / đơn vị
               </span>
               <input
                 type="number"
@@ -487,7 +648,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Lot no
+                Số lô
               </span>
               <input
                 value={receiptLotNo}
@@ -498,7 +659,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Lot barcode
+                Mã vạch lô
               </span>
               <input
                 value={receiptLotBarcode}
@@ -509,7 +670,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Manufactured at
+                Ngày sản xuất
               </span>
               <input
                 type="datetime-local"
@@ -520,7 +681,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Expired at
+                Hạn sử dụng
               </span>
               <input
                 type="datetime-local"
@@ -550,12 +711,12 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               onChange={(event) => setReceiptPostImmediately(event.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-[#18352d] focus:ring-[#18352d]"
             />
-            <span>Post ngay sau khi lưu</span>
+            <span>Ghi sổ ngay sau khi lưu</span>
           </label>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-slate-500">
-              Phiếu nhập sẽ tạo lot + movement. Tồn cập nhật từ ledger, không
+              Phiếu nhập sẽ tạo lô + giao dịch kho. Tồn cập nhật từ sổ giao dịch, không
               chỉnh trực tiếp.
             </p>
             <button
@@ -580,18 +741,18 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
           ) : null}
         </form>
 
-        <form action={saveIssueAction} className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <form action={saveIssueAction} className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <input type="hidden" name="payload" value={issuePayload} />
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                Inventory issue
+                Phiếu xuất kho
               </p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 Tạo phiếu xuất
               </h3>
             </div>
-            <StatusPill label="Draft" tone="warning" />
+            <StatusPill label="Bản nháp" tone="warning" />
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -634,7 +795,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Item
+                Mặt hàng
               </span>
               <select
                 value={issueItemId}
@@ -643,7 +804,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               >
                 {data.stockByItem.map((item) => (
                   <option key={item.itemId} value={item.itemId}>
-                    {item.itemName} · {item.sku}
+                    {item.itemName} · Mã {item.sku}
                   </option>
                 ))}
               </select>
@@ -663,14 +824,14 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                FEFO lot gợi ý
+                Lô gợi ý theo FEFO
               </span>
               <select
                 value={issueLotId}
                 onChange={(event) => setIssueLotId(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
               >
-                <option value="">Auto FEFO</option>
+                <option value="">Tự động FEFO</option>
                 {issueFefoOptions.map((lot) => (
                   <option key={lot.lotId} value={lot.lotId}>
                     {lot.lotNo} · {formatQuantity(lot.onHand, selectedIssueItem?.unit ?? "unit")}
@@ -680,14 +841,14 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block md:col-span-2">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Ghi chú / override reason
+                Ghi chú / lý do ghi đè
               </span>
               <textarea
                 rows={3}
                 value={issueNote}
                 onChange={(event) => setIssueNote(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-                placeholder="Nếu chọn lot khác FEFO, ghi rõ lý do ở đây."
+                placeholder="Nếu chọn lô khác FEFO, ghi rõ lý do ở đây."
               />
             </label>
           </div>
@@ -699,12 +860,13 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               onChange={(event) => setIssuePostImmediately(event.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-[#18352d] focus:ring-[#18352d]"
             />
-            <span>Post ngay sau khi lưu</span>
+            <span>Ghi sổ ngay sau khi lưu</span>
+            <span>Ghi sổ ngay sau khi lưu</span>
           </label>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-slate-500">
-              FEFO được lưu vào draft. Khi post, DB sẽ tự chặn override nếu thiếu quyền.
+              FEFO được lưu vào phiếu nháp. Khi ghi sổ, DB sẽ tự chặn ghi đè nếu thiếu quyền.
             </p>
             <button
               type="submit"
@@ -733,25 +895,25 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Stock by item
+              Tồn theo mặt hàng
             </p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">
-              Tồn theo item
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">
+              Tồn theo mặt hàng
             </h3>
           </div>
-          <p className="text-sm text-slate-500">{filteredStockByItem.length} items</p>
+          <p className="text-sm text-slate-500">{filteredStockByItem.length} dòng</p>
         </div>
         <div className="mt-5 overflow-hidden rounded-[26px] border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">
               <tr>
-                <th className="px-4 py-3 font-medium">Item</th>
-                <th className="px-4 py-3 font-medium">On hand</th>
-                <th className="px-4 py-3 font-medium">Lot count</th>
-                <th className="px-4 py-3 font-medium">Reorder</th>
-                <th className="px-4 py-3 font-medium">AVG cost</th>
-                <th className="px-4 py-3 font-medium">Stock value</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Mặt hàng</th>
+                <th className="px-4 py-3 font-medium">Tồn</th>
+                <th className="px-4 py-3 font-medium">Số lô</th>
+                <th className="px-4 py-3 font-medium">Mức đặt hàng</th>
+                <th className="px-4 py-3 font-medium">Giá vốn TB</th>
+                <th className="px-4 py-3 font-medium">Giá trị tồn</th>
+                <th className="px-4 py-3 font-medium">Trạng thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -759,7 +921,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                 <tr key={`${item.shopId ?? "shop"}-${item.itemId}`}>
                   <td className="px-4 py-4 align-top">
                     <p className="font-medium text-slate-900">{item.itemName}</p>
-                    <p className="mt-1 text-slate-500">{item.sku}</p>
+                    <p className="mt-1 text-slate-500">Mã hàng: {item.sku}</p>
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
                     {formatQuantity(item.onHand, item.unit)}
@@ -778,7 +940,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                   </td>
                   <td className="px-4 py-4 align-top">
                     <StatusPill
-                      label={item.isLowStock ? "Low stock" : "Healthy"}
+                      label={item.isLowStock ? "Tồn thấp" : "Bình thường"}
                       tone={item.isLowStock ? "warning" : "success"}
                     />
                   </td>
@@ -793,24 +955,24 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Stock by lot
+              Tồn theo lô
             </p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">
-              Tồn theo lot / FEFO candidates
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">
+              Tồn theo lô / gợi ý FEFO
             </h3>
           </div>
-            <p className="text-sm text-slate-500">{filteredStockByLot.length} rows</p>
+          <p className="text-sm text-slate-500">{filteredStockByLot.length} dòng</p>
           </div>
           <div className="mt-5 overflow-hidden rounded-[26px] border border-slate-200">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 <tr>
-                <th className="px-4 py-3 font-medium">Lot</th>
-                <th className="px-4 py-3 font-medium">Item</th>
-                <th className="px-4 py-3 font-medium">Warehouse</th>
-                <th className="px-4 py-3 font-medium">Expiry</th>
-                <th className="px-4 py-3 font-medium">On hand</th>
-                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Lô</th>
+                <th className="px-4 py-3 font-medium">Mặt hàng</th>
+                <th className="px-4 py-3 font-medium">Kho</th>
+                <th className="px-4 py-3 font-medium">Hạn</th>
+                <th className="px-4 py-3 font-medium">Tồn</th>
+                <th className="px-4 py-3 font-medium">Trạng thái</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -818,24 +980,24 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                 <tr key={lot.lotId}>
                   <td className="px-4 py-4 align-top">
                     <p className="font-medium text-slate-900">{lot.lotNo}</p>
-                    <p className="mt-1 text-slate-500">{lot.lotBarcode ?? "No barcode"}</p>
+                    <p className="mt-1 text-slate-500">{lot.lotBarcode ?? "Không có mã"}</p>
                   </td>
                   <td className="px-4 py-4 align-top">
                     <p className="font-medium text-slate-900">{lot.itemName}</p>
                     <p className="mt-1 text-slate-500">{lot.sku}</p>
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
-                    {lot.warehouseName ?? "N/A"}
+                    {lot.warehouseName ?? "Không có"}
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
-                    {lot.expiredAt ? formatDate(lot.expiredAt) : "N/A"}
+                    {lot.expiredAt ? formatDate(lot.expiredAt) : "Không có"}
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
                     {formatQuantity(lot.onHand, lot.unit)}
                   </td>
                   <td className="px-4 py-4 align-top">
                     <StatusPill
-                      label={lot.isExpired ? "Expired" : lot.isFefoEnabled ? "FEFO" : "Normal"}
+                      label={lot.isExpired ? "Hết hạn" : lot.isFefoEnabled ? "FEFO" : "Bình thường"}
                       tone={lot.isExpired ? "muted" : "success"}
                     />
                   </td>
@@ -846,7 +1008,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
         </div>
         <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-white px-4 py-4">
           <p className="text-sm font-medium text-slate-900">
-            FEFO preview
+            Xem trước FEFO
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {filteredFefoCandidates.slice(0, 5).map((lot) => (
@@ -859,7 +1021,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             ))}
             {filteredFefoCandidates.length === 0 ? (
               <span className="text-sm text-slate-500">
-                Không có candidate FEFO phù hợp.
+                Không có lô FEFO phù hợp.
               </span>
             ) : null}
           </div>
@@ -867,28 +1029,28 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <div className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                Receipts
+                Phiếu nhập
               </p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 Phiếu nhập gần đây
               </h3>
             </div>
-            <p className="text-sm text-slate-500">{filteredReceipts.length} rows</p>
+            <p className="text-sm text-slate-500">{filteredReceipts.length} dòng</p>
           </div>
           <div className="mt-5 space-y-3">
             {filteredReceipts.map((receipt) => (
-              <div key={receipt.id} className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+              <div key={receipt.id} className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-medium text-slate-900">
-                        {receipt.receiptNo} · {receipt.warehouseName ?? "N/A"}
+                        {receipt.receiptNo} · {receipt.warehouseName ?? "Không có"}
                       </p>
                     <p className="mt-1 text-sm text-slate-500">
-                      {receipt.supplierName ?? "No supplier"} ·{" "}
+                      {receipt.supplierName ?? "Không có nhà cung cấp"} ·{" "}
                       {formatDate(receipt.createdAt)}
                     </p>
                   </div>
@@ -898,7 +1060,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                   />
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-600">
-                  <span>{receipt.items.length} lines</span>
+                  <span>{receipt.items.length} dòng</span>
                   <span>{formatCurrency(totalLineValue(receipt.items))}</span>
                 </div>
                 {receipt.status === "draft" && data.permissions.canPostReceipt ? (
@@ -909,7 +1071,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                       disabled={postingReceipt}
                       className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {postingReceipt ? "Posting..." : "Post"}
+                      {postingReceipt ? "Đang ghi sổ..." : "Ghi sổ"}
                     </button>
                   </form>
                 ) : null}
@@ -917,7 +1079,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             ))}
             {filteredReceipts.length === 0 ? (
               <p className="rounded-[24px] border border-dashed border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
-                Chưa có phiếu nhập phù hợp với filter hiện tại.
+                Chưa có phiếu nhập phù hợp với bộ lọc hiện tại.
               </p>
             ) : null}
           </div>
@@ -934,17 +1096,17 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
           ) : null}
         </div>
 
-        <div className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <div className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                Issues
+                Phiếu xuất
               </p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900">
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">
                 Phiếu xuất gần đây
               </h3>
             </div>
-            <p className="text-sm text-slate-500">{filteredIssues.length} rows</p>
+            <p className="text-sm text-slate-500">{filteredIssues.length} dòng</p>
           </div>
           <div className="mt-5 space-y-3">
             {filteredIssues.map((issue) => {
@@ -958,15 +1120,15 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               return (
                 <div
                   key={issue.id}
-                  className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4"
+                  className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-medium text-slate-900">
-                        {issue.issueNo} · {issue.warehouseName ?? "N/A"}
+                        {issue.issueNo} · {issue.warehouseName ?? "Không có"}
                       </p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {issue.reasonCode ?? "No reason"} ·{" "}
+                        {issue.reasonCode ?? "Không có lý do"} ·{" "}
                         {formatDate(issue.createdAt)}
                       </p>
                     </div>
@@ -975,11 +1137,11 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                       tone={formatStatusTone(issue.status)}
                     />
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-600">
-                    <span>{issue.items.length} lines</span>
-                    <span>{formatQuantity(issueTotalQty, issueUnit)}</span>
-                  </div>
-                  {issue.status === "draft" && data.permissions.canPostIssue ? (
+                <div className="mt-3 flex items-center justify-between gap-3 text-sm text-slate-600">
+                  <span>{issue.items.length} dòng</span>
+                  <span>{formatQuantity(issueTotalQty, issueUnit)}</span>
+                </div>
+                {issue.status === "draft" && data.permissions.canPostIssue ? (
                     <form action={postIssueAction} className="mt-3">
                       <input
                         type="hidden"
@@ -990,20 +1152,20 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                         })}
                       />
                       <button
-                        type="submit"
-                        disabled={postingIssue}
-                        className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {postingIssue ? "Posting..." : "Post"}
-                      </button>
-                    </form>
-                  ) : null}
+                      type="submit"
+                      disabled={postingIssue}
+                      className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {postingIssue ? "Đang ghi sổ..." : "Ghi sổ"}
+                    </button>
+                  </form>
+                ) : null}
                 </div>
               );
             })}
             {filteredIssues.length === 0 ? (
               <p className="rounded-[24px] border border-dashed border-slate-200 bg-white px-4 py-4 text-sm text-slate-500">
-                Chưa có phiếu xuất phù hợp với filter hiện tại.
+                Chưa có phiếu xuất phù hợp với bộ lọc hiện tại.
               </p>
             ) : null}
           </div>
@@ -1021,28 +1183,28 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
         </div>
       </section>
 
-      <section className="rounded-[32px] border border-white/70 bg-white/90 p-6 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+      <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Movement ledger
+              Sổ giao dịch kho
             </p>
-            <h3 className="mt-2 text-2xl font-semibold text-slate-900">
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">
               Giao dịch kho gần nhất
             </h3>
           </div>
-          <p className="text-sm text-slate-500">{filteredMovements.length} rows</p>
+          <p className="text-sm text-slate-500">{filteredMovements.length} dòng</p>
         </div>
         <div className="mt-5 overflow-hidden rounded-[26px] border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">
               <tr>
-                <th className="px-4 py-3 font-medium">Time</th>
-                <th className="px-4 py-3 font-medium">Item</th>
-                <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Qty</th>
-                <th className="px-4 py-3 font-medium">Lot</th>
-                <th className="px-4 py-3 font-medium">Reference</th>
+                <th className="px-4 py-3 font-medium">Thời gian</th>
+                <th className="px-4 py-3 font-medium">Mặt hàng</th>
+                <th className="px-4 py-3 font-medium">Loại</th>
+                <th className="px-4 py-3 font-medium">Số lượng</th>
+                <th className="px-4 py-3 font-medium">Lô</th>
+                <th className="px-4 py-3 font-medium">Tham chiếu</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -1058,17 +1220,17 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                     <p className="mt-1 text-slate-500">{movement.notes ?? ""}</p>
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
-                    {movement.movementType}
+                    {formatMovementTypeLabel(movement.movementType)}
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
                     {movement.quantityDelta >= 0 ? "+" : ""}
                     {formatQuantity(movement.quantityDelta, itemLookup.get(movement.itemId)?.unit ?? "unit")}
                   </td>
                   <td className="px-4 py-4 align-top text-slate-700">
-                    {movement.lotId ?? "N/A"}
+                    {movement.lotId ?? "Không có"}
                   </td>
                   <td className="px-4 py-4 align-top text-slate-500">
-                    {movement.referenceType ?? "N/A"}
+                    {movement.referenceType ?? "Không có"}
                   </td>
                 </tr>
               ))}

@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { formatCurrency } from "@/lib/admin/format";
 import type { ActionState, OrderStatus } from "@/lib/admin/types";
+import { formatOrderStatusLabel } from "@/features/admin/components";
 import {
   recordSalesPaymentAction,
   refreshSalesOrderPriceAction,
@@ -26,10 +27,6 @@ const orderStatuses: OrderStatus[] = [
   "completed",
   "cancelled",
 ];
-
-function formatLabel(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
 
 export function SalesOrderBillActions({
   order,
@@ -64,17 +61,17 @@ export function SalesOrderBillActions({
   const [paymentNote, setPaymentNote] = useState("");
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
+    <div className="grid gap-3 xl:grid-cols-3">
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.3)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Snapshot refresh
+          Làm mới bản chụp
         </p>
-        <h3 className="mt-2 text-xl font-semibold text-slate-900">
-          Refresh giá cho draft
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">
+          Làm mới giá cho bản nháp
         </h3>
-        <p className="mt-2 text-sm leading-7 text-slate-500">
-          Chỉ áp dụng cho đơn draft. Sau sent/confirmed, giá snapshot không tự
-          đổi nữa.
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Chỉ áp dụng cho đơn bản nháp. Sau khi gửi hoặc xác nhận, giá trong
+          bản chụp sẽ không tự đổi nữa.
         </p>
         <form action={refreshAction} className="mt-4 space-y-3">
           <input
@@ -87,15 +84,15 @@ export function SalesOrderBillActions({
             disabled={refreshPending || !canRefreshPrice || order.status !== "draft"}
             className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {refreshPending ? "Đang refresh..." : "Refresh giá từ price book"}
+            {refreshPending ? "Đang làm mới..." : "Làm mới giá từ bảng giá"}
           </button>
         </form>
         <p className="mt-3 text-xs leading-6 text-slate-500">
           {canRefreshPrice
             ? order.status === "draft"
-              ? "Dữ liệu line item sẽ được snapshot lại từ price book hiện hành."
-              : "Đơn không còn draft nên không thể refresh giá."
-            : "Bạn chưa có quyền refresh giá."}
+              ? "Dữ liệu dòng đơn sẽ được chụp lại từ bảng giá hiện hành."
+              : "Đơn không còn ở trạng thái bản nháp nên không thể làm mới giá."
+            : "Bạn chưa có quyền làm mới giá."}
         </p>
         {refreshState.status !== "idle" ? (
           <p
@@ -112,9 +109,9 @@ export function SalesOrderBillActions({
 
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.3)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Status update
+          Cập nhật trạng thái
         </p>
-        <h3 className="mt-2 text-xl font-semibold text-slate-900">
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">
           Đổi trạng thái đơn
         </h3>
         <form action={statusAction} className="mt-4 space-y-3">
@@ -124,9 +121,9 @@ export function SalesOrderBillActions({
             value={JSON.stringify({ orderId: order.id, status: selectedStatus })}
           />
           <label className="block">
-            <span className="mb-2 block text-sm font-medium text-slate-700">
-              Trạng thái
-            </span>
+              <span className="mb-2 block text-sm font-medium text-slate-700">
+                Trạng thái
+              </span>
             <select
               value={selectedStatus}
               onChange={(event) => setSelectedStatus(event.target.value as OrderStatus)}
@@ -135,7 +132,7 @@ export function SalesOrderBillActions({
             >
               {orderStatuses.map((status) => (
                 <option key={status} value={status}>
-                  {formatLabel(status)}
+                  {formatOrderStatusLabel(status)}
                 </option>
               ))}
             </select>
@@ -149,7 +146,7 @@ export function SalesOrderBillActions({
           </button>
         </form>
         <p className="mt-3 text-xs leading-6 text-slate-500">
-          Trạng thái sent/confirmed sẽ khóa refresh giá tự động.
+          Trạng thái đã gửi hoặc đã xác nhận sẽ khóa việc làm mới giá tự động.
         </p>
         {statusState.status !== "idle" ? (
           <p
@@ -166,18 +163,18 @@ export function SalesOrderBillActions({
 
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.3)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Payment
+          Thanh toán
         </p>
-        <h3 className="mt-2 text-xl font-semibold text-slate-900">
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">
           Ghi nhận thanh toán
         </h3>
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           <div className="flex items-center justify-between gap-3">
-            <span>Paid</span>
+            <span>Đã thanh toán</span>
             <span>{formatCurrency(paidTotal)}</span>
           </div>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span>Balance due</span>
+            <span>Còn phải thu</span>
             <span className="font-medium text-slate-900">
               {formatCurrency(balanceDue)}
             </span>
@@ -230,7 +227,7 @@ export function SalesOrderBillActions({
           </button>
         </form>
         <p className="mt-3 text-xs leading-6 text-slate-500">
-          Bill chỉ cập nhật payment_status từ snapshot thanh toán trong order.
+          Hóa đơn chỉ cập nhật trạng thái thanh toán từ bản chụp trong đơn.
         </p>
         {paymentState.status !== "idle" ? (
           <p

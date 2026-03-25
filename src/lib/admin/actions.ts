@@ -56,7 +56,7 @@ export async function saveMenuProductAction(
 
   if (!isSupabaseConfigured()) {
     return demoSuccess(
-      "Đã lưu trong demo mode. Khi nối Supabase thật, form này sẽ ghi trực tiếp vào products, product_variants và recipe_components.",
+      "Đã lưu trong chế độ demo. Khi nối Supabase thật, form này sẽ ghi trực tiếp vào products, product_variants và recipe_components.",
     );
   }
 
@@ -64,7 +64,7 @@ export async function saveMenuProductAction(
     const supabase = await createSupabaseServerClient();
 
     if (!supabase) {
-      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở demo mode.");
+      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
     }
 
     const { error: productError } = await supabase.from("products").upsert(
@@ -174,7 +174,7 @@ export async function recordInventoryMovementAction(
 
   if (!isSupabaseConfigured()) {
     return demoSuccess(
-      "Đã ghi nhận điều chỉnh trong demo mode. Khi nối Supabase, thao tác này sẽ insert vào inventory_movements và cập nhật tồn kho tự động.",
+      "Đã ghi nhận điều chỉnh trong chế độ demo. Khi nối Supabase, thao tác này sẽ thêm vào inventory_movements và cập nhật tồn kho tự động.",
     );
   }
 
@@ -182,7 +182,7 @@ export async function recordInventoryMovementAction(
     const supabase = await createSupabaseServerClient();
 
     if (!supabase) {
-      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở demo mode.");
+      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
     }
 
     const movementRow: Record<string, unknown> = {

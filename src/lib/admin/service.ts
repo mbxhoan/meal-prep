@@ -192,7 +192,7 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
               item.id ??
               "",
           ),
-          productName: String(item.item_name_snapshot ?? "Menu item"),
+          productName: String(item.item_name_snapshot ?? "Món"),
           variantId: String(
             item.menu_item_variant_id ??
               item.legacy_product_variant_id ??
@@ -206,7 +206,7 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
           lineRevenue: safeNumber(item.line_total_after_discount),
           lineCogs: safeNumber(item.line_cost_total),
           lineProfit: safeNumber(item.line_profit_total),
-          itemNameSnapshot: String(item.item_name_snapshot ?? "Menu item"),
+          itemNameSnapshot: String(item.item_name_snapshot ?? "Món"),
           variantLabelSnapshot:
             item.variant_label_snapshot == null
               ? null
@@ -264,7 +264,7 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
             id: String(item.id),
             orderId: String(item.order_id),
             productId: String(item.product_id ?? product.id ?? ""),
-            productName: String(product.name ?? "Menu item"),
+            productName: String(product.name ?? "Món"),
             variantId: String(item.variant_id ?? variant.id ?? ""),
             variantLabel: String(variant.label ?? ""),
             quantity: safeNumber(item.quantity, 1),

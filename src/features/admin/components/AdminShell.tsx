@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { IconType } from "react-icons";
 import {
+  FaAnglesLeft,
+  FaAnglesRight,
   FaArrowRight,
   FaArrowUpRightFromSquare,
   FaBars,
+  FaBolt,
   FaBoxArchive,
   FaChartColumn,
   FaChartLine,
@@ -36,7 +39,7 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: FaHouse },
+  { href: "/admin", label: "Tổng quan", icon: FaHouse },
   {
     href: "/admin/master-data",
     label: "Danh mục",
@@ -63,7 +66,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/admin/analytics",
-    label: "Doanh thu",
+    label: "Báo cáo",
     icon: FaChartLine,
     permission: "report.sales.read",
   },
@@ -106,10 +109,10 @@ function formatRoleLabel(role: string | null | undefined) {
 function getHeaderConfig(pathname: string): HeaderConfig {
   if (pathname === "/admin") {
     return {
-      eyebrow: "Dashboard",
+      eyebrow: "Tổng quan",
       title: "Tồn kho, doanh thu và lợi nhuận",
       description:
-        "Revenue, gross profit, menu đang bán và low stock trong cùng một nơi.",
+        "Doanh thu, lợi nhuận gộp, món bán và tồn thấp trong cùng một nơi.",
       action: {
         href: "/admin/orders/new",
         label: "Tạo đơn mới",
@@ -119,46 +122,46 @@ function getHeaderConfig(pathname: string): HeaderConfig {
 
   if (pathname.startsWith("/admin/menu/")) {
     return {
-      eyebrow: "Menu editor",
-      title: "Chỉnh món và BOM nguyên liệu",
+      eyebrow: "Biên tập thực đơn",
+      title: "Chỉnh món và công thức nguyên liệu",
       description:
-        "Cập nhật ảnh đại diện, thông tin hiển thị, giá bán từng variant và cost profile.",
+        "Cập nhật ảnh đại diện, thông tin hiển thị, giá bán từng biến thể và hồ sơ giá vốn.",
     };
   }
 
   if (pathname === "/admin/menu") {
     return {
-      eyebrow: "Menu",
-      title: "Ảnh đại diện, giá bán và cost profile",
+      eyebrow: "Thực đơn",
+      title: "Ảnh đại diện, giá bán và hồ sơ giá vốn",
       description:
-        "Chỉnh thực đơn, variant và margin từng món từ cùng một màn hình.",
+        "Chỉnh thực đơn, biến thể và biên lợi nhuận từng món từ cùng một màn hình.",
     };
   }
 
   if (pathname === "/admin/inventory") {
     return {
-      eyebrow: "Inventory",
-      title: "Tồn kho, AVG cost và biến động nguyên liệu",
+      eyebrow: "Tồn kho",
+      title: "Tồn kho, giá vốn bình quân và biến động nguyên liệu",
       description:
-        "Theo dõi tồn kho và cập nhật cost dùng ngay cho BOM và các đơn mới.",
+        "Theo dõi tồn kho và cập nhật giá vốn dùng ngay cho công thức và đơn mới.",
     };
   }
 
   if (pathname === "/admin/orders/new") {
     return {
-      eyebrow: "New order",
+      eyebrow: "Đơn mới",
       title: "Tạo đơn và cho hệ thống tự tính",
       description:
-        "Preview revenue, COGS và gross profit trước khi lưu vào Supabase.",
+        "Xem trước doanh thu, giá vốn và lợi nhuận gộp trước khi lưu vào Supabase.",
     };
   }
 
   if (pathname.startsWith("/admin/orders/")) {
     return {
-      eyebrow: "Bill",
-      title: "Bill đơn hàng",
+      eyebrow: "Hóa đơn",
+      title: "Hóa đơn đơn hàng",
       description:
-        "Xem snapshot giá, trạng thái thanh toán và lịch sử chốt đơn.",
+        "Xem bản chụp giá, trạng thái thanh toán và lịch sử chốt hóa đơn.",
       action: {
         href: "/admin/orders",
         label: "Danh sách",
@@ -168,10 +171,10 @@ function getHeaderConfig(pathname: string): HeaderConfig {
 
   if (pathname === "/admin/orders") {
     return {
-      eyebrow: "Orders",
-      title: "Đơn hàng và lời lãi theo từng đơn",
+      eyebrow: "Đơn hàng",
+      title: "Đơn hàng và lãi lỗ theo từng đơn",
       description:
-        "Theo dõi revenue, COGS và gross profit theo trạng thái của từng đơn.",
+        "Theo dõi doanh thu, giá vốn và lợi nhuận gộp theo trạng thái từng đơn.",
       action: {
         href: "/admin/orders/new",
         label: "Tạo đơn",
@@ -181,19 +184,19 @@ function getHeaderConfig(pathname: string): HeaderConfig {
 
   if (pathname === "/admin/analytics") {
     return {
-      eyebrow: "Analytics",
+      eyebrow: "Báo cáo",
       title: "Doanh thu và lợi nhuận theo ngày",
       description:
-        "Xem margin thay đổi theo ngày và theo từng kênh bán.",
+        "Xem biên lợi nhuận thay đổi theo ngày và theo từng kênh bán.",
     };
   }
 
   if (pathname === "/admin/master-data") {
     return {
-      eyebrow: "Master data",
-      title: "Danh mục nền tảng Phase 1",
+      eyebrow: "Danh mục",
+      title: "Danh mục nền tảng",
       description:
-        "Quản lý customer, supplier, warehouse, item, menu và price book.",
+        "Quản lý khách hàng, nhà cung cấp, kho, hàng hóa, thực đơn và bảng giá.",
     };
   }
 
@@ -204,7 +207,7 @@ function getHeaderConfig(pathname: string): HeaderConfig {
       const config = MASTER_DATA_ENTITY_CONFIGS[entity];
 
       return {
-        eyebrow: "Master data",
+        eyebrow: "Danh mục nền tảng",
         title: config.title,
         description: config.description,
       };
@@ -213,17 +216,17 @@ function getHeaderConfig(pathname: string): HeaderConfig {
 
   if (pathname === "/admin/settings/roles") {
     return {
-      eyebrow: "Access control",
-      title: "Phân quyền user theo shop",
+      eyebrow: "Phân quyền",
+      title: "Phân quyền người dùng theo shop",
       description:
-        "Gán role, shop và employee profile trong một màn hình duy nhất.",
+        "Gán vai trò, cửa hàng và hồ sơ nhân viên trong một màn hình duy nhất.",
     };
   }
 
   return {
-    eyebrow: "Operations",
+    eyebrow: "Vận hành",
     description:
-      "Theo dõi tồn kho, cost, doanh thu và gross profit theo từng đơn.",
+      "Theo dõi tồn kho, giá vốn, doanh thu và lợi nhuận gộp theo từng đơn.",
   };
 }
 
@@ -236,6 +239,7 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const header = getHeaderConfig(pathname);
   const visibleNavItems = navItems.filter((item) =>
     item.permission ? context.permissions.includes(item.permission) : true,
@@ -243,29 +247,47 @@ export function AdminShell({
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(244,114,32,0.12),_transparent_32%),linear-gradient(180deg,_#f6f7f1_0%,_#eef2e7_56%,_#f6f1e7_100%)] text-slate-900">
-      <div className="flex min-h-screen w-full gap-4 px-4 py-4 md:gap-5 md:px-5">
+      <div className="flex min-h-screen w-full gap-3 px-3 py-3 md:gap-4 md:px-4">
         <aside
-          className={`fixed inset-y-4 left-4 z-40 w-[280px] overflow-hidden rounded-[32px] border border-white/20 bg-[#13261f]/95 p-5 text-white shadow-[0_25px_90px_-45px_rgba(15,23,42,0.85)] backdrop-blur transition md:static md:block md:w-[290px] ${
+          className={`fixed inset-y-3 left-3 z-40 overflow-y-auto overflow-x-hidden rounded-[30px] border border-white/20 bg-[#13261f]/95 p-4 text-white shadow-[0_25px_90px_-45px_rgba(15,23,42,0.85)] backdrop-blur transition md:sticky md:top-3 md:block md:h-[calc(100vh-1.5rem)] ${
+            collapsed ? "md:w-[88px]" : "w-[280px] md:w-[290px]"
+          } ${
             open ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/45">
-                MealFit Ops
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold">Inventory Admin</h2>
+            {collapsed ? (
+              <div className="mx-auto text-lg">
+                <FaBoxArchive />
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-white/45">
+                  MealFit Ops
+                </p>
+                <h2 className="mt-2 text-lg font-semibold">Quản trị tồn kho</h2>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCollapsed((value) => !value)}
+                className="hidden h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-sm md:grid"
+                title={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
+              >
+                {collapsed ? <FaAnglesRight /> : <FaAnglesLeft />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-sm md:hidden"
+              >
+                <FaXmark />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-sm md:hidden"
-            >
-              <FaXmark />
-            </button>
           </div>
 
-          <div className="mt-8 rounded-[26px] border border-white/10 bg-white/6 p-4">
+          <div className={`mt-7 rounded-[24px] border border-white/10 bg-white/6 p-4 ${collapsed ? "hidden" : ""}`}>
             <p className="text-sm font-medium text-white/80">
               {context.user?.fullName ?? "MealFit team"}
             </p>
@@ -274,7 +296,7 @@ export function AdminShell({
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <StatusPill
-                label={context.mode === "live" ? "Live mode" : "Demo mode"}
+                label={context.mode === "live" ? "Trực tiếp" : "Demo"}
                 tone={context.mode === "live" ? "success" : "warning"}
               />
               <StatusPill
@@ -295,7 +317,7 @@ export function AdminShell({
             ) : null}
           </div>
 
-          <nav className="mt-8 space-y-2">
+          <nav className="mt-7 space-y-2">
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActivePath(pathname, item.href);
@@ -304,27 +326,35 @@ export function AdminShell({
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                  title={item.label}
+                  className={`flex items-center rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                    collapsed ? "justify-center" : "gap-3"
+                  } ${
                     active
                       ? "bg-white text-[#13261f]"
                       : "text-white/70 hover:bg-white/8 hover:text-white"
                   }`}
                 >
                   <Icon className="text-base" />
-                  <span>{item.label}</span>
+                  {!collapsed ? <span>{item.label}</span> : null}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="mt-auto pt-8">
+          <div className="mt-auto pt-7">
             <Link
               href="/"
-              className="flex items-center gap-3 rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-white/75 transition hover:bg-white/8 hover:text-white"
+              prefetch
+              className={`flex items-center rounded-2xl border border-white/10 px-4 py-3 text-sm font-medium text-white/75 transition hover:bg-white/8 hover:text-white ${
+                collapsed ? "justify-center" : "gap-3"
+              }`}
+              title="Về trang bán hàng"
             >
               <FaArrowUpRightFromSquare />
-              <span>Về storefront</span>
+              {!collapsed ? <span>Về trang bán hàng</span> : null}
             </Link>
           </div>
         </aside>
@@ -339,8 +369,8 @@ export function AdminShell({
         ) : null}
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <header className="sticky top-4 z-20 rounded-[30px] border border-white/70 bg-white/82 px-4 py-3 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:px-5">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <header className="sticky top-3 z-20 rounded-[22px] border border-white/70 bg-white/82 px-4 py-2 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:px-5">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-start gap-3">
                 <button
                   type="button"
@@ -354,16 +384,16 @@ export function AdminShell({
                     {header.eyebrow}
                   </p>
                   {header.title ? (
-                    <h1 className="mt-1 text-lg font-semibold tracking-tight text-slate-900 md:text-xl">
+                    <h1 className="mt-0.5 truncate text-sm font-semibold tracking-tight text-slate-900 md:text-base">
                       {header.title}
                     </h1>
                   ) : null}
-                  <p className="mt-1 flex max-w-4xl items-start gap-2 text-xs leading-6 text-slate-600 md:text-sm">
+                  <p className="mt-0.5 flex max-w-3xl items-center gap-2 text-[11px] leading-5 text-slate-600 md:text-sm">
                     <FaChartColumn className="mt-1 shrink-0 text-[#51724f]" />
-                    <span>{header.description}</span>
+                    <span className="truncate">{header.description}</span>
                   </p>
                   {context.shop ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       <StatusPill
                         label={context.shop.name}
                         tone="info"
@@ -379,22 +409,32 @@ export function AdminShell({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex shrink-0 items-center gap-2">
                 {header.action ? (
                   <Link
                     href={header.action.href}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
+                    prefetch
+                    title={header.action.label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#18352d] text-white transition hover:opacity-90"
                   >
-                    {header.action.label}
                     <FaArrowRight className="text-xs" />
                   </Link>
                 ) : null}
-                <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-500 md:text-sm">
-                  {context.mode === "live"
-                    ? "Đang kết nối Supabase"
-                    : "Demo fallback đang bật"}
+                <div
+                  title={
+                    context.mode === "live"
+                      ? "Đang kết nối Supabase"
+                      : "Demo fallback đang bật"
+                  }
+                  className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${
+                    context.mode === "live"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  <FaBolt />
                 </div>
-                <LogoutButton disabled={context.mode === "demo"} />
+                <LogoutButton compact disabled={context.mode === "demo"} />
               </div>
             </div>
           </header>

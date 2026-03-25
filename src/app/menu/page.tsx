@@ -51,13 +51,13 @@ export default async function MenuPage({
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-10">
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-orange-500 to-red-500 px-8 md:px-12 py-12 text-center">
-              <h1 className="text-4xl md:text-6xl font-bold text-white mb-3">
+              <h1 className="text-xl md:text-[20px] font-bold text-white mb-3">
                 Thực Đơn
               </h1>
               <p className="text-base text-white/80 max-w-xl mx-auto">
-                Danh sách này đọc từ cùng data layer với admin. Khi bạn đổi ảnh đại
-                diện, mô tả hoặc giá mặc định trong dashboard, storefront sẽ phản ánh
-                ngay.
+                Danh sách này đọc từ cùng lớp dữ liệu với trang quản trị. Khi bạn
+                đổi ảnh đại diện, mô tả hoặc giá mặc định trong bảng điều khiển,
+                trang bán hàng sẽ phản ánh ngay.
               </p>
             </div>
 
