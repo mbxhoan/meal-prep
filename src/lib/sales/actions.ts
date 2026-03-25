@@ -148,6 +148,7 @@ export async function updateSalesOrderStatusAction(
 
     revalidatePath("/admin");
     revalidatePath("/admin/orders");
+    revalidatePath("/admin/inventory");
     revalidatePath(`/admin/orders/${payload.orderId}`);
 
     redirect(`/admin/orders/${payload.orderId}`);

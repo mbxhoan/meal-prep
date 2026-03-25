@@ -420,7 +420,8 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
   }),
   menu_item_variants: lookupConfig("menu_item_variants", {
     title: "Biến thể món",
-    description: "Map món bán với biến thể, size và item tồn kho tương ứng.",
+    description:
+      "Map món bán với biến thể; liên kết SKU ledger (inventory_items) để confirm đơn tự tạo phiếu xuất nháp theo FEFO.",
     table: "menu_item_variants",
     permissions: {
       read: "master.menu.read",
@@ -429,7 +430,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       delete: "master.menu.delete",
     },
     select:
-      "id, shop_id, menu_item_id, menu_items(code, name), label, weight_grams, linked_inventory_item_id, items(sku, name), sort_order, is_active, notes, deleted_at, created_at, updated_at",
+      "id, shop_id, menu_item_id, menu_items(code, name), label, weight_grams, linked_inventory_item_id, items(sku, name), fulfillment_inventory_item_id, fulfillment_stock:inventory_items!fulfillment_inventory_item_id(sku, name), sort_order, is_active, notes, deleted_at, created_at, updated_at",
     orderBy: { column: "sort_order", ascending: true },
     fields: [
       {
@@ -449,9 +450,15 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       },
       {
         name: "linked_inventory_item_id",
-        label: "Item tồn kho liên kết",
+        label: "Item master (recipe)",
         type: "select",
         optionsSource: "items",
+      },
+      {
+        name: "fulfillment_inventory_item_id",
+        label: "SKU xuất kho (FEFO)",
+        type: "select",
+        optionsSource: "inventory_stock_items",
       },
       {
         name: "sort_order",
@@ -473,10 +480,19 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       { key: "menu_items.name", label: "Món" },
       { key: "label", label: "Biến thể" },
       { key: "weight_grams", label: "Gram", type: "number" },
-      { key: "items.name", label: "Linked item" },
+      { key: "items.name", label: "Item master" },
+      { key: "fulfillment_stock.sku", label: "SKU xuất" },
       { key: "is_active", label: "Trạng thái", type: "boolean" },
     ],
-    searchFields: ["label", "notes", "menu_items.name", "items.name", "weight_grams"],
+    searchFields: [
+      "label",
+      "notes",
+      "menu_items.name",
+      "items.name",
+      "fulfillment_stock.sku",
+      "fulfillment_stock.name",
+      "weight_grams",
+    ],
     optionLabelPaths: ["menu_items.name", "label"],
   }),
   price_books: lookupConfig("price_books", {

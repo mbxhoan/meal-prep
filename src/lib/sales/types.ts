@@ -59,6 +59,14 @@ export interface SalesOrderStatusLogRecord {
   createdAt: string;
 }
 
+/** Latest inventory issue linked to this order (sales fulfillment). */
+export interface SalesOrderFulfillmentIssueSummary {
+  id: string;
+  issueNo: string;
+  status: string;
+  postedAt: string | null;
+}
+
 export interface SalesOrderDetailRecord {
   id: string;
   shopId: string;
@@ -93,6 +101,7 @@ export interface SalesOrderDetailRecord {
   items: SalesOrderItemRecord[];
   payments: SalesPaymentRecord[];
   statusLogs: SalesOrderStatusLogRecord[];
+  fulfillmentIssue?: SalesOrderFulfillmentIssueSummary | null;
 }
 
 export interface SalesOrderBuilderData {

@@ -17,6 +17,13 @@ export const MASTER_DATA_ENTITY_KEYS = [
 export type MasterDataEntityKey =
   (typeof MASTER_DATA_ENTITY_KEYS)[number];
 
+/** Options loaded from tables that are not MasterDataEntityKey pages (e.g. stock SKU list). */
+export type MasterDataAuxOptionsSourceKey = "inventory_stock_items";
+
+export type MasterDataFieldOptionsSource =
+  | MasterDataEntityKey
+  | MasterDataAuxOptionsSourceKey;
+
 export type MasterDataFieldType =
   | "text"
   | "textarea"
@@ -37,7 +44,7 @@ export interface MasterDataFieldConfig {
   required?: boolean;
   placeholder?: string;
   helpText?: string;
-  optionsSource?: MasterDataEntityKey;
+  optionsSource?: MasterDataFieldOptionsSource;
   options?: MasterDataOption[];
   defaultValue?: string | number | boolean | null;
   step?: string;
@@ -92,7 +99,7 @@ export type MasterDataRow = Record<string, unknown> & {
 };
 
 export interface MasterDataOptionGroup {
-  key: MasterDataEntityKey;
+  key: MasterDataFieldOptionsSource;
   label: string;
   options: MasterDataOption[];
 }

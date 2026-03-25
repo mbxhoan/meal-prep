@@ -155,6 +155,41 @@ export function SalesOrderBill({
         </div>
       </section>
 
+      {order.fulfillmentIssue ? (
+        <section className="rounded-[24px] border border-emerald-200/80 bg-emerald-50/90 px-5 py-4 text-sm text-slate-800 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-800">
+            Xuất kho từ đơn
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <Link
+              href="/admin/inventory"
+              className="font-medium text-emerald-900 underline decoration-emerald-600/50 underline-offset-4 hover:decoration-emerald-800"
+            >
+              {order.fulfillmentIssue.issueNo}
+            </Link>
+            <StatusPill
+              label={formatLabel(order.fulfillmentIssue.status)}
+              tone={
+                order.fulfillmentIssue.status === "posted"
+                  ? "success"
+                  : order.fulfillmentIssue.status === "draft"
+                    ? "warning"
+                    : "muted"
+              }
+            />
+            {order.fulfillmentIssue.postedAt ? (
+              <span className="text-slate-600">
+                Post {formatDate(order.fulfillmentIssue.postedAt)}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-slate-600">
+            Phiếu nháp sinh khi confirm; chỉnh lô nếu override FEFO và ghi lý do trước khi post
+            (cần quyền inventory.fefo.override).
+          </p>
+        </section>
+      ) : null}
+
       <SalesOrderBillActions
         order={order}
         canRefreshPrice={canRefreshPrice}

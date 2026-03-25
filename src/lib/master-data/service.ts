@@ -14,6 +14,7 @@ import {
 import type {
   MasterDataEntityConfig,
   MasterDataEntityKey,
+  MasterDataFieldOptionsSource,
   MasterDataOptionGroup,
   MasterDataPageData,
   MasterDataRow,
@@ -24,7 +25,7 @@ function getEntityConfig(entity: MasterDataEntityKey): MasterDataEntityConfig {
 }
 
 function getUniqueOptionSources(config: MasterDataEntityConfig) {
-  const sources = new Set<MasterDataEntityKey>();
+  const sources = new Set<MasterDataFieldOptionsSource>();
 
   for (const field of config.fields) {
     if (field.optionsSource) {
@@ -33,6 +34,32 @@ function getUniqueOptionSources(config: MasterDataEntityConfig) {
   }
 
   return [...sources];
+}
+
+async function listInventoryStockItemOptions(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+) {
+  const { data, error } = await supabase
+    .from("inventory_items")
+    .select("id, sku, name")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  if (error || !Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((row) => {
+    const entry = row as Record<string, unknown>;
+    const sku = entry.sku == null ? "" : String(entry.sku).trim();
+    const name = entry.name == null ? "" : String(entry.name).trim();
+    const label = [sku, name].filter(Boolean).join(" · ");
+
+    return {
+      value: String(entry.id ?? ""),
+      label: label.length > 0 ? label : String(entry.id ?? ""),
+    };
+  });
 }
 
 async function listRowsForEntity(
@@ -143,7 +170,19 @@ export const getMasterDataPageData = cache(async (
   const [rows, optionResults] = await Promise.all([
     listRowsForEntity(supabase, config, shopId),
     Promise.all(
-      getUniqueOptionSources(config).map(async (source) => {
+      getUniqueOptionSources(config).map(async (_sourceRaw) => {
+        const source = _sourceRaw;
+
+        if (source === "inventory_stock_items") {
+          const options = await listInventoryStockItemOptions(supabase);
+
+          return {
+            key: source,
+            label: "Tồn kho (SKU)",
+            options,
+          } satisfies MasterDataOptionGroup;
+        }
+
         const sourceConfig = getEntityConfig(source);
         const options = await listOptionsForEntity(
           supabase,

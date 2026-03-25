@@ -10,6 +10,7 @@ import { getAdminContext } from "@/lib/admin/service";
 import type {
   SalesOrderBuilderData,
   SalesOrderDetailRecord,
+  SalesOrderFulfillmentIssueSummary,
   SalesOrderItemRecord,
   SalesOrderStatusLogRecord,
   SalesOrderStatus,
@@ -99,6 +100,49 @@ async function getCurrentPriceBookContext(
   return {
     priceBookId,
     priceBookName,
+  };
+}
+
+async function createFulfillmentIssueDraftIfConfirmed(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  orderId: string,
+) {
+  const { error } = await supabase.rpc(
+    "create_fulfillment_issue_draft_from_sales_order",
+    { p_sales_order_id: orderId },
+  );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function fetchFulfillmentIssueSummaryForOrder(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  shopId: string,
+  orderId: string,
+): Promise<SalesOrderFulfillmentIssueSummary | null> {
+  const { data, error } = await supabase
+    .from("inventory_issues")
+    .select("id, issue_no, status, posted_at")
+    .eq("shop_id", shopId)
+    .eq("source_type", "sales_order")
+    .eq("source_id", orderId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const row = data as Record<string, unknown>;
+
+  return {
+    id: String(row.id ?? ""),
+    issueNo: String(row.issue_no ?? ""),
+    status: String(row.status ?? "draft"),
+    postedAt: row.posted_at == null ? null : String(row.posted_at),
   };
 }
 
@@ -373,7 +417,14 @@ export const getSalesOrderById = cache(async (
     return null;
   }
 
-  return normalizeSalesOrderDetail(data as Record<string, unknown>);
+  const detail = normalizeSalesOrderDetail(data as Record<string, unknown>);
+  const fulfillmentIssue = await fetchFulfillmentIssueSummaryForOrder(
+    supabase,
+    context.shop.id,
+    orderId,
+  );
+
+  return { ...detail, fulfillmentIssue };
 });
 
 export async function createSalesOrderRecord(payload: OrderPayload) {
@@ -496,6 +547,10 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
     if (statusError) {
       throw new Error(statusError.message);
     }
+  }
+
+  if (payload.status === "confirmed") {
+    await createFulfillmentIssueDraftIfConfirmed(supabase, orderRow.id);
   }
 
   return {
@@ -647,6 +702,21 @@ export async function updateSalesOrderStatus(
     throw new Error("Supabase client is not available.");
   }
 
+  const { data: existing, error: readError } = await supabase
+    .from("sales_orders")
+    .select("status")
+    .eq("id", orderId)
+    .eq("shop_id", context.shop.id)
+    .maybeSingle();
+
+  if (readError || !existing) {
+    throw new Error(readError?.message ?? "Không tìm thấy đơn hàng.");
+  }
+
+  const previousStatus = String(
+    (existing as Record<string, unknown>).status ?? "",
+  );
+
   const { error } = await supabase
     .from("sales_orders")
     .update({ status })
@@ -655,6 +725,10 @@ export async function updateSalesOrderStatus(
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (status === "confirmed" && previousStatus !== "confirmed") {
+    await createFulfillmentIssueDraftIfConfirmed(supabase, orderId);
   }
 }
 
