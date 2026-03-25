@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
+import { GuardrailChecklist } from "@/features/admin/components";
 import { recordInventoryMovementAction } from "@/lib/admin/actions";
 import { formatCurrency } from "@/lib/admin/format";
 import type { InventoryItem, InventoryMovementType } from "@/lib/admin/types";
@@ -32,7 +33,19 @@ export function InventoryAdjustmentForm({ item }: { item: InventoryItem }) {
   }, [movementType, quantity]);
 
   return (
-    <form action={action} className="rounded-[28px] border border-slate-200 bg-white p-4">
+    <form
+      action={action}
+      className="rounded-[28px] border border-slate-200 bg-white p-4"
+      onSubmit={(event) => {
+        if (
+          !window.confirm(
+            "Biến động này sẽ đi vào inventory_movements và ảnh hưởng trực tiếp đến tồn kho. Hãy chắc chắn số lượng, loại giao dịch và lý do đã đúng. Tiếp tục?",
+          )
+        ) {
+          event.preventDefault();
+        }
+      }}
+    >
       <input
         type="hidden"
         name="payload"
@@ -113,6 +126,19 @@ export function InventoryAdjustmentForm({ item }: { item: InventoryItem }) {
             placeholder="Phiếu nhập, kiểm kê..."
           />
         </label>
+      </div>
+
+      <div className="mt-4">
+        <GuardrailChecklist
+          title="Trước khi ghi nhận biến động"
+          tone="warning"
+          note="Tồn kho chỉ nên thay đổi qua movement. Nếu là điều chỉnh hoặc hao hụt, hãy ghi chú rõ lý do."
+          items={[
+            "Đã chọn đúng loại biến động.",
+            "Số lượng và đơn giá đã kiểm tra lại.",
+            "Nếu là điều chỉnh hoặc hao hụt, đã có ghi chú phù hợp.",
+          ]}
+        />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

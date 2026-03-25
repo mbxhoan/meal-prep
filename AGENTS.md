@@ -94,3 +94,9 @@ Một phase được xem là xong khi:
 - audit log có dữ liệu
 - test manual flow chính chạy qua được
 - docs liên quan đã cập nhật
+
+## Nguyên tắc UX vận hành
+- Hệ thống phải đủ rõ để user mới có thể học và thao tác an toàn.
+- Business rule quan trọng phải xuất hiện trong UI qua helper text, empty state, confirm dialog hoặc checklist, không chỉ nằm trong docs dev.
+- Các flow rủi ro cao phải có guardrail: pricing snapshot, FEFO override, stock adjustment, expiry-required receipt.
+- Ưu tiên thiết kế màn hình có hướng dẫn ngắn ngay tại chỗ hơn là bắt user đọc tài liệu dài rồi tự nhớ.

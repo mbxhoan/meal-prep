@@ -1,7 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { ExportExcelButton, StatusPill } from "@/features/admin/components";
+import { FaTriangleExclamation } from "react-icons/fa6";
+import {
+  ExportExcelButton,
+  GuardrailChecklist,
+  GuidedWorkflowCard,
+  StatusPill,
+} from "@/features/admin/components";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/admin/format";
 import {
   postInventoryIssueAction,
@@ -304,6 +310,13 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
 
     return candidates;
   }, [data.fefoCandidates, issueItemId, issueWarehouseId]);
+  const receiptRequiresExpiry = Boolean(
+    selectedReceiptItem?.isExpirable && receiptExpiredAt.length === 0,
+  );
+  const issueFefoOverride =
+    issueLotId.length > 0 &&
+    Boolean(issueFefoOptions[0]) &&
+    issueLotId !== issueFefoOptions[0].lotId;
 
   useEffect(() => {
     if (!selectedReceiptItem) {
@@ -392,6 +405,18 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
 
   return (
     <div className="space-y-4 pb-8">
+      <GuidedWorkflowCard
+        eyebrow="Quy trình kho"
+        title="Nhập kho, xuất kho và ghi sổ theo đúng luồng"
+        description="Màn này cho phép bạn tạo phiếu nháp, kiểm tra FEFO/HSD rồi mới ghi sổ. Tồn kho luôn đi qua movement ledger."
+        steps={[
+          "Kiểm tra dashboard, lô cận HSD và tồn thấp trước.",
+          "Tạo phiếu nhập hoặc phiếu xuất với số lượng và lô đúng.",
+          "Rà HSD, FEFO và ghi chú override nếu có.",
+          "Chỉ ghi sổ khi mọi dữ liệu đã sẵn sàng.",
+        ]}
+      />
+
       <section className="space-y-3">
         <div className="grid gap-3 lg:grid-cols-4">
           <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
@@ -425,6 +450,46 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             <p className="mt-2 text-base font-semibold text-slate-900">
               {data.movements[0] ? formatDate(data.movements[0].movementAt) : "Không có"}
             </p>
+          </div>
+        </div>
+
+        <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
+              <FaTriangleExclamation className="text-sm" />
+            </div>
+            <p className="text-sm leading-6 text-amber-900/85">
+              Mọi thay đổi tồn kho phải đi qua phiếu nhập, phiếu xuất hoặc phiếu
+              điều chỉnh. Hàng có HSD ưu tiên FEFO, và mọi override phải có lý do
+              rõ ràng.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3">
+          <p className="text-sm font-semibold text-sky-900">
+            Kiểm tra nhanh trước khi thao tác
+          </p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-2">
+            <GuardrailChecklist
+              title="Phiếu nhập"
+              note="Nếu bấm ghi sổ ngay, hệ thống sẽ tạo movement và cập nhật tồn theo sổ kho."
+              items={[
+                "Kho và nhà cung cấp đã đúng.",
+                "Mã lô, HSD và đơn giá vốn đã kiểm tra.",
+                "Item có HSD thì không để trống dữ liệu hạn.",
+              ]}
+            />
+            <GuardrailChecklist
+              title="Phiếu xuất"
+              tone="warning"
+              note="FEFO là mặc định. Nếu chọn lô khác gợi ý, hãy chắc chắn đã có lý do."
+              items={[
+                "Đã kiểm tra lô gợi ý theo FEFO.",
+                "Số lượng xuất không vượt tồn khả dụng.",
+                "Nếu override FEFO, cần ghi lý do rõ ràng.",
+              ]}
+            />
           </div>
         </div>
 
@@ -535,7 +600,20 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
-        <form action={saveReceiptAction} className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <form
+          action={saveReceiptAction}
+          className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]"
+          onSubmit={(event) => {
+            if (
+              receiptPostImmediately &&
+              !window.confirm(
+                `Phiếu nhập này sẽ được lưu và ghi sổ ngay. ${receiptRequiresExpiry ? "Item này có HSD nên hãy kiểm tra hạn sử dụng trước khi tiếp tục. " : ""}Tồn kho sẽ đi qua movement ledger, không chỉnh tay số tồn. Tiếp tục?`,
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
           <input type="hidden" name="payload" value={receiptPayload} />
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -548,6 +626,16 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </div>
             <StatusPill label="Bản nháp" tone="warning" />
           </div>
+
+          <GuardrailChecklist
+            title="Trước khi lưu phiếu nhập"
+            note="Phiếu nhập nháp vẫn cần đủ dữ liệu lô và HSD nếu item có HSD. Khi ghi sổ ngay, stock movement sẽ phát sinh lập tức."
+            items={[
+              "Kho, nhà cung cấp và mặt hàng đã chọn đúng.",
+              "Số lượng, giá vốn và mã lô đã kiểm tra.",
+              "Item expirable thì đã nhập HSD.",
+            ]}
+          />
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <label className="block">
@@ -741,7 +829,20 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
           ) : null}
         </form>
 
-        <form action={saveIssueAction} className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <form
+          action={saveIssueAction}
+          className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]"
+          onSubmit={(event) => {
+            if (
+              issuePostImmediately &&
+              !window.confirm(
+                `Phiếu xuất này sẽ được lưu và ghi sổ ngay. ${issueFefoOverride ? "Bạn đang chọn lô khác gợi ý FEFO, hãy chắc chắn có lý do hợp lệ. " : ""}Tồn kho sẽ đi qua movement ledger. Tiếp tục?`,
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
           <input type="hidden" name="payload" value={issuePayload} />
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -754,6 +855,17 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </div>
             <StatusPill label="Bản nháp" tone="warning" />
           </div>
+
+          <GuardrailChecklist
+            title="Trước khi lưu phiếu xuất"
+            tone="warning"
+            note="FEFO là mặc định cho hàng có HSD. Nếu đổi lô, hãy nhập lý do rõ ràng trước khi ghi sổ."
+            items={[
+              "Phiếu liên kết đúng đơn hoặc đúng lý do xuất.",
+              "Đã kiểm tra lô gợi ý theo FEFO.",
+              "Nếu override FEFO thì có reason trong ghi chú.",
+            ]}
+          />
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <label className="block">
@@ -860,7 +972,6 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               onChange={(event) => setIssuePostImmediately(event.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-[#18352d] focus:ring-[#18352d]"
             />
-            <span>Ghi sổ ngay sau khi lưu</span>
             <span>Ghi sổ ngay sau khi lưu</span>
           </label>
 
@@ -1064,7 +1175,19 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                   <span>{formatCurrency(totalLineValue(receipt.items))}</span>
                 </div>
                 {receipt.status === "draft" && data.permissions.canPostReceipt ? (
-                  <form action={postReceiptAction} className="mt-3">
+                  <form
+                    action={postReceiptAction}
+                    className="mt-3"
+                    onSubmit={(event) => {
+                      if (
+                        !window.confirm(
+                          "Ghi sổ phiếu nhập sẽ đẩy movement vào sổ kho. Hãy chắc chắn kho, item, số lượng, giá vốn và HSD đều đúng. Tiếp tục?",
+                        )
+                      ) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
                     <input type="hidden" name="payload" value={JSON.stringify({ receiptId: receipt.id, receiptNo: receipt.receiptNo })} />
                     <button
                       type="submit"
@@ -1142,7 +1265,19 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                   <span>{formatQuantity(issueTotalQty, issueUnit)}</span>
                 </div>
                 {issue.status === "draft" && data.permissions.canPostIssue ? (
-                    <form action={postIssueAction} className="mt-3">
+                  <form
+                    action={postIssueAction}
+                    className="mt-3"
+                    onSubmit={(event) => {
+                      if (
+                        !window.confirm(
+                          "Ghi sổ phiếu xuất sẽ đẩy movement vào sổ kho. Hãy chắc chắn FEFO, lô chọn và số lượng đều đúng. Tiếp tục?",
+                        )
+                      ) {
+                        event.preventDefault();
+                      }
+                    }}
+                  >
                       <input
                         type="hidden"
                         name="payload"
@@ -1152,12 +1287,12 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                         })}
                       />
                       <button
-                      type="submit"
-                      disabled={postingIssue}
-                      className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {postingIssue ? "Đang ghi sổ..." : "Ghi sổ"}
-                    </button>
+                        type="submit"
+                        disabled={postingIssue}
+                        className="inline-flex rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {postingIssue ? "Đang ghi sổ..." : "Ghi sổ"}
+                      </button>
                   </form>
                 ) : null}
                 </div>
@@ -1195,6 +1330,41 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
           </div>
           <p className="text-sm text-slate-500">{filteredMovements.length} dòng</p>
         </div>
+        {filteredMovements.length > 0 ? (
+          <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-sm font-medium text-slate-900">Hoạt động gần nhất</p>
+            <div className="mt-3 space-y-3">
+              {filteredMovements.slice(0, 5).map((movement) => (
+                <div key={movement.id} className="flex gap-3">
+                  <div className="mt-2 flex flex-col items-center">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#51724f]" />
+                    <span className="min-h-8 w-px flex-1 bg-slate-200" />
+                  </div>
+                  <div className="min-w-0 pb-1">
+                    <p className="text-sm font-medium text-slate-900">
+                      {formatMovementTypeLabel(movement.movementType)} ·{" "}
+                      {itemLookup.get(movement.itemId)?.itemName ?? movement.itemId}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {formatDate(movement.movementAt)} ·{" "}
+                      {movement.quantityDelta >= 0 ? "+" : ""}
+                      {formatQuantity(
+                        movement.quantityDelta,
+                        itemLookup.get(movement.itemId)?.unit ?? "unit",
+                      )}
+                      {movement.lotId ? ` · Lô ${movement.lotId}` : ""}
+                    </p>
+                    {movement.notes ? (
+                      <p className="mt-1 text-xs leading-6 text-slate-400">
+                        {movement.notes}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <div className="mt-5 overflow-hidden rounded-[26px] border border-slate-200">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">

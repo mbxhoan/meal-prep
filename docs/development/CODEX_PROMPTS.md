@@ -7,6 +7,7 @@ Hãy đọc lần lượt:
 - docs/development/BUSINESS_RULES.md
 - docs/development/MASTER_DATA.md
 - docs/development/SCHEMA_SPEC.md
+- docs/TRACKING_MODES_AND_BARCODES.md
 - docs/development/RBAC.md
 
 Sau đó:
@@ -103,3 +104,78 @@ Hãy review code hiện tại theo docs và liệt kê:
 - luôn bảo Codex đọc docs trước
 - luôn yêu cầu migration + types + UI + permission + audit cùng nhau
 - luôn làm theo phase nhỏ
+
+## Prompt 2B — patch foundation sau Phase 0 để khóa kiến trúc tracking/barcode
+Sau khi Phase 0 hiện tại hoàn tất, hãy đọc lại:
+- AGENTS.md
+- docs/development/BUSINESS_RULES.md
+- docs/development/SCHEMA_SPEC.md
+- docs/development/IMPLEMENTATION_PHASES.md
+- docs/development/TRACKING_MODES_AND_BARCODES.md
+
+Mục tiêu của prompt này là **cập nhật nền móng kiến trúc**, không phải build full inventory ngay.
+
+Hãy thực hiện:
+1. review schema/docs hiện tại và bổ sung support cho `tracking_mode` của item: `none`, `lot`, `serial`, `lot_serial`
+2. đảm bảo schema spec / types / validation có chỗ cho:
+   - `items.barcode`, `items.barcode_type`, `items.tracking_mode`, `items.is_expirable`, `items.is_fefo_enabled`, `items.requires_unit_label`, `items.default_shelf_life_days`
+   - `inventory_lots.lot_barcode`
+   - `inventory_movements.serial_id` nullable để sẵn sàng cho phase sau
+   - nếu phù hợp, tạo luôn blueprint hoặc migration non-breaking cho `inventory_serials`
+3. không build serial scan UI, không build full inventory flow ở prompt này
+4. chỉ tạo thay đổi nào **không phá vỡ** code của Phase 0 vừa xong
+5. cập nhật docs liên quan nếu tên cột / enum / table thay đổi
+
+Yêu cầu output:
+- liệt kê migration nào cần thêm
+- liệt kê type/schema nào cần thêm
+- implement phần foundation an toàn, tối thiểu, non-breaking
+- ghi rõ phần nào defer sang Phase 3/4/6
+
+Nguyên tắc:
+- Meal Prep phase đầu vận hành bằng `lot + HSD + FEFO` là chính
+- serial là kiến trúc mở sẵn, chưa ép áp dụng toàn bộ
+- không hardcode giả định rằng mọi item đều serial-tracked
+
+
+## Prompt 2C — build help/docs foundation cho user mới
+Hãy đọc:
+- AGENTS.md
+- docs/development/USER_ONBOARDING_GUIDE.md
+- docs/development/ROLE_BASED_OPERATIONS_SOP.md
+- docs/development/DAILY_OPERATIONS_PLAYBOOK.md
+- docs/development/OPERATIONAL_CHECKLISTS.md
+- docs/development/TROUBLESHOOTING_AND_EXCEPTION_HANDLING.md
+- docs/development/RBAC.md
+
+Sau đó implement một khu vực `Help / SOP / Getting Started` trong app cho người dùng đã đăng nhập.
+Yêu cầu:
+- route và page rõ ràng
+- nội dung có thể đọc từ markdown/constants, tách cấu trúc dễ bảo trì
+- mọi role đã đăng nhập đều xem được
+- thêm helper/empty-state ngắn ở sales và inventory để nhắc rule quan trọng
+- không build chatbot hoặc tour phức tạp ở prompt này
+
+## Prompt 4B — build guided workflows và UI guardrails
+Sau khi có Sales hoặc Inventory core cơ bản, hãy đọc:
+- AGENTS.md
+- docs/development/BUSINESS_RULES.md
+- docs/development/ORDER_PRICING_COST_RULES.md
+- docs/development/INVENTORY_FEFO_RULES.md
+- docs/development/USER_ONBOARDING_GUIDE.md
+- docs/development/ROLE_BASED_OPERATIONS_SOP.md
+- docs/development/DAILY_OPERATIONS_PLAYBOOK.md
+- docs/development/OPERATIONAL_CHECKLISTS.md
+- docs/development/TROUBLESHOOTING_AND_EXCEPTION_HANDLING.md
+
+Sau đó bổ sung guardrails trong UI:
+- confirm dialogs
+- step hints
+- helper text
+- checklists trước khi post/confirm
+- activity timeline nếu đã có dữ liệu log
+
+Nguyên tắc:
+- nhắc user về snapshot giá, movement ledger, FEFO, expiry rules
+- không làm thay đổi business logic gốc
+- implementation phải non-breaking

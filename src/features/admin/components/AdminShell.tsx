@@ -14,6 +14,7 @@ import {
   FaBoxArchive,
   FaChartColumn,
   FaChartLine,
+  FaBookOpen,
   FaClipboardList,
   FaHouse,
   FaListUl,
@@ -75,6 +76,11 @@ const navItems: NavItem[] = [
     label: "Phân quyền",
     icon: FaUserShield,
     permission: "system.user.assign_role",
+  },
+  {
+    href: "/admin/help",
+    label: "Trợ giúp",
+    icon: FaBookOpen,
   },
 ];
 
@@ -220,6 +226,15 @@ function getHeaderConfig(pathname: string): HeaderConfig {
       title: "Phân quyền người dùng theo shop",
       description:
         "Gán vai trò, cửa hàng và hồ sơ nhân viên trong một màn hình duy nhất.",
+    };
+  }
+
+  if (pathname === "/admin/help") {
+    return {
+      eyebrow: "Trợ giúp",
+      title: "Help / SOP / Getting Started",
+      description:
+        "Hướng dẫn bắt đầu, SOP theo vai trò, checklist và cách xử lý lỗi cho mọi user đã đăng nhập.",
     };
   }
 

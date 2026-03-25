@@ -209,3 +209,22 @@ Các config gợi ý:
 - `Master_data` -> item_groups, item_types, units, warehouses
 - `Danh_muc_hang` -> items
 - `Thuc_don` + `Bang_gia` -> menu_items, menu_item_variants, price_books, price_book_items
+
+## Bổ sung cho master item
+Đề xuất thêm các field ở `items`:
+- `sku`
+- `barcode`
+- `barcode_type`
+- `tracking_mode`
+- `is_expirable`
+- `is_fefo_enabled`
+- `requires_unit_label`
+- `default_shelf_life_days`
+
+
+## Ghi chú thêm cho vận hành
+Không nhất thiết phải làm ngay trong Phase 1, nhưng nên chuẩn bị chỗ cho `shop_configs` hoặc cấu hình tương đương để lưu:
+- tên shop hiển thị trên bill
+- chính sách FEFO / expiry warning days
+- text hướng dẫn ngắn trong app nếu sau này muốn cho từng shop tùy chỉnh
+- cờ bật/tắt module help nội bộ

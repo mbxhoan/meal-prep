@@ -3,7 +3,10 @@
 import { useActionState, useMemo, useState } from "react";
 import { formatCurrency } from "@/lib/admin/format";
 import type { ActionState, OrderStatus } from "@/lib/admin/types";
-import { formatOrderStatusLabel } from "@/features/admin/components";
+import {
+  GuardrailChecklist,
+  formatOrderStatusLabel,
+} from "@/features/admin/components";
 import {
   recordSalesPaymentAction,
   refreshSalesOrderPriceAction,
@@ -59,6 +62,7 @@ export function SalesOrderBillActions({
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus>(order.status);
   const [paymentAmount, setPaymentAmount] = useState(String(balanceDue));
   const [paymentNote, setPaymentNote] = useState("");
+  const statusChanged = selectedStatus !== order.status;
 
   return (
     <div className="grid gap-3 xl:grid-cols-3">
@@ -73,7 +77,36 @@ export function SalesOrderBillActions({
           Chỉ áp dụng cho đơn bản nháp. Sau khi gửi hoặc xác nhận, giá trong
           bản chụp sẽ không tự đổi nữa.
         </p>
-        <form action={refreshAction} className="mt-4 space-y-3">
+        <GuardrailChecklist
+          title="Trước khi làm mới"
+          note="Làm mới chỉ dùng cho đơn bản nháp. Sau bước này, dữ liệu dòng đơn sẽ được chụp lại từ bảng giá hiện hành."
+          items={[
+            "Đơn vẫn đang ở trạng thái bản nháp.",
+            "Muốn dùng giá hiện hành thay cho snapshot cũ.",
+            "Đã kiểm tra lại món, biến thể và giảm giá.",
+          ]}
+        />
+        <form
+          action={refreshAction}
+          className="mt-4 space-y-3"
+          onSubmit={(event) => {
+            if (
+              refreshPending ||
+              !canRefreshPrice ||
+              order.status !== "draft"
+            ) {
+              return;
+            }
+
+            if (
+              !window.confirm(
+                "Làm mới giá sẽ chụp lại snapshot theo bảng giá hiện hành cho đơn bản nháp. Tiếp tục?",
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
           <input
             type="hidden"
             name="payload"
@@ -114,16 +147,44 @@ export function SalesOrderBillActions({
         <h3 className="mt-1 text-lg font-semibold text-slate-900">
           Đổi trạng thái đơn
         </h3>
-        <form action={statusAction} className="mt-4 space-y-3">
+        <GuardrailChecklist
+          title="Trước khi đổi trạng thái"
+          tone="warning"
+          note="Nếu chuyển sang đã gửi / đã xác nhận / hoàn tất, giá lịch sử sẽ khóa theo snapshot."
+          items={[
+            "Đã kiểm tra bill và các dòng đơn.",
+            "Biết rõ trạng thái mới sẽ khóa hay mở gì.",
+            "Nếu chuyển sang đã gửi hoặc đã xác nhận thì snapshot giá sẽ bị khóa.",
+          ]}
+        />
+        <form
+          action={statusAction}
+          className="mt-4 space-y-3"
+          onSubmit={(event) => {
+            if (statusPending || !canUpdateStatus || !statusChanged) {
+              return;
+            }
+
+            const label = formatOrderStatusLabel(selectedStatus);
+
+            if (
+              !window.confirm(
+                `Xác nhận đổi trạng thái đơn sang "${label}"? Nếu chuyển sang đã gửi hoặc đã xác nhận, giá lịch sử sẽ khóa theo snapshot.`,
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
           <input
             type="hidden"
             name="payload"
             value={JSON.stringify({ orderId: order.id, status: selectedStatus })}
           />
           <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-700">
-                Trạng thái
-              </span>
+            <span className="mb-2 block text-sm font-medium text-slate-700">
+              Trạng thái
+            </span>
             <select
               value={selectedStatus}
               onChange={(event) => setSelectedStatus(event.target.value as OrderStatus)}
@@ -168,6 +229,15 @@ export function SalesOrderBillActions({
         <h3 className="mt-1 text-lg font-semibold text-slate-900">
           Ghi nhận thanh toán
         </h3>
+        <GuardrailChecklist
+          title="Trước khi ghi nhận"
+          note="Thanh toán chỉ cộng vào lịch sử thanh toán, không làm thay đổi giá của dòng đơn."
+          items={[
+            "Đã kiểm tra số tiền còn phải thu.",
+            "Đã chọn đúng phương thức thanh toán.",
+            "Thanh toán chỉ cộng lịch sử, không đổi giá đơn.",
+          ]}
+        />
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
           <div className="flex items-center justify-between gap-3">
             <span>Đã thanh toán</span>
@@ -180,7 +250,23 @@ export function SalesOrderBillActions({
             </span>
           </div>
         </div>
-        <form action={paymentAction} className="mt-4 space-y-3">
+        <form
+          action={paymentAction}
+          className="mt-4 space-y-3"
+          onSubmit={(event) => {
+            if (paymentPending || !canRecordPayment) {
+              return;
+            }
+
+            if (
+              !window.confirm(
+                "Xác nhận ghi nhận thanh toán cho đơn này? Thao tác này sẽ cập nhật lịch sử thanh toán nhưng không đổi snapshot giá.",
+              )
+            ) {
+              event.preventDefault();
+            }
+          }}
+        >
           <input
             type="hidden"
             name="payload"

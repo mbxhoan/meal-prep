@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FaArrowRight } from "react-icons/fa6";
+import { FaArrowRight, FaCircleInfo } from "react-icons/fa6";
 import {
   ExportExcelButton,
   StatusPill,
@@ -45,6 +45,41 @@ export default async function AdminOrdersPage() {
     trạng_thái: formatOrderStatusLabel(order.status),
   }));
 
+  if (orders.length === 0) {
+    return (
+      <div className="space-y-4 pb-8">
+        <section className="rounded-[24px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+            Đơn hàng
+          </p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900">
+            Chưa có đơn hàng để hiển thị
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Đơn đã gửi hoặc đã chốt dùng snapshot giá. Nếu cần bắt đầu, hãy tạo
+            đơn mới thay vì refresh lại giá trên bill cũ.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/orders/new"
+              className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              <FaArrowRight className="text-xs" />
+              <span>Tạo đơn mới</span>
+            </Link>
+            <Link
+              href="/admin/help#bat-dau-nhanh"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              <FaCircleInfo className="text-xs" />
+              <span>Xem hướng dẫn</span>
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 pb-8">
       <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
@@ -56,6 +91,18 @@ export default async function AdminOrdersPage() {
             <h2 className="mt-1 text-lg font-semibold text-slate-900">
               Danh sách đơn hàng và lời lãi theo từng đơn
             </h2>
+            <div className="mt-3 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-700">
+                  <FaCircleInfo className="text-sm" />
+                </div>
+                <p className="text-sm leading-6 text-sky-900/85">
+                  Đơn đã gửi hoặc đã chốt dùng snapshot giá. Không refresh giá lịch
+                  sử bằng bảng giá hiện tại, nếu cần sửa hãy đi theo flow override
+                  có log.
+                </p>
+              </div>
+            </div>
           </div>
           <ExportExcelButton
             filename={`don-hang-${new Date().toISOString().slice(0, 10)}`}

@@ -31,3 +31,16 @@ Phần mềm mới phải giữ được các ưu điểm đó, đồng thời g
 - audit lịch sử thao tác
 - phân quyền rõ
 - quy trình xác nhận đơn / chốt giá / xuất FEFO
+
+
+## Tài liệu vận hành cho user mới
+Các file dưới đây dành cho người dùng vận hành, QA nội bộ và team onboarding:
+- `USER_ONBOARDING_GUIDE.md`
+- `ROLE_BASED_OPERATIONS_SOP.md`
+- `DAILY_OPERATIONS_PLAYBOOK.md`
+- `OPERATIONAL_CHECKLISTS.md`
+- `TROUBLESHOOTING_AND_EXCEPTION_HANDLING.md`
+
+## Prompt bổ sung cho UX vận hành
+- `PROMPT_2C_USER_OPERATIONS_DOCS_AND_HELP.md`
+- `PROMPT_4B_USER_GUIDED_WORKFLOWS_AND_GUARDRAILS.md`

@@ -114,3 +114,18 @@ Bao gồm:
 - Mỗi phase ra production được, không đợi hoàn hảo
 - Không build khuyến mãi phức tạp trước khi order + stock ổn định
 - Không build actual costing trước khi movement + lots chắc chắn
+
+## Phase 2A — User onboarding & operational UX
+Mục tiêu:
+- giúp user mới thao tác đúng trong app
+- đưa business rule quan trọng ra gần màn hình thao tác
+
+Bao gồm:
+- Help / SOP / Getting Started pages
+- helper text / empty states cho sales và inventory
+- checklist / confirm warnings ở các bước quan trọng
+- troubleshooting pages nội bộ
+
+Lưu ý:
+- phase này có thể triển khai song song hoặc ngay sau Sales/Inventory core cơ bản
+- không thay đổi logic nền, chỉ tăng khả năng vận hành an toàn

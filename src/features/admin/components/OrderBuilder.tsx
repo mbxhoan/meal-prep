@@ -4,7 +4,11 @@ import { useActionState, useMemo, useState } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa6";
 import { createOrderAction } from "@/lib/admin/actions";
 import { formatCurrency, roundCurrency } from "@/lib/admin/format";
-import { formatOrderStatusLabel } from "@/features/admin/components/StatusPill";
+import {
+  GuardrailChecklist,
+  GuidedWorkflowCard,
+  formatOrderStatusLabel,
+} from "@/features/admin/components";
 import type { MenuProduct, MenuVariant, OrderStatus, SalesChannel } from "@/lib/admin/types";
 
 const initialState = {
@@ -86,9 +90,35 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
   );
   const grossProfit = roundCurrency(totalRevenue - totalCogs);
   const grossMargin = totalRevenue > 0 ? grossProfit / totalRevenue : 0;
+  const orderIsFrozen = status !== "draft";
 
   return (
-    <form action={action} className="space-y-6">
+    <form
+      action={action}
+      className="space-y-6"
+      onSubmit={(event) => {
+        if (
+          orderIsFrozen &&
+          !window.confirm(
+            "Đơn đang được tạo ở trạng thái đã gửi hoặc đã xác nhận. Snapshot giá sẽ được khóa theo dữ liệu hiện hành. Tiếp tục?",
+          )
+        ) {
+          event.preventDefault();
+        }
+      }}
+    >
+      <GuidedWorkflowCard
+        eyebrow="Quy trình tạo đơn"
+        title="Làm đúng 4 bước để tránh sai giá"
+        description="Màn tạo đơn đã chụp snapshot giá ngay khi lưu. Hãy kiểm tra kỹ khách, món, giá và trạng thái trước khi bấm lưu."
+        steps={[
+          "Chọn khách hàng, địa chỉ và kênh bán.",
+          "Thêm món, số lượng và kiểm tra giá bán từng dòng.",
+          "Rà giảm giá, phí giao hàng, ghi chú và biên lợi nhuận.",
+          "Nếu không còn là bản nháp, xác nhận chấp nhận khóa snapshot.",
+        ]}
+      />
+
       <input
         type="hidden"
         name="payload"
@@ -185,6 +215,11 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
               </label>
             </div>
 
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Dữ liệu đơn mới sẽ lưu snapshot giá và giá vốn tại thời điểm tạo,
+              không tự kéo lại từ bảng giá sau này.
+            </p>
+
             <label className="mt-4 block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
                 Ghi chú
@@ -197,6 +232,18 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                 placeholder="Ví dụ: giao trước 12h, không hành..."
               />
             </label>
+
+            <div className="mt-4">
+              <GuardrailChecklist
+                title="Trước khi tạo đơn"
+                note="Đơn mới sẽ chụp snapshot giá ngay khi lưu. Nếu chọn trạng thái khác bản nháp, snapshot sẽ bị khóa sớm hơn."
+                items={[
+                  "Đã chọn đúng khách hàng và kênh bán.",
+                  "Đã kiểm tra món, biến thể, số lượng và giá bán.",
+                  "Đã kiểm tra giảm giá, phí giao hàng và ghi chú.",
+                ]}
+              />
+            </div>
           </section>
 
           <section className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
@@ -461,6 +508,16 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                   </span>
                 </div>
               </div>
+              <GuardrailChecklist
+                title="Checklist trước khi lưu"
+                tone="warning"
+                note="Nếu đơn không còn ở trạng thái nháp, giá lịch sử sẽ khóa theo snapshot sau khi lưu."
+                items={[
+                  "Khách hàng, món và số lượng đã đúng.",
+                  "Giá bán, giảm giá và phí giao hàng đã được rà.",
+                  "Đã chấp nhận việc khóa snapshot nếu chọn trạng thái gửi / xác nhận.",
+                ]}
+              />
               <button
                 type="submit"
                 disabled={pending || lines.length === 0}

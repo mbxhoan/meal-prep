@@ -280,30 +280,44 @@ export function SalesOrderBill({
         <h2 className="mt-1 text-lg font-semibold text-slate-900">
           Lịch sử chốt đơn
         </h2>
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          Dòng thời gian này đọc từ <code>sales_order_status_logs</code> và giữ nguyên dấu vết thay đổi.
+        </p>
+        <div className="mt-5 space-y-3">
           {order.statusLogs.length > 0 ? (
-            order.statusLogs.map((log) => (
-              <div
-                key={log.id}
-                className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-medium text-slate-900">{log.action}</p>
-                  <StatusPill
-                    label={formatOrderStatusLabel(log.toStatus as OrderStatus)}
-                    tone={statusTone(log.toStatus as OrderStatus)}
-                  />
+            order.statusLogs.map((log, index) => (
+              <div key={log.id} className="flex gap-3">
+                <div className="mt-2 flex flex-col items-center">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#51724f]" />
+                  {index !== order.statusLogs.length - 1 ? (
+                    <span className="min-h-16 w-px flex-1 bg-slate-200" />
+                  ) : null}
                 </div>
-                <p className="mt-2 text-sm text-slate-500">
-                  {log.fromStatus ?? "không có"} → {log.toStatus}
-                </p>
-                <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
-                  {formatDate(log.createdAt)}
-                </p>
+                <div className="min-w-0 flex-1 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-medium text-slate-900">{log.action}</p>
+                    <StatusPill
+                      label={formatOrderStatusLabel(log.toStatus as OrderStatus)}
+                      tone={statusTone(log.toStatus as OrderStatus)}
+                    />
+                  </div>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {log.fromStatus ?? "không có"} → {log.toStatus}
+                  </p>
+                  {log.note ? (
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {log.note}
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-xs uppercase tracking-[0.16em] text-slate-400">
+                    {formatDate(log.createdAt)}
+                    {log.changedBy ? ` · ${log.changedBy}` : ""}
+                  </p>
+                </div>
               </div>
             ))
           ) : (
-            <p className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500 md:col-span-2 xl:col-span-3">
+            <p className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
               Chưa có nhật ký trạng thái cho đơn này.
             </p>
           )}
