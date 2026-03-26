@@ -45,11 +45,9 @@ export function MenuCatalog({ products }: { products: MenuProduct[] }) {
               {products.length} món
             </p>
             <h2 className="mt-1 text-lg font-semibold text-slate-900">
-              Thực đơn, giá bán và hồ sơ giá vốn
+              Thực đơn, giá và vốn
             </h2>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
-              Mỗi món hiển thị theo dạng danh sách mặc định để tối ưu diện tích.
-            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-500">Mặc định là danh sách.</p>
           </div>
           <div className="flex items-center gap-2">
             <StatusPill

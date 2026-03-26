@@ -44,26 +44,16 @@ export const translations = {
       "Smoky Paprika Rub": "Smoky Paprika Rub",
     },
     descriptions: {
-      "Marinated Chicken":
-        "Enjoy our perfectly marinated meats, packed with protein and gourmet flavor. Designed for athletes, health enthusiasts, and busy professionals who demand maximum taste with zero prep time.",
-      "Premium Beef":
-        "Juicy cuts of marbled beef, aged to perfection and pre-seasoned. Experience restaurant-quality steak from the comfort of your home.",
-      "BBQ Ribs":
-        "Slow-cooked, fall-off-the-bone tender pork ribs glazed in our signature smoky, sweet, and tangy BBQ sauce.",
-      "Citrus Salmon":
-        "Fresh, sustainably sourced salmon fillets marinated in zesty citrus and dill. A light, nutritious option packed with Omega-3s.",
-      "Garlic Herb Chicken":
-        "Tender chicken breast infused with aromatic garlic and a medley of fresh herbs. A classic flavor that never disappoints.",
-      "Wagyu Steak":
-        "Premium A5-grade Wagyu beef, delicately seasoned to let the natural marbling shine. A luxurious dining experience at home.",
-      "Honey Glazed Pork":
-        "Succulent pork loin coated in a sweet honey glaze with hints of ginger and soy. A family favorite for any occasion.",
-      "Teriyaki Shrimp":
-        "Plump, juicy shrimp marinated in a classic Japanese teriyaki sauce. Quick to cook, bursting with umami flavor.",
-      "Signature Spice Blend":
-        "Our house-made blend of 12 premium spices, perfect for seasoning any protein. No preservatives, all natural.",
-      "Smoky Paprika Rub":
-        "A bold, smoky dry rub featuring Hungarian paprika, cumin, and brown sugar. Ideal for grilling and roasting.",
+      "Marinated Chicken": "Marinated chicken, high in protein.",
+      "Premium Beef": "Tender beef, rich flavor.",
+      "BBQ Ribs": "Slow BBQ ribs, soft and smoky.",
+      "Citrus Salmon": "Salmon with citrus, light and fresh.",
+      "Garlic Herb Chicken": "Garlic herb chicken, easy to eat.",
+      "Wagyu Steak": "Premium Wagyu beef.",
+      "Honey Glazed Pork": "Pork with sweet honey glaze.",
+      "Teriyaki Shrimp": "Teriyaki shrimp, quick to cook.",
+      "Signature Spice Blend": "Ready-to-use spice blend.",
+      "Smoky Paprika Rub": "Smoky paprika rub, bold flavor.",
     },
 
     // Benefits
@@ -101,30 +91,30 @@ export const translations = {
 
     // About page
     about: {
-      title: "About Us",
-      subtitle: "From Our Kitchen to Your Table",
-      story: "At Meal Prep, we believe that healthy eating shouldn't mean sacrificing flavor or spending hours in the kitchen. Founded in 2024, our mission is to make premium, pre-marinated meals accessible to everyone.",
-      mission: "Our Mission",
-      missionText: "To revolutionize the way people eat by providing restaurant-quality, pre-marinated proteins that are ready to cook in minutes. We source only the finest ingredients and craft unique flavor profiles that make every meal an experience.",
+      title: "About us",
+      subtitle: "Good food, made easy.",
+      story: "Meal Prep makes pre-marinated meals that are quick and tasty.",
+      mission: "Mission",
+      missionText: "Make dinner faster without losing quality.",
       values: [
-        { title: "Fresh Ingredients", desc: "We source premium, locally-grown ingredients and never use artificial preservatives." },
-        { title: "Nutritional Balance", desc: "Every product is carefully designed to provide optimal macro and micronutrients." },
-        { title: "Zero Waste", desc: "Our packaging is 100% recyclable and we minimize food waste across our supply chain." },
-        { title: "Convenience", desc: "From fridge to plate in under 15 minutes. Meal prep without the prep." },
+        { title: "Fresh", desc: "Clear ingredients." },
+        { title: "Balanced", desc: "Easy, still filling." },
+        { title: "Less waste", desc: "Simple packs, less waste." },
+        { title: "Fast", desc: "Ready in minutes." },
       ],
     },
 
     // Menu page
     menu: {
-      title: "Our Menu",
-      subtitle: "Discover our complete collection of premium meal prep products",
-      viewDetails: "View Details",
+      title: "Menu",
+      subtitle: "See current items and prices.",
+      viewDetails: "View",
     },
 
     // Product detail
     productDetail: {
-      addToCart: "Add to Cart",
-      ingredients: "Premium Ingredients",
+      addToCart: "Add to cart",
+      ingredients: "Ingredients",
     },
   },
   vi: {
@@ -170,26 +160,16 @@ export const translations = {
       "Smoky Paprika Rub": "Gia Vị Paprika Hun Khói",
     },
     descriptions: {
-      "Marinated Chicken":
-        "Thưởng thức phần thịt được tẩm ướp hoàn hảo, dồi dào protein và hương vị hảo hạng. Dành cho những người sành ăn muốn tối đa hoá hương vị mà không tốn công chuẩn bị.",
-      "Premium Beef":
-        "Những thớ thịt bò vân mỡ mọng nước, được ủ đến độ hoàn hảo và tẩm ướp sẵn. Trải nghiệm món bít tết chuẩn nhà hàng ngay tại nhà.",
-      "BBQ Ribs":
-        "Sườn heo nướng chậm, mềm tơi róc xương, phủ lớp nước xốt BBQ đặc trưng mang hương vị đậm đà, chua ngọt.",
-      "Citrus Salmon":
-        "Cá hồi tươi, khai thác bền vững được tẩm ướp với cam chanh và thì là. Lựa chọn thanh đạm, bổ dưỡng dồi dào Omega-3.",
-      "Garlic Herb Chicken":
-        "Ức gà mềm mại thấm đẫm hương tỏi thơm nồng và các loại thảo mộc tươi. Hương vị cổ điển không bao giờ làm bạn thất vọng.",
-      "Wagyu Steak":
-        "Thịt bò Wagyu hạng A5 cao cấp, nêm nếm tinh tế để tôn lên vân mỡ tự nhiên. Trải nghiệm ẩm thực sang trọng tại nhà.",
-      "Honey Glazed Pork":
-        "Thăn heo mọng nước phủ lớp mật ong ngọt ngào kết hợp gừng và nước tương. Món ăn yêu thích của cả gia đình.",
-      "Teriyaki Shrimp":
-        "Tôm tươi căng mọng ướp nước sốt teriyaki Nhật Bản truyền thống. Nấu nhanh, tràn đầy hương vị umami.",
-      "Signature Spice Blend":
-        "Hỗn hợp 12 loại gia vị cao cấp tự pha chế, hoàn hảo cho mọi loại thịt. Không chất bảo quản, hoàn toàn tự nhiên.",
-      "Smoky Paprika Rub":
-        "Gia vị khô đậm đà với paprika Hungary, thì là Ai Cập và đường nâu. Lý tưởng cho nướng và quay.",
+      "Marinated Chicken": "Ức gà ướp, giàu protein.",
+      "Premium Beef": "Bò mềm, đậm vị.",
+      "BBQ Ribs": "Sườn BBQ mềm, thơm.",
+      "Citrus Salmon": "Cá hồi cam chanh, nhẹ vị.",
+      "Garlic Herb Chicken": "Gà tỏi thảo mộc, dễ ăn.",
+      "Wagyu Steak": "Bò Wagyu cao cấp.",
+      "Honey Glazed Pork": "Heo mật ong ngọt mặn.",
+      "Teriyaki Shrimp": "Tôm teriyaki, nấu nhanh.",
+      "Signature Spice Blend": "Gia vị trộn sẵn, dễ dùng.",
+      "Smoky Paprika Rub": "Paprika hun khói đậm vị.",
     },
 
     // Benefits
@@ -227,30 +207,30 @@ export const translations = {
 
     // About page
     about: {
-      title: "Về Chúng Tôi",
-      subtitle: "Từ Bếp Của Chúng Tôi Đến Bàn Ăn Của Bạn",
-      story: "Tại Meal Prep, chúng tôi tin rằng ăn uống lành mạnh không có nghĩa là phải hy sinh hương vị hay dành hàng giờ trong bếp. Được thành lập năm 2024, sứ mệnh của chúng tôi là mang những bữa ăn cao cấp, được tẩm ướp sẵn đến với mọi người.",
-      mission: "Sứ Mệnh",
-      missionText: "Cách mạng hóa cách mọi người ăn uống bằng cách cung cấp thịt ướp sẵn chất lượng nhà hàng, sẵn sàng nấu trong vài phút. Chúng tôi chỉ sử dụng nguyên liệu tốt nhất và tạo ra những hương vị độc đáo khiến mỗi bữa ăn trở thành một trải nghiệm.",
+      title: "Về chúng tôi",
+      subtitle: "Món ngon, làm sẵn.",
+      story: "Meal Prep làm món ướp sẵn, dễ nấu và vẫn ngon.",
+      mission: "Mục tiêu",
+      missionText: "Giúp bữa ăn nhanh hơn mà không mất chất lượng.",
       values: [
-        { title: "Nguyên Liệu Tươi", desc: "Chúng tôi sử dụng nguyên liệu cao cấp, trồng tại địa phương và không bao giờ dùng chất bảo quản nhân tạo." },
-        { title: "Cân Bằng Dinh Dưỡng", desc: "Mỗi sản phẩm được thiết kế cẩn thận để cung cấp lượng dinh dưỡng vĩ mô và vi mô tối ưu." },
-        { title: "Không Lãng Phí", desc: "Bao bì của chúng tôi có thể tái chế 100% và chúng tôi giảm thiểu lãng phí thực phẩm trong chuỗi cung ứng." },
-        { title: "Tiện Lợi", desc: "Từ tủ lạnh đến bàn ăn chỉ trong 15 phút. Meal prep không cần prep." },
+        { title: "Tươi", desc: "Nguyên liệu rõ nguồn gốc." },
+        { title: "Cân bằng", desc: "Dễ ăn, đủ chất." },
+        { title: "Ít lãng phí", desc: "Đóng gói gọn, dùng hết." },
+        { title: "Nhanh", desc: "Chuẩn bị trong vài phút." },
       ],
     },
 
     // Menu page
     menu: {
-      title: "Thực Đơn",
-      subtitle: "Khám phá bộ sưu tập đầy đủ các sản phẩm meal prep cao cấp của chúng tôi",
-      viewDetails: "Xem Chi Tiết",
+      title: "Thực đơn",
+      subtitle: "Xem món bán và giá hiện hành.",
+      viewDetails: "Xem",
     },
 
     // Product detail
     productDetail: {
-      addToCart: "Thêm Vào Giỏ",
-      ingredients: "Nguyên Liệu Cao Cấp",
+      addToCart: "Thêm vào giỏ",
+      ingredients: "Thành phần",
     },
   },
 } as const;

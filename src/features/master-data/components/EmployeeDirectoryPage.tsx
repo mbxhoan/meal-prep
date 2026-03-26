@@ -75,9 +75,8 @@ export async function EmployeeDirectoryPage({
               Nhân viên
             </h1>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              Hồ sơ nhân sự liên kết shop và quyền truy cập. Nếu chưa có hồ sơ
-              `public.employees`, hệ thống sẽ hiển thị danh sách nhân sự nguồn
-              từ Excel để bạn đối chiếu.
+              Hồ sơ nhân sự của shop. Nếu chưa có `public.employees`, sẽ hiện
+              dữ liệu nguồn từ Excel.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -156,9 +155,8 @@ export async function EmployeeDirectoryPage({
             </h2>
           </div>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            `public.employees` chưa có hồ sơ liên kết user nên chưa thể hiện ở
-            màn business schema. Danh sách dưới đây là nguồn nhân sự đã đọc từ
-            Excel để bạn đối chiếu và gán user sau.
+            `public.employees` chưa có dữ liệu. Danh sách dưới đây là nguồn từ
+            Excel để đối chiếu.
           </p>
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">

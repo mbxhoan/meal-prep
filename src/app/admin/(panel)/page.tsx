@@ -51,25 +51,25 @@ export default async function AdminDashboardPage() {
         <MetricCard
           label="Doanh thu 30 ngày"
           value={formatCurrency(snapshot.revenue30d)}
-          hint="Đã loại trừ đơn bản nháp và đã hủy."
+          hint="Chỉ đơn đã chốt."
           icon={<FaMoneyBillTrendUp />}
         />
         <MetricCard
           label="Lợi nhuận gộp 30 ngày"
           value={formatCurrency(snapshot.profit30d)}
-          hint={`Biên lợi nhuận hiện tại ${formatPercent(snapshot.grossMargin30d)} trên doanh thu đã chốt.`}
+          hint={`Biên ${formatPercent(snapshot.grossMargin30d)}.`}
           icon={<FaClipboardList />}
         />
         <MetricCard
           label="Món đang bán"
           value={`${snapshot.menuCount} món`}
-          hint="Số món đang bán trong danh mục quản trị."
+          hint="Món đang mở bán."
           icon={<FaUtensils />}
         />
         <MetricCard
           label="Tồn thấp"
           value={`${snapshot.lowStockCount} nguyên liệu`}
-          hint={`${snapshot.openOrders} đơn đang mở cần theo dõi tồn kho trước khi xác nhận.`}
+          hint={`${snapshot.openOrders} đơn chờ xử lý.`}
           icon={<FaBoxArchive />}
         />
       </section>
@@ -81,9 +81,7 @@ export default async function AdminDashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
                 Đơn gần nhất
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-900">
-                Đơn gần nhất và lợi nhuận theo đơn
-              </h2>
+              <h2 className="mt-1 text-lg font-semibold text-slate-900">Đơn gần nhất</h2>
             </div>
             <div className="flex items-center gap-2">
               <ExportExcelButton
@@ -104,7 +102,7 @@ export default async function AdminDashboardPage() {
                 href="/admin/orders"
                 className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
               >
-                Xem tất cả
+                Xem đơn
               </Link>
             </div>
           </div>
@@ -160,9 +158,7 @@ export default async function AdminDashboardPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
                   Tồn thấp
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-900">
-                  Ưu tiên nhập thêm
-                </h2>
+                <h2 className="mt-1 text-lg font-semibold text-slate-900">Cần nhập</h2>
               </div>
               <Link
                 href="/admin/inventory"
@@ -204,9 +200,7 @@ export default async function AdminDashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
               Bán chạy
             </p>
-            <h2 className="mt-1 text-lg font-semibold">
-              Mặt hàng mang nhiều doanh thu nhất
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold">Mặt hàng bán tốt</h2>
             <div className="mt-5 space-y-4">
               {snapshot.bestSellers.map((item) => (
                 <div

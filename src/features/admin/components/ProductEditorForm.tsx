@@ -824,14 +824,13 @@ export function ProductEditorForm({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Bộ ảnh món
+                  Bộ ảnh
                 </p>
                 <h2 className="mt-2 text-lg font-semibold text-slate-900">
-                  Tối đa 8 ảnh, 1 ảnh đại diện
+                  Tối đa 8 ảnh
                 </h2>
-                <p className="mt-3 text-sm leading-7 text-slate-500">
-                  Ảnh đại diện sẽ dùng cho trang thực đơn và trang chi tiết.
-                  Các ảnh còn lại là gallery tham khảo cho món.
+                <p className="mt-3 text-sm leading-6 text-slate-500">
+                  Ảnh đại diện dùng cho menu và trang chi tiết.
                 </p>
               </div>
               <button
@@ -869,7 +868,7 @@ export function ProductEditorForm({
                       }
                       className="rounded-full border border-[#18352d]/20 bg-white px-4 py-2 text-xs font-medium text-[#18352d] transition hover:border-[#18352d]/40 hover:bg-[#18352d]/5 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Đặt làm ảnh đại diện
+                      Ảnh đại diện
                     </button>
                   </div>
                   <div className="mt-4">
@@ -885,12 +884,12 @@ export function ProductEditorForm({
                       pathPrefix={`products/${product.id}/images`}
                       title={`Ảnh món ${index + 1}`}
                       label="URL ảnh"
-                      emptyText="Chưa có ảnh cho slot này"
-                      uploadLabel="Tải ảnh lên Supabase Storage"
+                      emptyText="Chưa có ảnh"
+                      uploadLabel="Upload ảnh"
                       helpText={
                         <>
-                          Dùng bucket <code>product-media</code>. Bạn có thể
-                          dán URL bất kỳ hoặc upload trực tiếp.
+                          Dùng bucket <code>product-media</code>. Dán URL hoặc
+                          upload trực tiếp.
                         </>
                       }
                     />
@@ -904,21 +903,16 @@ export function ProductEditorForm({
             <p className="text-xs uppercase tracking-[0.22em] text-white/45">
               Luồng lưu
             </p>
-            <h2 className="mt-3 text-lg font-semibold">
-              Lưu thực đơn + hồ sơ chi phí
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-white/70">
-              Khi bạn lưu, hệ thống sẽ ghi vào <code>products</code>,{" "}
-              <code>product_variants</code> và <code>recipe_components</code>. Khi
-              tạo đơn mới, trigger của Supabase sẽ dùng các giá trị này để tính
-              giá vốn và lợi nhuận gộp tự động.
+            <h2 className="mt-3 text-lg font-semibold">Lưu</h2>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              Lưu xong, hệ thống tự tính giá vốn và lãi.
             </p>
             <button
               type="submit"
               disabled={pending}
               className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-medium text-[#18352d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {pending ? "Đang lưu..." : "Lưu thực đơn"}
+              {pending ? "Đang lưu..." : "Lưu"}
             </button>
             {state.status !== "idle" ? (
               <p

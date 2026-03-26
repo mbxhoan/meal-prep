@@ -96,8 +96,8 @@ export function HelpHub() {
     <div className="space-y-4 pb-8">
       <PageHeader
         eyebrow="Trợ giúp"
-        title="Trợ giúp / SOP / Bắt đầu nhanh"
-        description="Trang này gom hướng dẫn bắt đầu, SOP theo vai trò, playbook hàng ngày, checklist và cách xử lý lỗi thường gặp. Nội dung dùng chung cho mọi user đã đăng nhập."
+        title="Trợ giúp / SOP"
+        description="Bắt đầu nhanh, SOP, checklist và lỗi thường gặp."
         action={
           <Link
             href="/admin"
@@ -118,7 +118,7 @@ export function HelpHub() {
             </p>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            4 bước đầu tiên để user mới không thao tác sai shop, sai giá hoặc sai kho.
+            4 bước đầu cho user mới.
           </p>
         </div>
         <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
@@ -129,7 +129,7 @@ export function HelpHub() {
             </p>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Snapshot giá, movement ledger, FEFO và audit log là các rule không được bỏ qua.
+            Giữ snapshot, FEFO và log.
           </p>
         </div>
         <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
@@ -140,7 +140,7 @@ export function HelpHub() {
             </p>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Có checklist trước khi gửi bill, post phiếu nhập, post phiếu xuất và chốt ngày.
+            Rà nhanh trước khi chốt.
           </p>
         </div>
       </section>
@@ -168,8 +168,8 @@ export function HelpHub() {
       <SectionCard
         id="bat-dau-nhanh"
         eyebrow="Bắt đầu nhanh"
-        title="30 phút đầu tiên cho user mới"
-        description="Đi theo trình tự này để tránh nhập sai shop, sai giá hoặc bỏ sót cảnh báo đầu ngày."
+        title="30 phút đầu"
+        description="Làm theo thứ tự để khỏi sai."
       >
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {helpQuickStartSteps.map((step, index) => (
@@ -198,8 +198,8 @@ export function HelpHub() {
       <SectionCard
         id="quy-tac"
         eyebrow="Quy tắc nền"
-        title="Các rule phải nhớ"
-        description="Đây là những rule nền để dữ liệu lịch sử không tự nhảy theo master hiện tại."
+        title="Rule chính"
+        description="Các rule nền cần nhớ."
       >
         <div className="grid gap-3 lg:grid-cols-2">
           {helpGuardrails.map((rule) => (
@@ -215,8 +215,8 @@ export function HelpHub() {
       <SectionCard
         id="sop-vai-tro"
         eyebrow="Theo vai trò"
-        title="SOP theo vai trò"
-        description="Mỗi role có phạm vi khác nhau. User mới nên đọc đúng phần của mình để không chồng chéo quyền."
+        title="Theo vai trò"
+        description="Mỗi role làm phần việc của mình."
       >
         <div className="grid gap-4 xl:grid-cols-3">
           {helpRoleGuides.map((role) => (
@@ -259,8 +259,8 @@ export function HelpHub() {
       <SectionCard
         id="daily-playbook"
         eyebrow="Vận hành hằng ngày"
-        title="Quy trình vận hành hằng ngày"
-        description="Các bước này bám theo nhịp làm việc thực tế của shop, từ mở ngày cho đến chốt cuối ngày."
+        title="Hằng ngày"
+        description="Cách làm trong ngày."
       >
         <div className="grid gap-3 xl:grid-cols-2">
           {helpDailyPlaybook.map((section) => (
@@ -281,8 +281,8 @@ export function HelpHub() {
       <SectionCard
         id="checklist"
         eyebrow="Checklist"
-        title="Checklist trước khi chốt thao tác"
-        description="Checklist ngắn để user mới tự kiểm tra trước khi gửi bill, post phiếu hoặc chốt ngày."
+        title="Checklist"
+        description="Rà nhanh trước khi chốt."
       >
         <div className="grid gap-3 xl:grid-cols-2">
           {helpChecklists.map((section) => (
@@ -302,8 +302,8 @@ export function HelpHub() {
       <SectionCard
         id="xu-ly-loi"
         eyebrow="Xử lý lỗi"
-        title="Xử lý lỗi và ngoại lệ"
-        description="Cách xử lý đúng là đối chiếu dữ liệu, giữ snapshot lịch sử và không vá tay vào master hoặc tồn."
+        title="Lỗi và ngoại lệ"
+        description="Đối chiếu rồi giữ lịch sử."
       >
         <div className="grid gap-4 xl:grid-cols-2">
           {helpTroubleshootingItems.map((item) => (
@@ -348,8 +348,8 @@ export function HelpHub() {
       <SectionCard
         id="rbac"
         eyebrow="Phân quyền"
-        title="Phân quyền và phạm vi truy cập"
-        description="Toàn bộ help area này mở cho mọi user đã đăng nhập, nhưng nghiệp vụ phía sau vẫn đi theo RBAC của từng shop."
+        title="Phân quyền"
+        description="Mở cho mọi user đã đăng nhập."
       >
         <div className="grid gap-3 xl:grid-cols-3">
           {helpRbacSummary.map((item) => (

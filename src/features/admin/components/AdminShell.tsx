@@ -116,58 +116,52 @@ function getHeaderConfig(pathname: string): HeaderConfig {
   if (pathname === "/admin") {
     return {
       eyebrow: "Tổng quan",
-      title: "Tồn kho, doanh thu và lợi nhuận",
-      description:
-        "Doanh thu, lợi nhuận gộp, món bán và tồn thấp trong cùng một nơi.",
+      title: "Doanh thu, lợi nhuận, tồn kho",
+      description: "Xem số chính trong một màn.",
       action: {
         href: "/admin/orders/new",
-        label: "Tạo đơn mới",
+        label: "Tạo đơn",
       },
     };
   }
 
   if (pathname.startsWith("/admin/menu/")) {
     return {
-      eyebrow: "Biên tập thực đơn",
-      title: "Chỉnh món và công thức nguyên liệu",
-      description:
-        "Cập nhật ảnh đại diện, thông tin hiển thị, giá bán từng biến thể và hồ sơ giá vốn.",
+      eyebrow: "Thực đơn",
+      title: "Sửa món",
+      description: "Ảnh, giá bán, giá vốn.",
     };
   }
 
   if (pathname === "/admin/menu") {
     return {
       eyebrow: "Thực đơn",
-      title: "Ảnh đại diện, giá bán và hồ sơ giá vốn",
-      description:
-        "Chỉnh thực đơn, biến thể và biên lợi nhuận từng món từ cùng một màn hình.",
+      title: "Ảnh, giá và vốn",
+      description: "Mặc định là danh sách.",
     };
   }
 
   if (pathname === "/admin/inventory") {
     return {
       eyebrow: "Tồn kho",
-      title: "Tồn kho, giá vốn bình quân và biến động nguyên liệu",
-      description:
-        "Theo dõi tồn kho và cập nhật giá vốn dùng ngay cho công thức và đơn mới.",
+      title: "Tồn, lô, FEFO",
+      description: "Xem sổ kho và giá vốn.",
     };
   }
 
   if (pathname === "/admin/orders/new") {
     return {
       eyebrow: "Đơn mới",
-      title: "Tạo đơn và cho hệ thống tự tính",
-      description:
-        "Xem trước doanh thu, giá vốn và lợi nhuận gộp trước khi lưu vào Supabase.",
+      title: "Tạo đơn",
+      description: "Chụp giá ngay khi lưu.",
     };
   }
 
   if (pathname.startsWith("/admin/orders/")) {
     return {
       eyebrow: "Hóa đơn",
-      title: "Hóa đơn đơn hàng",
-      description:
-        "Xem bản chụp giá, trạng thái thanh toán và lịch sử chốt hóa đơn.",
+      title: "Hóa đơn",
+      description: "Xem snapshot và thanh toán.",
       action: {
         href: "/admin/orders",
         label: "Danh sách",
@@ -178,9 +172,8 @@ function getHeaderConfig(pathname: string): HeaderConfig {
   if (pathname === "/admin/orders") {
     return {
       eyebrow: "Đơn hàng",
-      title: "Đơn hàng và lãi lỗ theo từng đơn",
-      description:
-        "Theo dõi doanh thu, giá vốn và lợi nhuận gộp theo trạng thái từng đơn.",
+      title: "Đơn hàng",
+      description: "Danh sách đơn và lãi/lỗ.",
       action: {
         href: "/admin/orders/new",
         label: "Tạo đơn",
@@ -191,9 +184,8 @@ function getHeaderConfig(pathname: string): HeaderConfig {
   if (pathname === "/admin/analytics") {
     return {
       eyebrow: "Báo cáo",
-      title: "Doanh thu và lợi nhuận theo ngày",
-      description:
-        "Xem biên lợi nhuận thay đổi theo ngày và theo từng kênh bán.",
+      title: "Báo cáo",
+      description: "Doanh thu và lợi nhuận.",
     };
   }
 
@@ -201,8 +193,7 @@ function getHeaderConfig(pathname: string): HeaderConfig {
     return {
       eyebrow: "Danh mục",
       title: "Danh mục nền tảng",
-      description:
-        "Quản lý khách hàng, nhà cung cấp, kho, hàng hóa, thực đơn và bảng giá.",
+      description: "Khách, kho, hàng, bảng giá.",
     };
   }
 
@@ -223,25 +214,22 @@ function getHeaderConfig(pathname: string): HeaderConfig {
   if (pathname === "/admin/settings/roles") {
     return {
       eyebrow: "Phân quyền",
-      title: "Phân quyền người dùng theo shop",
-      description:
-        "Gán vai trò, cửa hàng và hồ sơ nhân viên trong một màn hình duy nhất.",
+      title: "Phân quyền",
+      description: "Gán vai trò cho user.",
     };
   }
 
   if (pathname === "/admin/help") {
     return {
       eyebrow: "Trợ giúp",
-      title: "Help / SOP / Getting Started",
-      description:
-        "Hướng dẫn bắt đầu, SOP theo vai trò, checklist và cách xử lý lỗi cho mọi user đã đăng nhập.",
+      title: "Trợ giúp",
+      description: "Bắt đầu, SOP, checklist.",
     };
   }
 
   return {
     eyebrow: "Vận hành",
-    description:
-      "Theo dõi tồn kho, giá vốn, doanh thu và lợi nhuận gộp theo từng đơn.",
+    description: "Tồn kho, đơn hàng, doanh thu.",
   };
 }
 

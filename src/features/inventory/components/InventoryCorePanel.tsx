@@ -407,13 +407,13 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
     <div className="space-y-4 pb-8">
       <GuidedWorkflowCard
         eyebrow="Quy trình kho"
-        title="Nhập kho, xuất kho và ghi sổ theo đúng luồng"
-        description="Màn này cho phép bạn tạo phiếu nháp, kiểm tra FEFO/HSD rồi mới ghi sổ. Tồn kho luôn đi qua movement ledger."
+        title="Nhập, xuất, ghi sổ"
+        description="Dùng nháp trước, kiểm FEFO rồi mới ghi sổ."
         steps={[
-          "Kiểm tra dashboard, lô cận HSD và tồn thấp trước.",
-          "Tạo phiếu nhập hoặc phiếu xuất với số lượng và lô đúng.",
-          "Rà HSD, FEFO và ghi chú override nếu có.",
-          "Chỉ ghi sổ khi mọi dữ liệu đã sẵn sàng.",
+          "Xem cảnh báo trước.",
+          "Tạo phiếu và chọn lô.",
+          "Rà HSD và lý do override.",
+          "Ghi sổ khi đã đủ.",
         ]}
       />
 
@@ -459,35 +459,33 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               <FaTriangleExclamation className="text-sm" />
             </div>
             <p className="text-sm leading-6 text-amber-900/85">
-              Mọi thay đổi tồn kho phải đi qua phiếu nhập, phiếu xuất hoặc phiếu
-              điều chỉnh. Hàng có HSD ưu tiên FEFO, và mọi override phải có lý do
-              rõ ràng.
+              Tồn chỉ đổi qua phiếu. Hàng có HSD ưu tiên FEFO.
             </p>
           </div>
         </div>
 
         <div className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3">
           <p className="text-sm font-semibold text-sky-900">
-            Kiểm tra nhanh trước khi thao tác
+            Rà nhanh
           </p>
           <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-2">
             <GuardrailChecklist
               title="Phiếu nhập"
-              note="Nếu bấm ghi sổ ngay, hệ thống sẽ tạo movement và cập nhật tồn theo sổ kho."
+              note="Ghi sổ sẽ tạo movement."
               items={[
                 "Kho và nhà cung cấp đã đúng.",
-                "Mã lô, HSD và đơn giá vốn đã kiểm tra.",
-                "Item có HSD thì không để trống dữ liệu hạn.",
+                "Mã lô, HSD và giá vốn đã rà.",
+                "Item có HSD thì không để trống.",
               ]}
             />
             <GuardrailChecklist
               title="Phiếu xuất"
               tone="warning"
-              note="FEFO là mặc định. Nếu chọn lô khác gợi ý, hãy chắc chắn đã có lý do."
+              note="FEFO là mặc định."
               items={[
-                "Đã kiểm tra lô gợi ý theo FEFO.",
-                "Số lượng xuất không vượt tồn khả dụng.",
-                "Nếu override FEFO, cần ghi lý do rõ ràng.",
+                "Đã kiểm tra lô gợi ý.",
+                "Số lượng không vượt tồn.",
+                "Override thì có lý do.",
               ]}
             />
           </div>
@@ -579,10 +577,10 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Tồn kho cốt lõi
+              Tồn kho
             </p>
             <h2 className="mt-1 text-lg font-semibold text-slate-900">
-              Tồn theo mặt hàng, lô, phiếu nhập và phiếu xuất
+              Theo mặt hàng, lô và phiếu
             </h2>
           </div>
           <label className="w-full max-w-md">
@@ -593,7 +591,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              placeholder="Tìm mặt hàng, lô, phiếu nhập/xuất..."
+              placeholder="Tìm mặt hàng, lô, phiếu..."
             />
           </label>
         </div>
@@ -607,7 +605,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             if (
               receiptPostImmediately &&
               !window.confirm(
-                `Phiếu nhập này sẽ được lưu và ghi sổ ngay. ${receiptRequiresExpiry ? "Item này có HSD nên hãy kiểm tra hạn sử dụng trước khi tiếp tục. " : ""}Tồn kho sẽ đi qua movement ledger, không chỉnh tay số tồn. Tiếp tục?`,
+                `Ghi sổ phiếu nhập ngay? ${receiptRequiresExpiry ? "Item này có HSD, hãy kiểm tra hạn sử dụng. " : ""}Tồn sẽ đi qua sổ kho.`,
               )
             ) {
               event.preventDefault();
@@ -620,20 +618,18 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
                 Phiếu nhập kho
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                Tạo phiếu nhập
-              </h3>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Phiếu nhập</h3>
             </div>
             <StatusPill label="Bản nháp" tone="warning" />
           </div>
 
           <GuardrailChecklist
             title="Trước khi lưu phiếu nhập"
-            note="Phiếu nhập nháp vẫn cần đủ dữ liệu lô và HSD nếu item có HSD. Khi ghi sổ ngay, stock movement sẽ phát sinh lập tức."
+            note="Nháp vẫn cần đủ lô và HSD."
             items={[
-              "Kho, nhà cung cấp và mặt hàng đã chọn đúng.",
-              "Số lượng, giá vốn và mã lô đã kiểm tra.",
-              "Item expirable thì đã nhập HSD.",
+              "Kho, nhà cung cấp và mặt hàng đã đúng.",
+              "Số lượng, giá vốn và mã lô đã rà.",
+              "Item có HSD thì đã nhập.",
             ]}
           />
 
@@ -804,15 +800,14 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-slate-500">
-              Phiếu nhập sẽ tạo lô + giao dịch kho. Tồn cập nhật từ sổ giao dịch, không
-              chỉnh trực tiếp.
+              Lưu xong sẽ tạo lô và movement. Không sửa trực tiếp số tồn.
             </p>
             <button
               type="submit"
               disabled={savingReceipt}
               className="inline-flex items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {savingReceipt ? "Đang lưu..." : "Lưu phiếu nhập"}
+              {savingReceipt ? "Đang lưu..." : "Lưu"}
             </button>
           </div>
 
@@ -836,7 +831,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             if (
               issuePostImmediately &&
               !window.confirm(
-                `Phiếu xuất này sẽ được lưu và ghi sổ ngay. ${issueFefoOverride ? "Bạn đang chọn lô khác gợi ý FEFO, hãy chắc chắn có lý do hợp lệ. " : ""}Tồn kho sẽ đi qua movement ledger. Tiếp tục?`,
+                `Ghi sổ phiếu xuất ngay? ${issueFefoOverride ? "Bạn đang chọn lô khác FEFO. " : ""}Tồn sẽ đi qua sổ kho.`,
               )
             ) {
               event.preventDefault();
@@ -849,9 +844,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
                 Phiếu xuất kho
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                Tạo phiếu xuất
-              </h3>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Phiếu xuất</h3>
             </div>
             <StatusPill label="Bản nháp" tone="warning" />
           </div>
@@ -859,11 +852,11 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
           <GuardrailChecklist
             title="Trước khi lưu phiếu xuất"
             tone="warning"
-            note="FEFO là mặc định cho hàng có HSD. Nếu đổi lô, hãy nhập lý do rõ ràng trước khi ghi sổ."
+            note="FEFO là mặc định."
             items={[
-              "Phiếu liên kết đúng đơn hoặc đúng lý do xuất.",
-              "Đã kiểm tra lô gợi ý theo FEFO.",
-              "Nếu override FEFO thì có reason trong ghi chú.",
+              "Phiếu liên kết đúng đơn hoặc lý do.",
+              "Đã kiểm tra lô gợi ý.",
+              "Override thì có lý do.",
             ]}
           />
 
@@ -936,14 +929,14 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Lô gợi ý theo FEFO
+                Lô FEFO
               </span>
               <select
                 value={issueLotId}
                 onChange={(event) => setIssueLotId(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
               >
-                <option value="">Tự động FEFO</option>
+                <option value="">Tự động</option>
                 {issueFefoOptions.map((lot) => (
                   <option key={lot.lotId} value={lot.lotId}>
                     {lot.lotNo} · {formatQuantity(lot.onHand, selectedIssueItem?.unit ?? "unit")}
@@ -953,14 +946,14 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             </label>
             <label className="block md:col-span-2">
               <span className="mb-2 block text-sm font-medium text-slate-700">
-                Ghi chú / lý do ghi đè
+                Ghi chú
               </span>
               <textarea
                 rows={3}
                 value={issueNote}
                 onChange={(event) => setIssueNote(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-                placeholder="Nếu chọn lô khác FEFO, ghi rõ lý do ở đây."
+                placeholder="Nếu đổi lô, ghi lý do."
               />
             </label>
           </div>
@@ -977,14 +970,14 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-slate-500">
-              FEFO được lưu vào phiếu nháp. Khi ghi sổ, DB sẽ tự chặn ghi đè nếu thiếu quyền.
+              FEFO lưu vào phiếu nháp. Ghi sổ sẽ chặn nếu thiếu quyền.
             </p>
             <button
               type="submit"
               disabled={savingIssue}
               className="inline-flex items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {savingIssue ? "Đang lưu..." : "Lưu phiếu xuất"}
+              {savingIssue ? "Đang lưu..." : "Lưu"}
             </button>
           </div>
 
@@ -1008,9 +1001,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               Tồn theo mặt hàng
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-900">
-              Tồn theo mặt hàng
-            </h3>
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">Theo mặt hàng</h3>
           </div>
           <p className="text-sm text-slate-500">{filteredStockByItem.length} dòng</p>
         </div>
@@ -1068,9 +1059,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               Tồn theo lô
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-900">
-              Tồn theo lô / gợi ý FEFO
-            </h3>
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">Theo lô</h3>
           </div>
           <p className="text-sm text-slate-500">{filteredStockByLot.length} dòng</p>
           </div>
@@ -1118,9 +1107,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
           </table>
         </div>
         <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-white px-4 py-4">
-          <p className="text-sm font-medium text-slate-900">
-            Xem trước FEFO
-          </p>
+          <p className="text-sm font-medium text-slate-900">Gợi ý FEFO</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {filteredFefoCandidates.slice(0, 5).map((lot) => (
               <span
@@ -1132,7 +1119,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             ))}
             {filteredFefoCandidates.length === 0 ? (
               <span className="text-sm text-slate-500">
-                Không có lô FEFO phù hợp.
+                Không có gợi ý FEFO.
               </span>
             ) : null}
           </div>
@@ -1146,9 +1133,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
                 Phiếu nhập
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                Phiếu nhập gần đây
-              </h3>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Phiếu nhập</h3>
             </div>
             <p className="text-sm text-slate-500">{filteredReceipts.length} dòng</p>
           </div>
@@ -1181,7 +1166,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                     onSubmit={(event) => {
                       if (
                         !window.confirm(
-                          "Ghi sổ phiếu nhập sẽ đẩy movement vào sổ kho. Hãy chắc chắn kho, item, số lượng, giá vốn và HSD đều đúng. Tiếp tục?",
+                          "Ghi sổ phiếu nhập ngay? Hãy chắc chắn kho, item, số lượng, giá vốn và HSD đều đúng.",
                         )
                       ) {
                         event.preventDefault();
@@ -1225,9 +1210,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
                 Phiếu xuất
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-900">
-                Phiếu xuất gần đây
-              </h3>
+              <h3 className="mt-1 text-lg font-semibold text-slate-900">Phiếu xuất</h3>
             </div>
             <p className="text-sm text-slate-500">{filteredIssues.length} dòng</p>
           </div>
@@ -1271,7 +1254,7 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
                     onSubmit={(event) => {
                       if (
                         !window.confirm(
-                          "Ghi sổ phiếu xuất sẽ đẩy movement vào sổ kho. Hãy chắc chắn FEFO, lô chọn và số lượng đều đúng. Tiếp tục?",
+                          "Ghi sổ phiếu xuất ngay? Hãy chắc chắn FEFO, lô chọn và số lượng đều đúng.",
                         )
                       ) {
                         event.preventDefault();
@@ -1324,15 +1307,13 @@ export function InventoryCorePanel({ data }: { data: InventoryCorePageData }) {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               Sổ giao dịch kho
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-900">
-              Giao dịch kho gần nhất
-            </h3>
+            <h3 className="mt-1 text-lg font-semibold text-slate-900">Sổ giao dịch</h3>
           </div>
           <p className="text-sm text-slate-500">{filteredMovements.length} dòng</p>
         </div>
         {filteredMovements.length > 0 ? (
           <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-sm font-medium text-slate-900">Hoạt động gần nhất</p>
+            <p className="text-sm font-medium text-slate-900">Gần đây</p>
             <div className="mt-3 space-y-3">
               {filteredMovements.slice(0, 5).map((movement) => (
                 <div key={movement.id} className="flex gap-3">

@@ -64,8 +64,7 @@ export function SalesOrderBill({
               />
             </div>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
-              Hóa đơn chỉ đọc từ bản chụp trong đơn. Không nối lại bảng giá hiện
-              hành để tránh lịch sử tự đổi theo danh mục nền tảng.
+              Hóa đơn đọc từ snapshot. Không kéo lại bảng giá mới.
             </p>
             <div className="mt-5 grid gap-3 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
@@ -89,7 +88,7 @@ export function SalesOrderBill({
               </div>
               <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                  Bảng giá chụp
+                  Snapshot giá
                 </p>
                 <p className="mt-1 text-slate-700">
                   {order.priceBookIdSnapshot
@@ -111,11 +110,11 @@ export function SalesOrderBill({
               href="/admin/orders"
               className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
             >
-              Quay lại danh sách
+              Quay lại
             </Link>
             <div className="rounded-[22px] border border-[#18352d]/10 bg-[#18352d] p-5 text-white">
               <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-                Tổng hợp
+                Tổng
               </p>
               <div className="mt-3 space-y-2 text-sm">
                 <div className="flex items-center justify-between gap-4">
@@ -195,8 +194,7 @@ export function SalesOrderBill({
             ) : null}
           </div>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">
-            Phiếu nháp sinh khi xác nhận; chỉnh lô nếu ghi đè FEFO và ghi lý do trước khi ghi sổ
-            (cần quyền inventory.fefo.override).
+            Phiếu nháp sinh khi xác nhận. Đổi lô thì ghi lý do trước khi ghi sổ.
           </p>
         </section>
       ) : null}
@@ -212,11 +210,9 @@ export function SalesOrderBill({
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Dòng đơn hàng
+              Dòng
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">
-              Dòng chụp
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">Dòng</h2>
           </div>
           <StatusPill label={`${order.items.length} dòng`} tone="muted" />
         </div>

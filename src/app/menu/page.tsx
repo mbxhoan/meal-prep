@@ -52,12 +52,10 @@ export default async function MenuPage({
           <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-r from-orange-500 to-red-500 px-8 md:px-12 py-12 text-center">
               <h1 className="text-xl md:text-[20px] font-bold text-white mb-3">
-                Thực Đơn
+                Thực đơn
               </h1>
               <p className="text-base text-white/80 max-w-xl mx-auto">
-                Danh sách này đọc từ cùng lớp dữ liệu với trang quản trị. Khi bạn
-                đổi ảnh đại diện, mô tả hoặc giá mặc định trong bảng điều khiển,
-                trang bán hàng sẽ phản ánh ngay.
+                Xem món bán và giá hiện hành.
               </p>
             </div>
 
@@ -126,9 +124,9 @@ export default async function MenuPage({
                         </p>
                         <div className="mt-3 flex items-center justify-between text-xs font-semibold">
                           <span className="text-gray-400">
-                            {product.variants.length} lựa chọn
+                            {product.variants.length} biến thể
                           </span>
-                          <span className="text-orange-500">Xem chi tiết →</span>
+                          <span className="text-orange-500">Chi tiết →</span>
                         </div>
                       </div>
                     </Link>

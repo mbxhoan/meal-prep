@@ -52,12 +52,9 @@ export default async function AdminOrdersPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
             Đơn hàng
           </p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">
-            Chưa có đơn hàng để hiển thị
-          </h2>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900">Chưa có đơn</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Đơn đã gửi hoặc đã chốt dùng snapshot giá. Nếu cần bắt đầu, hãy tạo
-            đơn mới thay vì refresh lại giá trên bill cũ.
+            Tạo đơn mới để bắt đầu.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <Link
@@ -65,7 +62,7 @@ export default async function AdminOrdersPage() {
               className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
             >
               <FaArrowRight className="text-xs" />
-              <span>Tạo đơn mới</span>
+              <span>Tạo đơn</span>
             </Link>
             <Link
               href="/admin/help#bat-dau-nhanh"
@@ -88,18 +85,14 @@ export default async function AdminOrdersPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               Đơn hàng
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">
-              Danh sách đơn hàng và lời lãi theo từng đơn
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">Danh sách đơn</h2>
             <div className="mt-3 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-700">
                   <FaCircleInfo className="text-sm" />
                 </div>
                 <p className="text-sm leading-6 text-sky-900/85">
-                  Đơn đã gửi hoặc đã chốt dùng snapshot giá. Không refresh giá lịch
-                  sử bằng bảng giá hiện tại, nếu cần sửa hãy đi theo flow override
-                  có log.
+                  Đơn chốt dùng snapshot giá. Muốn sửa thì đi flow override.
                 </p>
               </div>
             </div>

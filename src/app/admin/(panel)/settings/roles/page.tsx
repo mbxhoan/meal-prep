@@ -11,11 +11,10 @@ export default async function AdminRolesPage() {
           Thiết lập
         </p>
         <h1 className="mt-2 text-lg font-semibold tracking-tight text-slate-900">
-          Phân quyền người dùng theo shop
+          Phân quyền
         </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
-          Màn này dùng để gán vai trò, đồng thời đồng bộ hồ sơ nhân viên và
-          vai trò hiện tại để các policy cũ vẫn chạy ổn.
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+          Gán vai trò và shop cho user.
         </p>
       </section>
 

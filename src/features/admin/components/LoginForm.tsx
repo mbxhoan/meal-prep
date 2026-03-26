@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import LoadingSpinner from "@/shared/components/LoadingSpinner";
-import { PROFILE_ROLE_LABELS } from "@/lib/rbac/constants";
 import { createSupabaseBrowserClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 export function LoginForm({ reason }: { reason?: string }) {
@@ -13,7 +12,7 @@ export function LoginForm({ reason }: { reason?: string }) {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(
     reason === "permission" || reason === "role"
-      ? "Tài khoản của bạn chưa được gán quyền truy cập quản trị hoặc shop hợp lệ."
+      ? "Tài khoản chưa có quyền quản trị hoặc shop."
       : null,
   );
   const [pending, setPending] = useState(false);
@@ -27,26 +26,19 @@ export function LoginForm({ reason }: { reason?: string }) {
       <h1 className="mt-3 text-lg font-semibold tracking-tight text-slate-900">
         Đăng nhập quản trị
       </h1>
-      <p className="mt-3 text-sm leading-7 text-slate-500">
-        Dùng tài khoản Supabase đã được gán vai trò{" "}
-        <code>{PROFILE_ROLE_LABELS.system_admin}</code>,{" "}
-        <code>{PROFILE_ROLE_LABELS.shop_admin}</code> hoặc{" "}
-        <code>{PROFILE_ROLE_LABELS.employee}</code>. Nếu chưa cấu hình môi
-        trường, bạn vẫn có thể mở bảng điều khiển ở chế độ demo.
+      <p className="mt-3 text-sm leading-6 text-slate-500">
+        Dùng tài khoản đã được gán vai trò quản trị.
       </p>
 
       {!configured ? (
         <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-800">
-          <p className="font-medium">Chưa có biến môi trường Supabase.</p>
-          <p className="mt-2">
-            Hệ thống đã tự chuyển sang chế độ demo để bạn kiểm tra giao diện,
-            luồng chi phí và tạo đơn.
-          </p>
+          <p className="font-medium">Chưa có Supabase env.</p>
+          <p className="mt-2">Dùng demo để xem giao diện.</p>
           <Link
             href="/admin"
             className="mt-4 inline-flex rounded-full bg-[#18352d] px-5 py-3 font-medium text-white transition hover:opacity-90"
           >
-            Vào bảng điều khiển demo
+            Vào demo
           </Link>
         </div>
       ) : (

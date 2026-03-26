@@ -36,47 +36,39 @@ export type HelpTroubleshootingItem = {
 
 export const helpQuickStartSteps: HelpQuickStartStep[] = [
   {
-    title: "Đăng nhập và kiểm tra shop",
-    description:
-      "Xác nhận đúng tài khoản, đúng shop và đúng menu quyền trước khi thao tác.",
+    title: "Đăng nhập đúng shop",
+    description: "Kiểm tra user, shop và quyền.",
   },
   {
-    title: "Đọc dashboard đầu ngày",
-    description:
-      "Xem đơn chờ xử lý, đơn chưa thanh toán, lô cận HSD và tồn thấp.",
+    title: "Xem dashboard",
+    description: "Nhìn đơn chờ, tồn thấp và lô cận HSD.",
   },
   {
-    title: "Nhớ 5 khu vực chính",
-    description:
-      "Danh mục nền tảng, bán hàng, tồn kho, báo cáo và quản trị / nhật ký hệ thống.",
+    title: "Biết 5 khu vực",
+    description: "Danh mục, bán hàng, kho, báo cáo, quyền.",
   },
   {
-    title: "Tự kiểm tra 4 câu hỏi",
-    description:
-      "Đây là master data hay giao dịch, có ảnh hưởng giá lịch sử, có ảnh hưởng tồn và có audit log hay không?",
+    title: "Rà trước khi lưu",
+    description: "Kiểm tra giá, tồn, FEFO và log.",
   },
 ];
 
 export const helpGuardrails: HelpRule[] = [
   {
     title: "Snapshot giá",
-    description:
-      "Đơn đã gửi hoặc đã chốt dùng giá chụp tại thời điểm tạo đơn, không tự đổi theo bảng giá mới.",
+    description: "Đơn chốt không tự đổi theo bảng giá mới.",
   },
   {
     title: "Movement là nguồn sự thật của tồn",
-    description:
-      "Mọi thay đổi kho phải đi qua phiếu nhập, phiếu xuất, phiếu điều chỉnh hoặc bút toán tương đương.",
+    description: "Tồn chỉ đổi qua phiếu hoặc movement.",
   },
   {
-    title: "FEFO là mặc định",
-    description:
-      "Hàng có HSD phải ưu tiên lô gần hết hạn nhất còn tồn, trừ khi có override và lý do rõ ràng.",
+    title: "FEFO",
+    description: "Hàng có HSD ưu tiên lô gần hết hạn.",
   },
   {
     title: "Audit log bắt buộc",
-    description:
-      "Thao tác tạo, sửa, xóa, duyệt, chốt, hủy, override giá và override tồn đều phải lưu lịch sử.",
+    description: "Sửa, xóa, duyệt và override đều phải có log.",
   },
 ];
 
@@ -84,243 +76,135 @@ export const helpRoleGuides: HelpRoleGuide[] = [
   {
     roleCode: "system_admin",
     roleLabel: "Quản trị hệ thống",
-    scope: "Quản lý toàn hệ thống đa shop.",
-    responsibilities: [
-      "Tạo, khóa shop và quản lý mapping user, role, permission.",
-      "Xem audit log toàn hệ thống và xử lý sự cố dữ liệu có kiểm soát.",
-      "Cấu hình nền cho chính sách dữ liệu và bảo mật.",
-    ],
-    guardrails: [
-      "Không dùng cho tác nghiệp bán hàng hàng ngày.",
-      "Không chỉnh nghiệp vụ thay shop admin nếu không thật sự cần.",
-    ],
+    scope: "Quản lý toàn hệ thống.",
+    responsibilities: ["Tạo và khóa shop.", "Xem log và xử lý sự cố dữ liệu."],
+    guardrails: ["Không dùng cho tác nghiệp ngày.", "Không sửa thay shop admin nếu không cần."],
   },
   {
     roleCode: "shop_admin",
     roleLabel: "Quản lý shop",
-    scope: "Vận hành nghiệp vụ trong phạm vi shop được gán.",
+    scope: "Vận hành trong shop được gán.",
     responsibilities: [
-      "Quản lý master data của shop, bảng giá hiện hành và user trong shop.",
-      "Tạo / sửa khách hàng, hàng hóa, menu, phiếu nhập, phiếu xuất và điều chỉnh kho.",
-      "Duyệt ngoại lệ có kiểm soát như override giá hoặc override FEFO.",
+      "Quản lý master data và bảng giá.",
+      "Tạo, sửa khách, hàng, menu và phiếu kho.",
+      "Duyệt override khi cần.",
     ],
-    guardrails: [
-      "Bill cũ không được tự đổi giá theo master mới.",
-      "Tồn kho phải đi qua chứng từ, không sửa tay vào số tồn.",
-    ],
+    guardrails: ["Bill cũ không đổi theo master mới.", "Tồn phải đi qua chứng từ."],
   },
   {
     roleCode: "employee",
     roleLabel: "Nhân viên",
-    scope: "Tác nghiệp hàng ngày theo quyền được cấp.",
+    scope: "Tác nghiệp theo quyền được cấp.",
     responsibilities: [
-      "Tạo khách hàng, tạo đơn nháp, thêm món, gửi bill và theo dõi thanh toán.",
-      "Nhập / xuất kho nếu được cấp quyền và scan barcode hàng hoặc barcode lô.",
-      "Làm việc theo quy trình đã duyệt thay vì tự đổi giá hoặc đổi lô cảm tính.",
+      "Tạo khách, tạo đơn và gửi bill.",
+      "Nhập / xuất kho nếu được cấp quyền.",
+      "Làm theo quy trình đã duyệt.",
     ],
-    guardrails: [
-      "Không xóa chứng từ đã post.",
-      "Không bypass FEFO nếu chưa có quyền và lý do.",
-      "Không dùng chung tài khoản với người khác.",
-    ],
+    guardrails: ["Không xóa chứng từ đã post.", "Không bypass FEFO nếu chưa có quyền.", "Không dùng chung tài khoản."],
   },
 ];
 
 export const helpDailyPlaybook: HelpPlaybookSection[] = [
   {
-    title: "Mở ngày làm việc",
-    summary: "Bắt đầu bằng dashboard để thấy rủi ro trước khi thao tác.",
-    steps: [
-      "Xem đơn chưa xử lý, đơn chưa thanh toán, lô cận HSD / hết hạn và tồn thấp.",
-      "Kiểm tra phiếu nhập hoặc giao hàng dự kiến trong ngày.",
-    ],
+    title: "Mở ngày",
+    summary: "Xem cảnh báo trước khi làm.",
+    steps: ["Xem đơn chờ, đơn chưa thu và lô cận HSD.", "Kiểm tra phiếu nháp và lịch giao."],
   },
   {
-    title: "Nhập kho hàng mới",
-    summary: "Dùng khi nhận nguyên liệu, bao bì, gia vị hoặc thành phẩm nhập kho.",
-    steps: [
-      "Tạo phiếu nhập, chọn kho nhận và chọn nhà cung cấp hoặc nguồn nhập.",
-      "Với item theo lô, nhập mã lô, NSX, HSD, số lượng và đơn giá vốn.",
-      "Post phiếu và kiểm tra tồn theo lô sau khi ghi sổ.",
-    ],
+    title: "Nhập kho",
+    summary: "Nhập rồi mới ghi sổ.",
+    steps: ["Tạo phiếu, chọn kho và nhà cung cấp.", "Nhập lô, HSD, số lượng và giá vốn.", "Ghi sổ rồi kiểm tra tồn."],
   },
   {
-    title: "Tạo đơn bán",
-    summary: "Dùng snapshot giá ngay khi đơn được tạo.",
-    steps: [
-      "Chọn khách hoặc tạo khách mới, tạo đơn nháp rồi thêm món / biến thể / số lượng.",
-      "Kiểm tra giảm giá, phí giao hàng và ghi chú trước khi gửi bill.",
-      "Khi khách đã đồng ý, chuyển sang trạng thái gửi hoặc xác nhận và không refresh giá nữa.",
-    ],
+    title: "Tạo đơn",
+    summary: "Dùng snapshot giá.",
+    steps: ["Chọn khách, thêm món và số lượng.", "Rà giảm giá, phí và ghi chú.", "Khách đồng ý thì chốt."],
   },
   {
-    title: "Xuất kho cho đơn",
-    summary: "Luôn kiểm tra gợi ý FEFO trước khi post.",
-    steps: [
-      "Mở phiếu xuất liên kết với đơn và xem lô gợi ý theo FEFO.",
-      "Nếu đổi lô, nhập lý do override và post phiếu.",
-      "Đối chiếu lại tồn sau xuất để chắc chắn movement đã ghi nhận đúng.",
-    ],
+    title: "Xuất kho",
+    summary: "Luôn xem FEFO trước.",
+    steps: ["Xem lô gợi ý theo FEFO.", "Đổi lô thì ghi lý do.", "Đối chiếu tồn sau xuất."],
   },
   {
     title: "Cuối ngày",
-    summary: "Chốt những thứ còn dang dở trước khi hết ca.",
-    steps: [
-      "Kiểm tra đơn chưa thanh toán, phiếu nháp chưa post và lô cận HSD.",
-      "Rà các thao tác override giá, override FEFO và điều chỉnh tồn.",
-      "Chốt doanh thu và gross profit snapshot trong ngày.",
-    ],
+    summary: "Chốt việc còn dang dở.",
+    steps: ["Rà đơn chưa thu và phiếu nháp.", "Rà override và tồn thấp.", "Xem doanh thu và lãi trong ngày."],
   },
 ];
 
 export const helpChecklists: HelpChecklistSection[] = [
   {
     title: "Checklist mở đầu ngày",
-    items: [
-      "Đã chọn đúng shop",
-      "Đã xem dashboard cảnh báo",
-      "Đã kiểm tra lô cận HSD / hết hạn",
-      "Đã kiểm tra đơn chờ xử lý",
-      "Đã kiểm tra phiếu nhập / xuất nháp",
-    ],
+    items: ["Đúng shop", "Đã xem dashboard", "Đã xem lô cận HSD", "Đã xem đơn chờ"],
   },
   {
     title: "Checklist trước khi gửi bill",
-    items: [
-      "Khách hàng đúng",
-      "Món / biến thể / số lượng đúng",
-      "Giá và giảm giá đúng",
-      "Phí giao hàng đúng",
-      "Ghi chú đơn hàng đã đủ",
-      "Trạng thái đơn còn là nháp",
-    ],
+    items: ["Khách đúng", "Món, số lượng đúng", "Giá và giảm giá đúng", "Phí và ghi chú đủ"],
   },
   {
     title: "Checklist trước khi post phiếu nhập",
-    items: [
-      "Kho đúng",
-      "Item đúng",
-      "Số lượng đúng",
-      "Đơn giá vốn đúng",
-      "Mã lô đúng",
-      "HSD đã nhập nếu item có HSD",
-    ],
+    items: ["Kho đúng", "Item đúng", "Số lượng đúng", "Giá vốn và lô đúng", "Có HSD thì đã nhập"],
   },
   {
     title: "Checklist trước khi post phiếu xuất",
-    items: [
-      "Phiếu xuất liên kết đúng đơn hoặc lý do",
-      "FEFO suggestion đã được kiểm tra",
-      "Lô chọn đúng",
-      "Số lượng xuất không vượt tồn khả dụng",
-      "Override có reason nếu không dùng lô FEFO",
-    ],
+    items: ["Đúng đơn hoặc lý do", "Đã xem gợi ý FEFO", "Số lượng không vượt tồn", "Override thì có lý do"],
   },
   {
     title: "Checklist cuối ngày",
-    items: [
-      "Không còn phiếu nháp quên xử lý",
-      "Đã rà đơn chưa thanh toán",
-      "Đã rà đơn hủy / hoàn",
-      "Đã rà lô cận HSD",
-      "Đã rà log override giá / FEFO / điều chỉnh tồn",
-    ],
+    items: ["Không còn phiếu nháp", "Đã rà đơn chưa thu", "Đã rà lô cận HSD", "Đã rà override"],
   },
 ];
 
 export const helpTroubleshootingItems: HelpTroubleshootingItem[] = [
   {
-    title: "Đơn cũ bị đổi giá sau khi sửa bảng giá",
-    symptom: "Bill cũ hiển thị giá mới.",
-    cause: [
-      "Order item chưa lưu snapshot mà vẫn đọc động từ bảng giá.",
-      "User refresh giá trên đơn đã gửi hoặc đã chốt.",
-    ],
-    fix: [
-      "Luôn lấy giá từ snapshot của đơn đã gửi / chốt / đã thanh toán.",
-      "Không sửa master price để vá bill cũ.",
-      "Nếu cần, xử lý bằng flow override có log.",
-    ],
+    title: "Đơn cũ bị đổi giá",
+    symptom: "Bill cũ ra giá mới.",
+    cause: ["Đọc động từ bảng giá.", "Đã refresh trên đơn chốt."],
+    fix: ["Dùng snapshot.", "Không vá bill cũ.", "Override nếu cần."],
   },
   {
     title: "Tồn kho sai",
-    symptom: "Tổng tồn không khớp với thực tế.",
-    cause: [
-      "Có phiếu nhập / xuất còn ở trạng thái nháp.",
-      "Có ai chỉnh tay tồn hoặc post movement trùng.",
-      "Có movement bị hủy nhưng chưa reverse đúng.",
-    ],
-    fix: [
-      "Đối chiếu movement ledger trước.",
-      "Nếu cần chỉnh, dùng phiếu điều chỉnh có reason.",
-      "Không update trực tiếp cột tồn.",
-    ],
+    symptom: "Tồn không khớp.",
+    cause: ["Có phiếu nháp.", "Chỉnh tay tồn.", "Movement trùng."],
+    fix: ["Đối chiếu sổ kho.", "Dùng phiếu điều chỉnh.", "Không sửa trực tiếp tồn."],
   },
   {
-    title: "FEFO gợi ý lô A nhưng kho lấy lô B",
-    symptom: "Lô thực tế khác lô được hệ thống gợi ý.",
-    cause: ["User đã override gợi ý mặc định."],
-    fix: [
-      "Chỉ cho phép khi user có quyền override.",
-      "Bắt buộc ghi lý do.",
-      "Audit log phải lưu lô gợi ý, lô thực tế và lý do.",
-    ],
+    title: "FEFO lấy lô khác",
+    symptom: "Kho lấy lô khác gợi ý.",
+    cause: ["Đã override gợi ý."],
+    fix: ["Chỉ override khi có quyền.", "Bắt buộc ghi lý do.", "Lưu log."],
   },
   {
     title: "Nhập thiếu HSD",
-    symptom: "Phiếu nhập không đủ dữ liệu để chạy FEFO.",
-    cause: [
-      "Item expirable nhưng chưa nhập hạn sử dụng.",
-      "Policy cho phép warning nhưng thao tác chưa được ghi chú đầy đủ.",
-    ],
-    fix: [
-      "Chặn post nếu item có HSD mà thiếu dữ liệu, trừ khi policy cho phép.",
-      "Hiển thị cảnh báo rõ ràng cho người dùng.",
-    ],
+    symptom: "Phiếu nhập thiếu dữ liệu.",
+    cause: ["Item có HSD nhưng chưa nhập.", "Cảnh báo chưa được rà."],
+    fix: ["Nhập HSD trước khi ghi sổ.", "Không bỏ qua cảnh báo."],
   },
   {
-    title: "Quét barcode không ra item hoặc lô",
-    symptom: "Scanner trả về mã nhưng hệ thống không nhận diện.",
-    cause: [
-      "Barcode thuộc item hay lot chưa được gắn đúng.",
-      "User đang ở sai shop hoặc sai kho.",
-      "Scanner thêm ký tự lạ hoặc line break.",
-    ],
-    fix: [
-      "Kiểm tra barcode đã tồn tại trong master hoặc lô chưa.",
-      "Xác nhận đúng shop / kho / mode quét.",
-      "Làm sạch ký tự lạ từ scanner nếu cần.",
-    ],
+    title: "Barcode không nhận",
+    symptom: "Có mã nhưng hệ thống không nhận.",
+    cause: ["Barcode chưa gắn đúng.", "Sai shop hoặc kho.", "Scanner thêm ký tự lạ."],
+    fix: ["Kiểm tra master.", "Chọn đúng shop / kho.", "Làm sạch ký tự thừa."],
   },
   {
-    title: "Hết hàng nhưng vẫn confirm được",
-    symptom: "Đơn vượt tồn khả dụng nhưng vẫn sang bước tiếp theo.",
-    cause: [
-      "Policy cho phép backorder hoặc override.",
-      "Cảnh báo tồn không đủ chưa được chặn đúng chỗ.",
-    ],
-    fix: [
-      "Hiển thị cảnh báo tồn không đủ rõ ràng.",
-      "Chỉ cho tiếp tục nếu policy cho phép và có reason.",
-      "Log lại lý do nếu vẫn tiếp tục.",
-    ],
+    title: "Hết hàng vẫn confirm",
+    symptom: "Đơn vượt tồn mà vẫn đi tiếp.",
+    cause: ["Policy cho phép override.", "Cảnh báo chưa chặn đúng chỗ."],
+    fix: ["Hiển thị cảnh báo rõ.", "Chỉ tiếp tục khi có lý do.", "Lưu log."],
   },
 ];
 
 export const helpRbacSummary = [
   {
     title: "Nguồn sự thật quyền",
-    description:
-      "Quyền thật đến từ role, permission, role_permissions và user_shop_roles; snapshot role trong profile chỉ để hiển thị.",
+    description: "Quyền thật đến từ role, permission và user_shop_roles.",
   },
   {
     title: "Phạm vi truy cập",
-    description:
-      "User thường chỉ truy cập dữ liệu cùng shop_id, còn system_admin có thể đi qua nhiều shop theo cấu hình.",
+    description: "User thường chỉ thấy shop của mình.",
   },
   {
     title: "Nguyên tắc hệ thống",
-    description:
-      "Một số thao tác cần SQL helper hoặc RPC để đảm bảo RLS, audit log và trạng thái hợp lệ.",
+    description: "Một số thao tác đi qua RPC để giữ RLS và log.",
   },
 ];

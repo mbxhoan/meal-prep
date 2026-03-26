@@ -65,7 +65,7 @@ export default async function ProductDetailPage({
 
                 <div className="w-full bg-gray-50 rounded-2xl p-5 border border-gray-100">
                   <p className="text-sm text-gray-400 mb-3 font-medium">
-                    Chọn size đang mở bán
+                    Biến thể
                   </p>
                   <div className="grid gap-3">
                     {product.variants.map((variant) => (
@@ -109,13 +109,13 @@ export default async function ProductDetailPage({
                 <div className="mb-5 p-4 rounded-2xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
                   <span className="text-sm text-gray-400 block mb-1">Giá bán</span>
                   <span className="text-lg font-bold text-orange-500 italic">
-                    📦 Từ {formatCurrency(lowestPrice)}
+                    Từ {formatCurrency(lowestPrice)}
                   </span>
                 </div>
 
                 <div className="mb-5">
                   <h2 className="text-base font-bold text-gray-800 mb-3">
-                    Các lựa chọn hiện có
+                    Biến thể
                   </h2>
                   <div className="grid grid-cols-1 gap-3">
                     {product.variants.map((variant) => (
@@ -143,14 +143,13 @@ export default async function ProductDetailPage({
 
                 <div className="mb-6">
                   <h2 className="text-base font-bold text-gray-800 mb-3">
-                    Điểm nổi bật
+                    Ghi chú
                   </h2>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      "Ảnh đại diện đồng bộ từ trang quản trị",
-                      "Giá bán quản lý theo biến thể",
-                      "Danh mục có thể đổi từ bảng điều khiển",
-                      "Sẵn sàng cho theo dõi lợi nhuận",
+                      "Ảnh từ trang quản trị",
+                      "Giá theo biến thể",
+                      "Sẵn sàng tính lãi",
                     ].map((benefit) => (
                       <div
                         key={benefit}
@@ -165,7 +164,7 @@ export default async function ProductDetailPage({
 
                 <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-base flex items-center justify-center gap-3 hover:opacity-90 transition-opacity shadow-lg shadow-orange-500/20">
                   <FaShoppingCart size={16} />
-                  Liên hệ đặt món
+                  Đặt món
                 </button>
               </div>
             </div>

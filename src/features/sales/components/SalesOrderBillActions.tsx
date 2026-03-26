@@ -68,22 +68,19 @@ export function SalesOrderBillActions({
     <div className="grid gap-3 xl:grid-cols-3">
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.3)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Làm mới bản chụp
+          Snapshot
         </p>
-        <h3 className="mt-1 text-lg font-semibold text-slate-900">
-          Làm mới giá cho bản nháp
-        </h3>
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">Làm mới giá</h3>
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Chỉ áp dụng cho đơn bản nháp. Sau khi gửi hoặc xác nhận, giá trong
-          bản chụp sẽ không tự đổi nữa.
+          Chỉ dùng cho đơn nháp.
         </p>
         <GuardrailChecklist
           title="Trước khi làm mới"
-          note="Làm mới chỉ dùng cho đơn bản nháp. Sau bước này, dữ liệu dòng đơn sẽ được chụp lại từ bảng giá hiện hành."
+          note="Chỉ dùng cho đơn nháp."
           items={[
-            "Đơn vẫn đang ở trạng thái bản nháp.",
-            "Muốn dùng giá hiện hành thay cho snapshot cũ.",
-            "Đã kiểm tra lại món, biến thể và giảm giá.",
+            "Đơn vẫn là nháp.",
+            "Muốn lấy giá hiện hành.",
+            "Đã rà món và giảm giá.",
           ]}
         />
         <form
@@ -100,7 +97,7 @@ export function SalesOrderBillActions({
 
             if (
               !window.confirm(
-                "Làm mới giá sẽ chụp lại snapshot theo bảng giá hiện hành cho đơn bản nháp. Tiếp tục?",
+                "Làm mới giá cho đơn nháp? Snapshot sẽ đổi theo giá hiện hành.",
               )
             ) {
               event.preventDefault();
@@ -117,15 +114,15 @@ export function SalesOrderBillActions({
             disabled={refreshPending || !canRefreshPrice || order.status !== "draft"}
             className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {refreshPending ? "Đang làm mới..." : "Làm mới giá từ bảng giá"}
+            {refreshPending ? "Đang làm mới..." : "Làm mới"}
           </button>
         </form>
         <p className="mt-3 text-xs leading-6 text-slate-500">
           {canRefreshPrice
             ? order.status === "draft"
-              ? "Dữ liệu dòng đơn sẽ được chụp lại từ bảng giá hiện hành."
-              : "Đơn không còn ở trạng thái bản nháp nên không thể làm mới giá."
-            : "Bạn chưa có quyền làm mới giá."}
+              ? "Sẽ chụp lại giá hiện hành."
+              : "Đơn không còn là nháp."
+            : "Bạn chưa có quyền."}
         </p>
         {refreshState.status !== "idle" ? (
           <p
@@ -142,19 +139,17 @@ export function SalesOrderBillActions({
 
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.3)]">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          Cập nhật trạng thái
+          Trạng thái
         </p>
-        <h3 className="mt-1 text-lg font-semibold text-slate-900">
-          Đổi trạng thái đơn
-        </h3>
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">Đổi trạng thái</h3>
         <GuardrailChecklist
           title="Trước khi đổi trạng thái"
           tone="warning"
-          note="Nếu chuyển sang đã gửi / đã xác nhận / hoàn tất, giá lịch sử sẽ khóa theo snapshot."
+          note="Đổi trạng thái có thể khóa giá."
           items={[
-            "Đã kiểm tra bill và các dòng đơn.",
-            "Biết rõ trạng thái mới sẽ khóa hay mở gì.",
-            "Nếu chuyển sang đã gửi hoặc đã xác nhận thì snapshot giá sẽ bị khóa.",
+            "Đã rà bill và dòng đơn.",
+            "Biết trạng thái mới sẽ làm gì.",
+            "Có thể khóa giá.",
           ]}
         />
         <form
@@ -169,7 +164,7 @@ export function SalesOrderBillActions({
 
             if (
               !window.confirm(
-                `Xác nhận đổi trạng thái đơn sang "${label}"? Nếu chuyển sang đã gửi hoặc đã xác nhận, giá lịch sử sẽ khóa theo snapshot.`,
+                `Đổi trạng thái sang "${label}"?`,
               )
             ) {
               event.preventDefault();
@@ -203,11 +198,11 @@ export function SalesOrderBillActions({
             disabled={statusPending || !canUpdateStatus}
             className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {statusPending ? "Đang cập nhật..." : "Lưu trạng thái"}
+            {statusPending ? "Đang lưu..." : "Lưu"}
           </button>
         </form>
         <p className="mt-3 text-xs leading-6 text-slate-500">
-          Trạng thái đã gửi hoặc đã xác nhận sẽ khóa việc làm mới giá tự động.
+          Đã gửi / đã xác nhận sẽ khóa refresh giá.
         </p>
         {statusState.status !== "idle" ? (
           <p
@@ -226,16 +221,14 @@ export function SalesOrderBillActions({
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
           Thanh toán
         </p>
-        <h3 className="mt-1 text-lg font-semibold text-slate-900">
-          Ghi nhận thanh toán
-        </h3>
+        <h3 className="mt-1 text-lg font-semibold text-slate-900">Ghi thanh toán</h3>
         <GuardrailChecklist
           title="Trước khi ghi nhận"
-          note="Thanh toán chỉ cộng vào lịch sử thanh toán, không làm thay đổi giá của dòng đơn."
+          note="Thanh toán không đổi giá đơn."
           items={[
-            "Đã kiểm tra số tiền còn phải thu.",
-            "Đã chọn đúng phương thức thanh toán.",
-            "Thanh toán chỉ cộng lịch sử, không đổi giá đơn.",
+            "Đã kiểm tra số tiền.",
+            "Đã chọn đúng phương thức.",
+            "Chỉ cộng lịch sử.",
           ]}
         />
         <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
@@ -260,7 +253,7 @@ export function SalesOrderBillActions({
 
             if (
               !window.confirm(
-                "Xác nhận ghi nhận thanh toán cho đơn này? Thao tác này sẽ cập nhật lịch sử thanh toán nhưng không đổi snapshot giá.",
+                "Ghi nhận thanh toán?",
               )
             ) {
               event.preventDefault();
@@ -309,11 +302,11 @@ export function SalesOrderBillActions({
             disabled={paymentPending || !canRecordPayment}
             className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {paymentPending ? "Đang lưu..." : "Ghi nhận thanh toán"}
+            {paymentPending ? "Đang lưu..." : "Lưu"}
           </button>
         </form>
         <p className="mt-3 text-xs leading-6 text-slate-500">
-          Hóa đơn chỉ cập nhật trạng thái thanh toán từ bản chụp trong đơn.
+          Thanh toán chỉ cập nhật lịch sử.
         </p>
         {paymentState.status !== "idle" ? (
           <p

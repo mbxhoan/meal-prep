@@ -59,11 +59,10 @@ export function RoleAssignmentForm({
           Quản lý phân quyền
         </p>
         <h2 className="mt-1 text-lg font-semibold text-slate-900">
-          Chưa có Supabase để quản lý vai trò
+          Chưa có Supabase
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-          Bật môi trường Supabase rồi quay lại màn này để gán vai trò cho người
-          dùng theo shop.
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+          Bật Supabase rồi quay lại để gán vai trò.
         </p>
       </div>
     );
@@ -79,9 +78,7 @@ export function RoleAssignmentForm({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
               Gán phân quyền
             </p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900">
-              Gán vai trò cho người dùng
-            </h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">Gán vai trò</h2>
           </div>
           <StatusPill label={selectedRoleLabel} tone="accent" />
         </div>
@@ -141,8 +138,8 @@ export function RoleAssignmentForm({
             </select>
             <p className="mt-2 text-xs leading-6 text-slate-500">
               {canPickShop
-                ? "Vai trò shop sẽ được gán theo cửa hàng đã chọn."
-                : "Quản trị hệ thống là quyền toàn hệ thống, nên cửa hàng sẽ được bỏ qua."}
+                ? "Vai trò shop theo cửa hàng đã chọn."
+                : "Quản trị hệ thống không cần chọn shop."}
             </p>
           </label>
 
@@ -162,13 +159,9 @@ export function RoleAssignmentForm({
                 {selectedUser.fullName ?? selectedUser.email ?? "Người dùng"}
               </p>
               <p className="mt-1">
-                {selectedUser.employee
-                  ? `Nhân viên: ${selectedUser.employee.fullName}`
-                  : "Chưa có hồ sơ nhân viên."}
+                {selectedUser.employee ? `NV: ${selectedUser.employee.fullName}` : "Chưa có hồ sơ NV."}
               </p>
-              <p className="mt-1">
-                Vai trò hiện tại: {PROFILE_ROLE_LABELS[selectedUser.profileRole]}
-              </p>
+              <p className="mt-1">Vai trò: {PROFILE_ROLE_LABELS[selectedUser.profileRole]}</p>
             </div>
           ) : null}
 
@@ -198,9 +191,7 @@ export function RoleAssignmentForm({
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
           Danh bạ
         </p>
-        <h2 className="mt-1 text-lg font-semibold text-slate-900">
-          Người dùng và gán vai trò hiện tại
-        </h2>
+        <h2 className="mt-1 text-lg font-semibold text-slate-900">Danh bạ user</h2>
         <div className="mt-5 space-y-3">
           {directory.users.map((user) => (
             <div

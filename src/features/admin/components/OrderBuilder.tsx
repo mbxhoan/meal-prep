@@ -109,13 +109,13 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
     >
       <GuidedWorkflowCard
         eyebrow="Quy trình tạo đơn"
-        title="Làm đúng 4 bước để tránh sai giá"
-        description="Màn tạo đơn đã chụp snapshot giá ngay khi lưu. Hãy kiểm tra kỹ khách, món, giá và trạng thái trước khi bấm lưu."
+        title="4 bước tạo đơn"
+        description="Snapshot giá được chụp khi lưu."
         steps={[
-          "Chọn khách hàng, địa chỉ và kênh bán.",
-          "Thêm món, số lượng và kiểm tra giá bán từng dòng.",
-          "Rà giảm giá, phí giao hàng, ghi chú và biên lợi nhuận.",
-          "Nếu không còn là bản nháp, xác nhận chấp nhận khóa snapshot.",
+          "Chọn khách, địa chỉ và kênh bán.",
+          "Thêm món, số lượng và kiểm giá.",
+          "Rà giảm giá, phí và ghi chú.",
+          "Nếu không là nháp, chấp nhận khóa giá.",
         ]}
       />
 
@@ -216,8 +216,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
             </div>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              Dữ liệu đơn mới sẽ lưu snapshot giá và giá vốn tại thời điểm tạo,
-              không tự kéo lại từ bảng giá sau này.
+              Đơn mới chụp giá và giá vốn khi lưu.
             </p>
 
             <label className="mt-4 block">
@@ -236,11 +235,11 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
             <div className="mt-4">
               <GuardrailChecklist
                 title="Trước khi tạo đơn"
-                note="Đơn mới sẽ chụp snapshot giá ngay khi lưu. Nếu chọn trạng thái khác bản nháp, snapshot sẽ bị khóa sớm hơn."
+                note="Đơn mới chụp giá ngay khi lưu."
                 items={[
-                  "Đã chọn đúng khách hàng và kênh bán.",
-                  "Đã kiểm tra món, biến thể, số lượng và giá bán.",
-                  "Đã kiểm tra giảm giá, phí giao hàng và ghi chú.",
+                  "Khách và kênh đã đúng.",
+                  "Món, số lượng và giá đã rà.",
+                  "Giảm giá, phí và ghi chú đã đủ.",
                 ]}
               />
             </div>
@@ -250,11 +249,9 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Dòng đơn
+                  Dòng
                 </p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-900">
-                  Món và giá bán
-                </h2>
+                <h2 className="mt-2 text-lg font-semibold text-slate-900">Dòng</h2>
               </div>
               <button
                 type="button"
@@ -440,7 +437,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
             <p className="text-xs uppercase tracking-[0.22em] text-white/45">
               Tính tự động
             </p>
-            <h2 className="mt-3 text-lg font-semibold">Doanh thu và lợi nhuận gộp</h2>
+            <h2 className="mt-3 text-lg font-semibold">Tổng</h2>
             <div className="mt-5 space-y-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-white/65">Tạm tính món</span>
@@ -509,13 +506,13 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                 </div>
               </div>
               <GuardrailChecklist
-                title="Checklist trước khi lưu"
+                title="Trước khi lưu"
                 tone="warning"
-                note="Nếu đơn không còn ở trạng thái nháp, giá lịch sử sẽ khóa theo snapshot sau khi lưu."
+                note="Không còn nháp thì giá sẽ khóa."
                 items={[
-                  "Khách hàng, món và số lượng đã đúng.",
-                  "Giá bán, giảm giá và phí giao hàng đã được rà.",
-                  "Đã chấp nhận việc khóa snapshot nếu chọn trạng thái gửi / xác nhận.",
+                  "Khách, món và số lượng đã đúng.",
+                  "Giá, giảm giá và phí đã rà.",
+                  "Chấp nhận khóa giá nếu không là nháp.",
                 ]}
               />
               <button
@@ -523,7 +520,7 @@ export function OrderBuilder({ products }: { products: MenuProduct[] }) {
                 disabled={pending || lines.length === 0}
                 className="inline-flex w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-medium text-[#18352d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {pending ? "Đang tạo đơn..." : "Lưu đơn và tính tự động"}
+                {pending ? "Đang tạo..." : "Lưu đơn"}
               </button>
             </div>
           </section>
