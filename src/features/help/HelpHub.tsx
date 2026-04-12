@@ -3,21 +3,15 @@ import type { ReactNode } from "react";
 import {
   FaArrowRight,
   FaBookOpen,
-  FaBug,
-  FaClipboardCheck,
-  FaClock,
+  FaCircleInfo,
   FaShieldHalved,
-  FaTriangleExclamation,
 } from "react-icons/fa6";
-import { PageHeader, StatusPill } from "@/features/admin/components";
+import { PageHeader } from "@/features/admin/components";
 import {
-  helpChecklists,
-  helpDailyPlaybook,
   helpGuardrails,
+  helpNeedHelpTips,
   helpQuickStartSteps,
-  helpRbacSummary,
   helpRoleGuides,
-  helpTroubleshootingItems,
 } from "@/features/help/content";
 
 function SectionCard({
@@ -36,58 +30,32 @@ function SectionCard({
   return (
     <section
       id={id}
-      className="scroll-mt-24 rounded-[24px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]"
+      className="scroll-mt-24 rounded-[22px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]"
     >
-      <div className="max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
-          {title}
-        </h2>
-        <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-      </div>
-      <div className="mt-5">{children}</div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+        {eyebrow}
+      </p>
+      <h2 className="mt-1 text-base font-semibold tracking-tight text-slate-900">
+        {title}
+      </h2>
+      <p className="mt-1.5 max-w-2xl text-[13px] leading-5 text-slate-500">
+        {description}
+      </p>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
 
-function BulletList({
-  items,
-}: {
-  items: string[];
-}) {
+function BulletList({ items }: { items: string[] }) {
   return (
-    <ul className="space-y-2 text-sm leading-6 text-slate-600">
+    <ul className="space-y-1.5 text-[13px] leading-5 text-slate-600">
       {items.map((item) => (
         <li key={item} className="flex gap-2">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#51724f]" />
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#51724f]" />
           <span>{item}</span>
         </li>
       ))}
     </ul>
-  );
-}
-
-function RuleBanner({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-3">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
-          <FaTriangleExclamation className="text-sm" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-amber-900">{title}</p>
-          <p className="mt-1 text-sm leading-6 text-amber-900/80">{description}</p>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -96,64 +64,61 @@ export function HelpHub() {
     <div className="space-y-4 pb-8">
       <PageHeader
         eyebrow="Trợ giúp"
-        title="Trợ giúp / SOP"
-        description="Bắt đầu nhanh, SOP, checklist và lỗi thường gặp."
+        title="Hướng dẫn ngắn"
+        description="Đọc 1 phút là đủ để bắt đầu."
         action={
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
           >
             <FaArrowRight className="text-xs" />
-            <span>Mở dashboard</span>
+            <span>Về dashboard</span>
           </Link>
         }
       />
 
       <section className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
+        <div className="rounded-[22px] border border-white/70 bg-white/90 p-3.5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
           <div className="flex items-center gap-2">
             <FaBookOpen className="text-[#51724f]" />
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
               Bắt đầu
             </p>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            4 bước đầu cho user mới.
+          <p className="mt-2 text-[13px] leading-5 text-slate-600">
+            Thêm món, tạo đơn, xem tiền.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
+        <div className="rounded-[22px] border border-white/70 bg-white/90 p-3.5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
           <div className="flex items-center gap-2">
             <FaShieldHalved className="text-[#51724f]" />
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Rule chính
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Quy tắc
             </p>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Giữ snapshot, FEFO và log.
+          <p className="mt-2 text-[13px] leading-5 text-slate-600">
+            Đơn lưu rồi thì giữ giá.
           </p>
         </div>
-        <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
+        <div className="rounded-[22px] border border-white/70 bg-white/90 p-3.5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
           <div className="flex items-center gap-2">
-            <FaClipboardCheck className="text-[#51724f]" />
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Checklist
+            <FaCircleInfo className="text-[#51724f]" />
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Khi kẹt
             </p>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Rà nhanh trước khi chốt.
+          <p className="mt-2 text-[13px] leading-5 text-slate-600">
+            Xem popup hướng dẫn hoặc quay lại dashboard.
           </p>
         </div>
       </section>
 
       <div className="flex flex-wrap gap-2">
         {[
-          { href: "#bat-dau-nhanh", label: "Bắt đầu nhanh" },
-          { href: "#quy-tac", label: "Quy tắc chính" },
-          { href: "#sop-vai-tro", label: "Theo vai trò" },
-          { href: "#daily-playbook", label: "Vận hành hằng ngày" },
-          { href: "#checklist", label: "Checklist" },
-          { href: "#xu-ly-loi", label: "Xử lý lỗi" },
-          { href: "#rbac", label: "Phân quyền" },
+          { href: "#bat-dau-nhanh", label: "Bắt đầu" },
+          { href: "#quy-tac", label: "Quy tắc" },
+          { href: "#vai-tro", label: "Vai trò" },
+          { href: "#khi-ket", label: "Khi kẹt" },
         ].map((item) => (
           <Link
             key={item.href}
@@ -168,26 +133,22 @@ export function HelpHub() {
       <SectionCard
         id="bat-dau-nhanh"
         eyebrow="Bắt đầu nhanh"
-        title="30 phút đầu"
-        description="Làm theo thứ tự để khỏi sai."
+        title="3 việc đầu tiên"
+        description="Làm đúng thứ tự này là đủ để vào việc."
       >
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-3">
           {helpQuickStartSteps.map((step, index) => (
             <div
               key={step.title}
-              className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-4"
+              className="rounded-[18px] border border-slate-200 bg-slate-50/80 p-3"
             >
-              <div className="flex items-center justify-between gap-3">
-                <StatusPill
-                  label={`Bước ${index + 1}`}
-                  tone={index === 0 ? "info" : "muted"}
-                />
-                <FaClock className="text-slate-400" />
-              </div>
-              <h3 className="mt-3 text-sm font-semibold text-slate-900">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                Bước {index + 1}
+              </p>
+              <h3 className="mt-1 text-[13px] font-semibold text-slate-900">
                 {step.title}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
+              <p className="mt-1.5 text-[13px] leading-5 text-slate-600">
                 {step.description}
               </p>
             </div>
@@ -197,81 +158,47 @@ export function HelpHub() {
 
       <SectionCard
         id="quy-tac"
-        eyebrow="Quy tắc nền"
-        title="Rule chính"
-        description="Các rule nền cần nhớ."
+        eyebrow="Quy tắc"
+        title="Rule ngắn"
+        description="Đây là 3 điều nên nhớ khi thao tác."
       >
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-3">
           {helpGuardrails.map((rule) => (
-            <RuleBanner
+            <div
               key={rule.title}
-              title={rule.title}
-              description={rule.description}
-            />
+              className="rounded-[18px] border border-slate-200 bg-white p-3.5"
+            >
+              <p className="text-[13px] font-semibold text-slate-900">
+                {rule.title}
+              </p>
+              <p className="mt-1.5 text-[13px] leading-5 text-slate-600">
+                {rule.description}
+              </p>
+            </div>
           ))}
         </div>
       </SectionCard>
 
       <SectionCard
-        id="sop-vai-tro"
-        eyebrow="Theo vai trò"
-        title="Theo vai trò"
-        description="Mỗi role làm phần việc của mình."
+        id="vai-tro"
+        eyebrow="Vai trò"
+        title="Ai làm gì"
+        description="Mỗi người chỉ cần biết phần của mình."
       >
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-3 xl:grid-cols-3">
           {helpRoleGuides.map((role) => (
             <div
               key={role.roleCode}
-              className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
+              className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-3.5"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    {role.roleLabel}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-slate-900">
-                    {role.scope}
-                  </p>
-                </div>
-                <StatusPill label={role.roleLabel} tone="muted" />
-              </div>
-              <div className="mt-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Trách nhiệm
-                </p>
-                <div className="mt-2">
-                  <BulletList items={role.responsibilities} />
-                </div>
-              </div>
-              <div className="mt-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Không nên quên
-                </p>
-                <div className="mt-2">
-                  <BulletList items={role.guardrails} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard
-        id="daily-playbook"
-        eyebrow="Vận hành hằng ngày"
-        title="Hằng ngày"
-        description="Cách làm trong ngày."
-      >
-        <div className="grid gap-3 xl:grid-cols-2">
-          {helpDailyPlaybook.map((section) => (
-            <div
-              key={section.title}
-              className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
-            >
-              <p className="text-sm font-semibold text-slate-900">{section.title}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{section.summary}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {role.roleLabel}
+              </p>
+              <p className="mt-1 text-[13px] font-medium text-slate-900">
+                {role.scope}
+              </p>
               <div className="mt-3">
-                <BulletList items={section.steps} />
+                <BulletList items={role.responsibilities} />
               </div>
             </div>
           ))}
@@ -279,87 +206,20 @@ export function HelpHub() {
       </SectionCard>
 
       <SectionCard
-        id="checklist"
-        eyebrow="Checklist"
-        title="Checklist"
-        description="Rà nhanh trước khi chốt."
+        id="khi-ket"
+        eyebrow="Khi kẹt"
+        title="Nếu không biết bấm gì"
+        description="Dùng 3 gợi ý này trước khi hỏi hỗ trợ."
       >
-        <div className="grid gap-3 xl:grid-cols-2">
-          {helpChecklists.map((section) => (
+        <div className="grid gap-3 md:grid-cols-3">
+          {helpNeedHelpTips.map((tip) => (
             <div
-              key={section.title}
-              className="rounded-[22px] border border-slate-200 bg-white p-4"
+              key={tip.title}
+              className="rounded-[18px] border border-slate-200 bg-white p-3.5"
             >
-              <p className="text-sm font-semibold text-slate-900">{section.title}</p>
-              <div className="mt-3">
-                <BulletList items={section.items} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard
-        id="xu-ly-loi"
-        eyebrow="Xử lý lỗi"
-        title="Lỗi và ngoại lệ"
-        description="Đối chiếu rồi giữ lịch sử."
-      >
-        <div className="grid gap-4 xl:grid-cols-2">
-          {helpTroubleshootingItems.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-100 text-rose-700">
-                  <FaBug className="text-sm" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    {item.symptom}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Nguyên nhân hay gặp
-                  </p>
-                  <div className="mt-2">
-                    <BulletList items={item.cause} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    Cách xử lý đúng
-                  </p>
-                  <div className="mt-2">
-                    <BulletList items={item.fix} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard
-        id="rbac"
-        eyebrow="Phân quyền"
-        title="Phân quyền"
-        description="Mở cho mọi user đã đăng nhập."
-      >
-        <div className="grid gap-3 xl:grid-cols-3">
-          {helpRbacSummary.map((item) => (
-            <div
-              key={item.title}
-              className="rounded-[22px] border border-slate-200 bg-white p-4"
-            >
-              <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                {item.description}
+              <p className="text-[13px] font-semibold text-slate-900">{tip.title}</p>
+              <p className="mt-1.5 text-[13px] leading-5 text-slate-600">
+                {tip.description}
               </p>
             </div>
           ))}

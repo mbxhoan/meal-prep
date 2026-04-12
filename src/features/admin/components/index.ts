@@ -1,4 +1,5 @@
 export * from "./AdminShell";
+export * from "./AdminGuidePopup";
 export * from "./ExportExcelButton";
 export * from "./GuardrailChecklist";
 export * from "./GuidedWorkflowCard";

@@ -121,15 +121,39 @@ async function listOptionsForEntity(
 
 export const getMasterDataLandingConfig = cache(async (): Promise<{
   context: Awaited<ReturnType<typeof getAdminContext>>;
-  entities: MasterDataEntityConfig[];
+  entities: Array<MasterDataEntityConfig & { recordCount: number }>;
 }> => {
   const context = await getAdminContext();
+  const supabase = context.shop && isSupabaseConfigured()
+    ? await createSupabaseServerClient()
+    : null;
+
+  const countEntries = await Promise.all(
+    MASTER_DATA_ENTITY_LIST.filter((entity) =>
+      context.permissions.includes(entity.permissions.read),
+    ).map(async (entity) => {
+      if (!supabase || !context.shop) {
+        return {
+          ...entity,
+          recordCount: 0,
+        };
+      }
+
+      const { count } = await supabase
+        .from(entity.table)
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", context.shop.id);
+
+      return {
+        ...entity,
+        recordCount: count ?? 0,
+      };
+    }),
+  );
 
   return {
     context,
-    entities: MASTER_DATA_ENTITY_LIST.filter((entity) =>
-      context.permissions.includes(entity.permissions.read),
-    ),
+    entities: countEntries,
   };
 });
 

@@ -1,5 +1,7 @@
 import type {
+  DeliveryStatus,
   InventoryMovementType,
+  OrderType,
   OrderStatus,
   PaymentStatus,
 } from "@/lib/admin/types";
@@ -99,6 +101,46 @@ export function formatPaymentStatusLabel(status: PaymentStatus) {
   }
 }
 
+export function deliveryStatusTone(status: DeliveryStatus): PillTone {
+  switch (status) {
+    case "delivered":
+      return "success";
+    case "pending":
+    default:
+      return "warning";
+  }
+}
+
+export function formatDeliveryStatusLabel(status: DeliveryStatus) {
+  switch (status) {
+    case "delivered":
+      return "Đã giao hàng";
+    case "pending":
+    default:
+      return "Chưa giao hàng";
+  }
+}
+
+export function orderTypeTone(type: OrderType): PillTone {
+  switch (type) {
+    case "ready_made":
+      return "info";
+    case "order":
+    default:
+      return "accent";
+  }
+}
+
+export function formatOrderTypeLabel(type: OrderType) {
+  switch (type) {
+    case "ready_made":
+      return "Hàng sẵn";
+    case "order":
+    default:
+      return "Order";
+  }
+}
+
 export function movementTone(type: InventoryMovementType): PillTone {
   switch (type) {
     case "purchase":
@@ -138,7 +180,7 @@ export function StatusPill({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${toneMap[tone]}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${toneMap[tone]}`}
     >
       {label}
     </span>

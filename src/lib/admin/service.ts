@@ -63,6 +63,129 @@ function safeNumber(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function toIsoDateKey(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function normalizeDashboardOrder(row: Record<string, unknown>): OrderRecord {
+  const subtotalBeforeDiscount = safeNumber(
+    row.subtotal_before_discount ?? row.total_revenue ?? row.total_amount,
+  );
+  const discountAmount = safeNumber(row.order_discount_amount ?? 0);
+  const totalAmount = safeNumber(row.total_amount ?? row.total_revenue);
+  const totalRevenue = safeNumber(row.total_revenue ?? row.total_amount);
+
+  return {
+    id: String(row.id ?? ""),
+    orderNumber: String(row.order_no ?? row.order_number ?? ""),
+    customerId: row.customer_id == null ? null : String(row.customer_id),
+    customerName: String(
+      row.customer_name_snapshot ?? row.customer_name ?? "Khách lẻ",
+    ),
+    customerPhone:
+      row.customer_phone_snapshot == null
+        ? null
+        : String(row.customer_phone_snapshot),
+    customerAddress:
+      row.customer_address_snapshot == null
+        ? null
+        : String(row.customer_address_snapshot),
+    employeeId: row.employee_id == null ? null : String(row.employee_id),
+    salesChannel: String(row.sales_channel ?? "manual") as OrderRecord["salesChannel"],
+    orderType:
+      row.order_type == null
+        ? undefined
+        : (String(row.order_type) as OrderRecord["orderType"]),
+    deliveryStatus:
+      row.delivery_status == null
+        ? undefined
+        : (String(row.delivery_status) as OrderRecord["deliveryStatus"]),
+    shipperName: row.shipper_name == null ? null : String(row.shipper_name),
+    status: String(row.status ?? "draft") as OrderRecord["status"],
+    paymentStatus: String(row.payment_status ?? "unpaid") as NonNullable<
+      OrderRecord["paymentStatus"]
+    >,
+    note: row.notes == null ? null : String(row.notes),
+    subtotal: subtotalBeforeDiscount,
+    subtotalBeforeDiscount,
+    discountAmount,
+    orderDiscountType:
+      row.order_discount_type == null ? null : String(row.order_discount_type),
+    orderDiscountValue:
+      row.order_discount_value == null ? null : safeNumber(row.order_discount_value),
+    orderDiscountAmount: discountAmount,
+    shippingFee: safeNumber(row.shipping_fee),
+    otherFee: safeNumber(row.other_fee),
+    totalAmount,
+    totalRevenue,
+    totalCogs: safeNumber(row.total_cogs),
+    grossProfit: safeNumber(row.gross_profit),
+    grossMargin: safeNumber(row.gross_margin),
+    orderedAt: String(row.ordered_at ?? row.created_at ?? new Date().toISOString()),
+    sentAt: row.sent_at == null ? null : String(row.sent_at),
+    confirmedAt: row.confirmed_at == null ? null : String(row.confirmed_at),
+    priceBookIdSnapshot:
+      row.price_book_id_snapshot == null
+        ? null
+        : String(row.price_book_id_snapshot),
+    priceBookCodeSnapshot:
+      row.price_book_code_snapshot == null
+        ? null
+        : String(row.price_book_code_snapshot),
+    inventoryAppliedAt:
+      row.inventory_applied_at == null
+        ? null
+        : String(row.inventory_applied_at),
+    payments: [],
+    items: [],
+  };
+}
+
+function buildSalesTrendPoints(
+  rows: Record<string, unknown>[],
+  days = 7,
+): AnalyticsPoint[] {
+  const buckets = new Map<string, AnalyticsPoint>();
+  const now = new Date();
+
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const day = new Date(now);
+    day.setDate(now.getDate() - offset);
+    const key = toIsoDateKey(day);
+
+    buckets.set(key, {
+      date: key,
+      revenue: 0,
+      cogs: 0,
+      profit: 0,
+      orders: 0,
+    });
+  }
+
+  for (const row of rows) {
+    const status = String(row.status ?? "draft");
+
+    if (status === "draft" || status === "cancelled") {
+      continue;
+    }
+
+    const orderedAt = String(row.ordered_at ?? "");
+    const key = orderedAt.slice(0, 10);
+    const bucket = buckets.get(key);
+
+    if (!bucket) {
+      continue;
+    }
+
+    bucket.revenue += safeNumber(row.total_revenue);
+    bucket.cogs += safeNumber(row.total_cogs);
+    bucket.profit += safeNumber(row.gross_profit);
+    bucket.orders += 1;
+  }
+
+  return [...buckets.values()];
+}
+
 function normalizeVariant(variant: Record<string, unknown>) {
   const recipeComponents = Array.isArray(variant.recipe_components)
     ? variant.recipe_components.map((component) => {
@@ -92,10 +215,12 @@ function normalizeVariant(variant: Record<string, unknown>) {
     (sum, component) => sum + component.lineCost,
     0,
   );
+  const rawStandardCost = safeNumber(variant.standard_cost);
   const packagingCost = safeNumber(variant.packaging_cost);
   const laborCost = safeNumber(variant.labor_cost);
   const overheadCost = safeNumber(variant.overhead_cost);
-  const totalCost = recipeCost + packagingCost + laborCost + overheadCost;
+  const formulaCost = recipeCost + packagingCost + laborCost + overheadCost;
+  const totalCost = rawStandardCost > 0 ? rawStandardCost : formulaCost;
   const price = safeNumber(variant.price);
   const grossProfit = price - totalCost;
 
@@ -112,6 +237,7 @@ function normalizeVariant(variant: Record<string, unknown>) {
       variant.compare_at_price == null
         ? null
         : safeNumber(variant.compare_at_price),
+    standardCost: totalCost,
     packagingCost,
     laborCost,
     overheadCost,
@@ -296,6 +422,15 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
           };
       })
       : [];
+  const payments = Array.isArray(row.sales_payments)
+    ? row.sales_payments.map((entry) => {
+        const payment = entry as Record<string, unknown>;
+
+        return {
+          amount: safeNumber(payment.amount, 0),
+        };
+      })
+    : [];
   const customerName = row.customer_name_snapshot ?? row.customer_name;
   const customerPhone = row.customer_phone_snapshot ?? row.customer_phone;
   const customerAddress = row.customer_address_snapshot ?? row.customer_address;
@@ -313,10 +448,24 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
   return {
     id: String(row.id),
     orderNumber: String(orderNumber ?? ""),
+    customerId:
+      row.customer_id == null ? null : String(row.customer_id),
     customerName: String(customerName ?? "Khách lẻ"),
     customerPhone: customerPhone == null ? null : String(customerPhone),
     customerAddress: customerAddress == null ? null : String(customerAddress),
+    employeeId:
+      row.employee_id == null ? null : String(row.employee_id),
     salesChannel: String(row.sales_channel ?? "manual") as OrderRecord["salesChannel"],
+    orderType:
+      row.order_type == null
+        ? undefined
+        : (String(row.order_type) as OrderRecord["orderType"]),
+    deliveryStatus:
+      row.delivery_status == null
+        ? undefined
+        : (String(row.delivery_status) as OrderRecord["deliveryStatus"]),
+    shipperName:
+      row.shipper_name == null ? null : String(row.shipper_name),
     status: String(row.status ?? "draft") as OrderRecord["status"],
     paymentStatus: String(row.payment_status ?? "unpaid") as NonNullable<
       OrderRecord["paymentStatus"]
@@ -358,6 +507,7 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
       row.inventory_applied_at == null
         ? null
         : String(row.inventory_applied_at),
+    payments,
     items,
   };
 }
@@ -412,6 +562,12 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   }
 
   try {
+    const context = await getAdminContext();
+
+    if (!context.shop) {
+      return getDemoDashboardSnapshot();
+    }
+
     const supabase = await createSupabaseServerClient();
 
     if (!supabase) {
@@ -421,77 +577,75 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
-    const [orders, inventoryResponse, menuItemsResponse, productsResponse] = await Promise.all([
-      getOrders(),
+    const [ordersResponse, menuItemsResponse, openOrdersResponse] = await Promise.all([
       supabase
-        .from("inventory_items")
-        .select("*")
-        .order("updated_at", { ascending: false }),
+        .from("sales_orders")
+        .select(
+          "id, order_no, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, sales_channel, order_type, delivery_status, shipper_name, status, payment_status, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, ordered_at, sent_at, confirmed_at, price_book_id_snapshot, price_book_code_snapshot, inventory_applied_at, notes",
+        )
+        .eq("shop_id", context.shop.id)
+        .gte("ordered_at", since.toISOString())
+        .order("ordered_at", { ascending: false }),
       supabase
         .from("menu_items")
         .select("id", { count: "exact", head: true })
+        .eq("shop_id", context.shop.id)
         .eq("is_active", true)
         .is("deleted_at", null),
-      supabase.from("products").select("id", { count: "exact", head: true }),
+      supabase
+        .from("sales_orders")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", context.shop.id)
+        .in("status", ["draft", "sent", "confirmed", "preparing", "ready"]),
     ]);
 
-    if (inventoryResponse.error) {
+    if (ordersResponse.error || menuItemsResponse.error || openOrdersResponse.error) {
       return getDemoDashboardSnapshot();
     }
 
-    const inventoryItems = (inventoryResponse.data ?? []).map((row) =>
-      normalizeInventoryItem(row as Record<string, unknown>),
-    );
-    const recentOrders30d = orders.filter(
-      (order) => new Date(order.orderedAt).getTime() >= since.getTime(),
-    );
-    const effectiveOrders = recentOrders30d.filter(
-      (order) => order.status !== "draft" && order.status !== "cancelled",
-    );
+    const orders = (ordersResponse.data ?? []) as Record<string, unknown>[];
+    const effectiveOrders = orders.filter((row) => {
+      const status = String(row.status ?? "draft");
+
+      return status !== "draft" && status !== "cancelled";
+    });
     const revenue30d = effectiveOrders.reduce(
-      (sum, order) => sum + order.totalRevenue,
+      (sum, row) => sum + safeNumber(row.total_revenue),
       0,
     );
     const profit30d = effectiveOrders.reduce(
-      (sum, order) => sum + order.grossProfit,
+      (sum, row) => sum + safeNumber(row.gross_profit),
       0,
     );
-    const bestSellerMap = new Map<string, DashboardSnapshot["bestSellers"][number]>();
-
-    for (const order of effectiveOrders) {
-      for (const item of order.items) {
-        const current = bestSellerMap.get(item.productId);
-
-        bestSellerMap.set(item.productId, {
-          productId: item.productId,
-          productName: item.productName,
-          quantity: (current?.quantity ?? 0) + item.quantity,
-          revenue: (current?.revenue ?? 0) + item.lineRevenue,
-          profit: (current?.profit ?? 0) + item.lineProfit,
-        });
-      }
-    }
+    const orderCount30d = effectiveOrders.length;
+    const salesTrend = buildSalesTrendPoints(orders, 7);
+    const todayKey = toIsoDateKey(new Date());
+    const todayBucket = salesTrend[salesTrend.length - 1] ?? {
+      date: todayKey,
+      revenue: 0,
+      cogs: 0,
+      profit: 0,
+      orders: 0,
+    };
 
     return {
       revenue30d,
       profit30d,
       grossMargin30d: revenue30d > 0 ? profit30d / revenue30d : 0,
-      avgOrderValue:
-        effectiveOrders.length > 0 ? revenue30d / effectiveOrders.length : 0,
+      avgOrderValue: orderCount30d > 0 ? revenue30d / orderCount30d : 0,
+      orderCount30d,
+      todayRevenue: todayBucket.revenue,
+      todayOrders: todayBucket.orders,
       menuCount:
         menuItemsResponse.count != null && menuItemsResponse.count > 0
           ? menuItemsResponse.count
-          : productsResponse.count ?? 0,
-      lowStockCount: inventoryItems.filter((item) => item.isLowStock).length,
-      openOrders: orders.filter(
-        (order) =>
-          order.status !== "completed" && order.status !== "cancelled",
-      ).length,
-      recentOrders: orders.slice(0, 5),
-      lowStockItems: inventoryItems.filter((item) => item.isLowStock).slice(0, 4),
-      bestSellers: [...bestSellerMap.values()]
-        .sort((left, right) => right.revenue - left.revenue)
-        .slice(0, 4),
+          : 0,
+      lowStockCount: 0,
+      openOrders: openOrdersResponse.count ?? 0,
+      recentOrders: orders.slice(0, 5).map((row) => normalizeDashboardOrder(row)),
+      salesTrend,
+      lowStockItems: [],
+      bestSellers: [],
     };
   } catch {
     return getDemoDashboardSnapshot();
@@ -541,8 +695,8 @@ export async function getMenuProducts(): Promise<MenuProduct[]> {
     }
 
     const variantsSelect = context.canEdit
-      ? "product_variants(id, product_id, label, weight_in_grams, price, compare_at_price, is_default, is_active, sort_order, packaging_cost, labor_cost, overhead_cost, recipe_components(id, variant_id, inventory_item_id, quantity_per_unit, wastage_pct, inventory_items(name, unit, average_unit_cost)))"
-      : "product_variants(id, product_id, label, weight_in_grams, price, compare_at_price, is_default, is_active, sort_order, packaging_cost, labor_cost, overhead_cost)";
+      ? "product_variants(id, product_id, label, weight_in_grams, price, compare_at_price, standard_cost, is_default, is_active, sort_order, packaging_cost, labor_cost, overhead_cost, recipe_components(id, variant_id, inventory_item_id, quantity_per_unit, wastage_pct, inventory_items(name, unit, average_unit_cost)))"
+      : "product_variants(id, product_id, label, weight_in_grams, price, compare_at_price, standard_cost, is_default, is_active, sort_order, packaging_cost, labor_cost, overhead_cost)";
 
     const { data, error } = await supabase
       .from("products")
@@ -596,7 +750,7 @@ export async function getOrders(): Promise<OrderRecord[]> {
     const salesResponse = await supabase
       .from("sales_orders")
       .select(
-        "id, shop_id, order_no, sales_channel, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total)",
+        "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at)",
       )
       .eq("shop_id", context.shop.id)
       .order("ordered_at", { ascending: false });

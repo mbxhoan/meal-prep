@@ -18,7 +18,7 @@ export function GuardrailChecklist({
 
   return (
     <div
-      className={`rounded-[22px] border px-4 py-3 ${
+      className={`rounded-[18px] border px-3 py-3 ${
         isWarning
           ? "border-amber-200 bg-amber-50"
           : "border-sky-200 bg-sky-50"
@@ -26,15 +26,15 @@ export function GuardrailChecklist({
     >
       <div className="flex items-start gap-3">
         <div
-          className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+          className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full ${
             isWarning ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700"
           }`}
         >
-          <Icon className="text-sm" />
+          <Icon className="text-xs" />
         </div>
         <div className="min-w-0">
           <p
-            className={`text-sm font-semibold ${
+            className={`text-[13px] font-semibold ${
               isWarning ? "text-amber-900" : "text-sky-900"
             }`}
           >
@@ -42,7 +42,7 @@ export function GuardrailChecklist({
           </p>
           {note ? (
             <p
-              className={`mt-1 text-sm leading-6 ${
+              className={`mt-1 text-[13px] leading-5 ${
                 isWarning ? "text-amber-900/80" : "text-sky-900/80"
               }`}
             >
@@ -52,7 +52,7 @@ export function GuardrailChecklist({
         </div>
       </div>
 
-      <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+      <ul className="mt-3 space-y-1.5 text-[13px] leading-5 text-slate-600">
         {items.map((item) => (
           <li key={item} className="flex gap-2">
             <span

@@ -45,6 +45,65 @@ export const demoCategories: AdminCategory[] = [
   },
 ];
 
+export const demoCustomers = [
+  {
+    id: "cust-1000-0000-0000-000000000001",
+    code: "KH-001",
+    name: "Nguyen Thi Linh",
+    phone: "0900000111",
+    address: "Quận 1, TP. Hồ Chí Minh",
+    note: "Khách mua đều mỗi tuần.",
+  },
+  {
+    id: "cust-1000-0000-0000-000000000002",
+    code: "KH-002",
+    name: "Tran Quoc Bao",
+    phone: "0900000222",
+    address: "Quận 3, TP. Hồ Chí Minh",
+    note: "Ưu tiên giao trước 12h.",
+  },
+  {
+    id: "cust-1000-0000-0000-000000000003",
+    code: "KH-003",
+    name: "Le Minh Chau",
+    phone: "0900000333",
+    address: "Thủ Đức, TP. Hồ Chí Minh",
+    note: null,
+  },
+  {
+    id: "cust-1000-0000-0000-000000000004",
+    code: "KH-004",
+    name: "Pham Thao Nhi",
+    phone: "0900000444",
+    address: "Quận 7, TP. Hồ Chí Minh",
+    note: "Giao buổi chiều.",
+  },
+];
+
+export const demoEmployees = [
+  {
+    id: "emp-1000-0000-0000-000000000001",
+    employeeCode: "NV-001",
+    fullName: "Nguyen Van An",
+    phone: "0911000001",
+    jobTitle: "Kinh doanh",
+  },
+  {
+    id: "emp-1000-0000-0000-000000000002",
+    employeeCode: "NV-002",
+    fullName: "Tran Thi Bich",
+    phone: "0911000002",
+    jobTitle: "Chăm sóc khách",
+  },
+  {
+    id: "emp-1000-0000-0000-000000000003",
+    employeeCode: "NV-003",
+    fullName: "Le Minh Chau",
+    phone: "0911000003",
+    jobTitle: "Bán hàng",
+  },
+];
+
 export const demoInventoryItems: InventoryItem[] = [
   {
     id: "i1000000-0000-0000-0000-000000000001",
@@ -237,6 +296,7 @@ function makeVariant(params: {
     weightInGrams: params.weightInGrams,
     price: params.price,
     compareAtPrice: params.compareAtPrice ?? null,
+    standardCost: totalCost,
     packagingCost: params.packagingCost,
     laborCost: params.laborCost,
     overheadCost: params.overheadCost,
@@ -502,7 +562,12 @@ function makeOrder(params: {
   orderNumber: string;
   customerName: string;
   customerPhone?: string;
+  customerId?: string | null;
+  employeeId?: string | null;
   salesChannel: OrderRecord["salesChannel"];
+  orderType?: OrderRecord["orderType"];
+  deliveryStatus?: OrderRecord["deliveryStatus"];
+  shipperName?: string | null;
   status: OrderRecord["status"];
   orderedAt: string;
   note?: string;
@@ -534,9 +599,16 @@ function makeOrder(params: {
   return {
     id: params.id,
     orderNumber: params.orderNumber,
+    customerId: params.customerId ?? null,
     customerName: params.customerName,
     customerPhone: params.customerPhone ?? null,
+    employeeId: params.employeeId ?? null,
     salesChannel: params.salesChannel,
+    orderType: params.orderType ?? "order",
+    deliveryStatus:
+      params.deliveryStatus ??
+      (params.status === "completed" ? "delivered" : "pending"),
+    shipperName: params.shipperName ?? null,
     status: params.status,
     note: params.note ?? null,
     subtotal,
@@ -700,9 +772,18 @@ export function getDemoDashboardSnapshot(): DashboardSnapshot {
   );
   const avgOrderValue =
     effectiveOrders.length > 0 ? revenue30d / effectiveOrders.length : 0;
+  const orderCount30d = effectiveOrders.length;
   const openOrders = demoOrders.filter(
     (order) => order.status === "draft" || order.status === "confirmed",
   ).length;
+  const salesTrend = getDemoAnalytics();
+  const todayPoint = salesTrend[salesTrend.length - 1] ?? {
+    date: today.toISOString().slice(0, 10),
+    revenue: 0,
+    cogs: 0,
+    profit: 0,
+    orders: 0,
+  };
 
   const bestSellerMap = new Map<string, BestSeller>();
 
@@ -725,6 +806,9 @@ export function getDemoDashboardSnapshot(): DashboardSnapshot {
     profit30d,
     grossMargin30d: revenue30d > 0 ? profit30d / revenue30d : 0,
     avgOrderValue,
+    orderCount30d,
+    todayRevenue: todayPoint.revenue,
+    todayOrders: todayPoint.orders,
     menuCount: demoMenuProducts.length,
     lowStockCount: demoInventoryItems.filter((item) => item.isLowStock).length,
     openOrders,
@@ -734,6 +818,7 @@ export function getDemoDashboardSnapshot(): DashboardSnapshot {
           new Date(right.orderedAt).getTime() - new Date(left.orderedAt).getTime(),
       )
       .slice(0, 5),
+    salesTrend,
     lowStockItems: demoInventoryItems.filter((item) => item.isLowStock),
     bestSellers: [...bestSellerMap.values()]
       .sort((left, right) => right.revenue - left.revenue)

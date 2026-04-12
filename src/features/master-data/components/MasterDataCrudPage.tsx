@@ -6,6 +6,7 @@ import {
   FaPenToSquare,
   FaPlus,
   FaRotateLeft,
+  FaTableColumns,
   FaTrash,
 } from "react-icons/fa6";
 import { ExportExcelButton } from "@/features/admin/components/ExportExcelButton";
@@ -127,6 +128,10 @@ export function MasterDataCrudPage({
 }) {
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [showColumns, setShowColumns] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(config.columns.map((column) => [column.key, true])),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, DraftValue>>(
     buildDraftFromRow(config, null),
@@ -206,14 +211,18 @@ export function MasterDataCrudPage({
     values: draft,
   });
 
-  const exportColumns: ExportExcelColumn[] = config.columns.map((column) => ({
+  const activeColumns = config.columns.filter(
+    (column) => visibleColumns[column.key] !== false,
+  );
+
+  const exportColumns: ExportExcelColumn[] = activeColumns.map((column) => ({
     key: column.key,
     label: column.label,
   }));
 
   const exportRows = filteredRows.map((row) =>
     Object.fromEntries(
-      config.columns.map((column) => {
+      activeColumns.map((column) => {
         const fieldConfig = fieldLookup.get(column.key);
 
         return [
@@ -261,6 +270,15 @@ export function MasterDataCrudPage({
             >
               <FaBoxArchive />
             </button>
+            <button
+              type="button"
+              onClick={() => setShowColumns((current) => !current)}
+              title="Cột hiển thị"
+              aria-label="Cột hiển thị"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              <FaTableColumns />
+            </button>
             <ExportExcelButton
               filename={`${config.key}-${new Date().toISOString().slice(0, 10)}`}
               sheetName={config.title}
@@ -306,6 +324,31 @@ export function MasterDataCrudPage({
           </p>
         </div>
       </section>
+
+      {showColumns ? (
+        <section className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {config.columns.map((column) => (
+              <label
+                key={column.key}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns[column.key] !== false}
+                  onChange={(event) =>
+                    setVisibleColumns((current) => ({
+                      ...current,
+                      [column.key]: event.target.checked,
+                    }))
+                  }
+                />
+                <span>{column.label}</span>
+              </label>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {canCreate || canUpdate ? (
         <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
@@ -502,7 +545,7 @@ export function MasterDataCrudPage({
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
             <thead className="bg-slate-50">
               <tr>
-                {config.columns.map((column) => (
+                {activeColumns.map((column) => (
                   <th
                     key={column.key}
                     className="px-4 py-3 font-medium text-slate-500"
@@ -518,7 +561,7 @@ export function MasterDataCrudPage({
             <tbody className="divide-y divide-slate-100 bg-white">
               {filteredRows.map((row) => (
                 <tr key={row.id} className="align-top">
-                  {config.columns.map((column) => (
+                  {activeColumns.map((column) => (
                     <td key={column.key} className="px-4 py-4 text-slate-700">
                       {column.type === "boolean" ? (
                         <StatusPill
@@ -585,7 +628,7 @@ export function MasterDataCrudPage({
               {filteredRows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={config.columns.length + 1}
+                    colSpan={activeColumns.length + 1}
                     className="px-4 py-8 text-center text-slate-500"
                   >
                     Không có dữ liệu phù hợp.

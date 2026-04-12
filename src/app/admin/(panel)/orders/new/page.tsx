@@ -6,7 +6,12 @@ export default async function AdminNewOrderPage() {
 
   return (
     <div className="space-y-5 pb-8">
-      <OrderBuilder products={builderData.products} />
+      <OrderBuilder
+        products={builderData.products}
+        customers={builderData.customers}
+        employees={builderData.employees}
+        defaultEmployeeId={builderData.defaultEmployeeId}
+      />
     </div>
   );
 }

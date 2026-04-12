@@ -1,4 +1,5 @@
 import type { MenuProduct } from "@/lib/admin/types";
+import type { DeliveryStatus, OrderType } from "@/lib/admin/types";
 
 export type SalesOrderStatus =
   | "draft"
@@ -72,12 +73,16 @@ export interface SalesOrderDetailRecord {
   shopId: string;
   orderNo: string;
   salesChannel: string;
+  orderType?: OrderType;
+  deliveryStatus?: DeliveryStatus;
+  shipperName?: string | null;
   orderedAt: string;
   customerId: string | null;
   customerNameSnapshot: string;
   customerPhoneSnapshot: string | null;
   customerAddressSnapshot: string | null;
   employeeId: string | null;
+  employeeNameSnapshot?: string | null;
   status: SalesOrderStatus;
   paymentStatus: SalesPaymentStatus;
   priceBookIdSnapshot: string | null;
@@ -109,4 +114,24 @@ export interface SalesOrderBuilderData {
   products: MenuProduct[];
   priceBookId: string | null;
   priceBookName: string | null;
+  customers: SalesOrderCustomerOption[];
+  employees: SalesOrderEmployeeOption[];
+  defaultEmployeeId: string | null;
+}
+
+export interface SalesOrderCustomerOption {
+  id: string;
+  code: string | null;
+  name: string;
+  phone: string | null;
+  address: string | null;
+  note: string | null;
+}
+
+export interface SalesOrderEmployeeOption {
+  id: string;
+  employeeCode: string | null;
+  fullName: string;
+  phone: string | null;
+  jobTitle: string | null;
 }

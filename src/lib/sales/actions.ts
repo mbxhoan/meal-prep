@@ -9,6 +9,7 @@ import {
   createSalesOrderRecord,
   recordSalesPayment,
   refreshSalesOrderDraftPrices,
+  updateSalesOrderDeliveryStatus,
   updateSalesOrderStatus,
 } from "@/lib/sales/service";
 import { parseJsonField, toNumber, toNullableText } from "@/lib/sales/validation";
@@ -41,6 +42,12 @@ function permissionForStatus(status: OrderStatus) {
   }
 }
 
+function permissionForDeliveryStatus(deliveryStatus: "pending" | "delivered") {
+  return deliveryStatus === "delivered"
+    ? "sales.order.confirm"
+    : "sales.order.update_draft";
+}
+
 export async function createSalesOrderAction(
   _previousState: ActionState,
   formData: FormData,
@@ -58,7 +65,7 @@ export async function createSalesOrderAction(
   }
 
   try {
-    await requirePermission(permissionForStatus(payload.status));
+    await requirePermission("sales.order.create");
     const result = await createSalesOrderRecord(payload);
 
     revalidatePath("/admin");
@@ -159,6 +166,48 @@ export async function updateSalesOrderStatusAction(
 
     return actionError(
       error instanceof Error ? error.message : "Không cập nhật được trạng thái.",
+      "live",
+    );
+  }
+}
+
+export async function updateSalesOrderDeliveryStatusAction(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  type Payload = {
+    orderId: string;
+    deliveryStatus: "pending" | "delivered";
+  };
+
+  let payload: Payload;
+
+  try {
+    payload = parseJsonField<Payload>(formData, "payload");
+  } catch {
+    return actionError("Không đọc được dữ liệu giao hàng.", "demo");
+  }
+
+  if (!isSupabaseConfigured()) {
+    return demoSuccess("Đã cập nhật trạng thái giao hàng trong chế độ demo.");
+  }
+
+  try {
+    await requirePermission(permissionForDeliveryStatus(payload.deliveryStatus));
+    await updateSalesOrderDeliveryStatus(payload.orderId, payload.deliveryStatus);
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${payload.orderId}`);
+
+    redirect(`/admin/orders/${payload.orderId}`);
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return actionError("Bạn không có quyền đổi trạng thái giao hàng.", "live");
+    }
+
+    return actionError(
+      error instanceof Error ? error.message : "Không cập nhật được giao hàng.",
       "live",
     );
   }

@@ -164,6 +164,7 @@ export async function saveMenuProductAction(
         variant.compareAtPrice == null
           ? null
           : sanitizeNumber(variant.compareAtPrice),
+      standard_cost: sanitizeNumber(variant.standardCost),
       packaging_cost: sanitizeNumber(variant.packagingCost),
       labor_cost: sanitizeNumber(variant.laborCost),
       overhead_cost: sanitizeNumber(variant.overheadCost),

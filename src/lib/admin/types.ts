@@ -24,6 +24,8 @@ export type SalesChannel =
   | "store"
   | "grab"
   | "manual";
+export type OrderType = "ready_made" | "order";
+export type DeliveryStatus = "pending" | "delivered";
 export type OrderStatus =
   | "draft"
   | "sent"
@@ -96,6 +98,7 @@ export interface MenuVariant {
   weightInGrams: number | null;
   price: number;
   compareAtPrice: number | null;
+  standardCost: number;
   packagingCost: number;
   laborCost: number;
   overheadCost: number;
@@ -225,10 +228,15 @@ export interface OrderItem {
 export interface OrderRecord {
   id: string;
   orderNumber: string;
+  customerId?: string | null;
   customerName: string;
   customerPhone: string | null;
   customerAddress?: string | null;
+  employeeId?: string | null;
   salesChannel: SalesChannel;
+  orderType?: OrderType;
+  deliveryStatus?: DeliveryStatus;
+  shipperName?: string | null;
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
   note: string | null;
@@ -251,6 +259,9 @@ export interface OrderRecord {
   priceBookIdSnapshot?: string | null;
   priceBookCodeSnapshot?: string | null;
   inventoryAppliedAt: string | null;
+  payments?: Array<{
+    amount: number;
+  }>;
   items: OrderItem[];
 }
 
@@ -267,10 +278,14 @@ export interface DashboardSnapshot {
   profit30d: number;
   grossMargin30d: number;
   avgOrderValue: number;
+  orderCount30d: number;
+  todayRevenue: number;
+  todayOrders: number;
   menuCount: number;
   lowStockCount: number;
   openOrders: number;
   recentOrders: OrderRecord[];
+  salesTrend: AnalyticsPoint[];
   lowStockItems: InventoryItem[];
   bestSellers: BestSeller[];
 }
@@ -313,6 +328,7 @@ export interface MenuProductPayload {
     weightInGrams: number | null;
     price: number;
     compareAtPrice: number | null;
+    standardCost: number;
     packagingCost: number;
     laborCost: number;
     overheadCost: number;
@@ -329,13 +345,19 @@ export interface MenuProductPayload {
 }
 
 export interface OrderPayload {
+  customerId: string | null;
   customerName: string;
-  customerPhone: string;
-  customerAddress: string;
+  customerPhone: string | null;
+  customerAddress: string | null;
+  employeeId: string | null;
   salesChannel: SalesChannel;
-  status: OrderStatus;
-  discountAmount: number;
+  orderType?: OrderType;
+  deliveryStatus?: DeliveryStatus;
+  shipperName?: string;
+  discountPercent?: number;
+  discountAmount?: number;
   shippingFee: number;
+  paidAmount?: number;
   otherFee: number;
   note: string;
   items: Array<{

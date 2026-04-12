@@ -1,17 +1,23 @@
 import { cache } from "react";
+import { demoCustomers, demoEmployees } from "@/lib/admin/demo-data";
 import { getMenuProducts } from "@/lib/admin/service";
 import type {
+  DeliveryStatus,
   MenuProduct,
   MenuVariant,
+  OrderType,
   OrderPayload,
 } from "@/lib/admin/types";
+import { roundCurrency } from "@/lib/admin/format";
 import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { getAdminContext } from "@/lib/admin/service";
 import type {
   SalesOrderBuilderData,
+  SalesOrderCustomerOption,
   SalesOrderDetailRecord,
   SalesOrderFulfillmentIssueSummary,
   SalesOrderItemRecord,
+  SalesOrderEmployeeOption,
   SalesOrderStatusLogRecord,
   SalesOrderStatus,
   SalesPaymentRecord,
@@ -54,6 +60,46 @@ function buildVariantIndex(products: MenuProduct[]) {
   }
 
   return entries;
+}
+
+function normalizeCustomerOption(
+  row: Record<string, unknown>,
+): SalesOrderCustomerOption {
+  return {
+    id: String(row.id ?? ""),
+    code: row.code == null ? null : String(row.code),
+    name: String(row.name ?? "Khách hàng"),
+    phone: row.phone == null ? null : String(row.phone),
+    address: row.address == null ? null : String(row.address),
+    note: row.note == null ? null : String(row.note),
+  };
+}
+
+function normalizeEmployeeOption(
+  row: Record<string, unknown>,
+): SalesOrderEmployeeOption {
+  return {
+    id: String(row.id ?? ""),
+    employeeCode:
+      row.employee_code == null ? null : String(row.employee_code),
+    fullName: String(row.full_name ?? "Nhân viên"),
+    phone: row.phone == null ? null : String(row.phone),
+    jobTitle: row.job_title == null ? null : String(row.job_title),
+  };
+}
+
+function resolveOrderDiscountAmount(
+  subtotalBeforeDiscount: number,
+  discountPercent?: number,
+  discountAmount?: number,
+) {
+  if (Number.isFinite(discountPercent ?? NaN) && (discountPercent ?? 0) > 0) {
+    return roundCurrency(
+      Math.max(subtotalBeforeDiscount, 0) * Math.max(discountPercent ?? 0, 0) / 100,
+    );
+  }
+
+  return roundCurrency(Math.max(discountAmount ?? 0, 0));
 }
 
 async function getCurrentPriceBookContext(
@@ -224,6 +270,7 @@ async function buildCanonicalCatalog(
                 : safeNumber(variantRow.weight_grams),
             price: salePrice,
             compareAtPrice: null,
+            standardCost,
             packagingCost: 0,
             laborCost: 0,
             overheadCost: 0,
@@ -262,6 +309,9 @@ async function buildCanonicalCatalog(
     priceBookId,
     priceBookName,
     priceBookItemIdByVariantId,
+    customers: [],
+    employees: [],
+    defaultEmployeeId: null,
   };
 }
 
@@ -274,6 +324,62 @@ async function buildLegacyCatalog(): Promise<CatalogResolution> {
     priceBookId: null,
     priceBookName: null,
     priceBookItemIdByVariantId: new Map<string, string>(),
+    customers: demoCustomers.map((row) => ({
+      id: row.id,
+      code: row.code,
+      name: row.name,
+      phone: row.phone,
+      address: row.address,
+      note: row.note,
+    })),
+    employees: demoEmployees.map((row) => ({
+      id: row.id,
+      employeeCode: row.employeeCode,
+      fullName: row.fullName,
+      phone: row.phone,
+      jobTitle: row.jobTitle,
+    })),
+    defaultEmployeeId: demoEmployees[0]?.id ?? null,
+  };
+}
+
+async function fetchOrderLookups(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  shopId: string,
+  defaultEmployeeId: string | null,
+) {
+  const [customersResponse, employeesResponse] = await Promise.all([
+    supabase
+      .from("customers")
+      .select("id, shop_id, code, name, phone, address, note, is_active, deleted_at")
+      .eq("shop_id", shopId)
+      .is("deleted_at", null)
+      .eq("is_active", true)
+      .order("name", { ascending: true }),
+    supabase
+      .from("employees")
+      .select("id, shop_id, employee_code, full_name, phone, job_title, is_active, deleted_at")
+      .eq("shop_id", shopId)
+      .is("deleted_at", null)
+      .eq("is_active", true)
+      .order("full_name", { ascending: true }),
+  ]);
+
+  const customers = (customersResponse.data ?? [])
+    .map((row) => normalizeCustomerOption(row as Record<string, unknown>))
+    .sort((left, right) => left.name.localeCompare(right.name, "vi"));
+  const employees = (employeesResponse.data ?? [])
+    .map((row) => normalizeEmployeeOption(row as Record<string, unknown>))
+    .sort((left, right) => left.fullName.localeCompare(right.fullName, "vi"));
+  const resolvedDefaultEmployeeId =
+    defaultEmployeeId && employees.some((employee) => employee.id === defaultEmployeeId)
+      ? defaultEmployeeId
+      : employees[0]?.id ?? null;
+
+  return {
+    customers,
+    employees,
+    defaultEmployeeId: resolvedDefaultEmployeeId,
   };
 }
 
@@ -288,6 +394,9 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
       products: legacy.products,
       priceBookId: legacy.priceBookId,
       priceBookName: legacy.priceBookName,
+      customers: legacy.customers,
+      employees: legacy.employees,
+      defaultEmployeeId: legacy.defaultEmployeeId,
     };
   }
 
@@ -301,6 +410,9 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
       products: legacy.products,
       priceBookId: legacy.priceBookId,
       priceBookName: legacy.priceBookName,
+      customers: legacy.customers,
+      employees: legacy.employees,
+      defaultEmployeeId: legacy.defaultEmployeeId,
     };
   }
 
@@ -308,20 +420,37 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
 
   if (!canonical) {
     const legacy = await buildLegacyCatalog();
+    const lookups = await fetchOrderLookups(
+      supabase,
+      context.shop.id,
+      context.employee?.id ?? null,
+    );
 
     return {
       mode: legacy.mode,
       products: legacy.products,
       priceBookId: legacy.priceBookId,
       priceBookName: legacy.priceBookName,
+      customers: lookups.customers,
+      employees: lookups.employees,
+      defaultEmployeeId: lookups.defaultEmployeeId,
     };
   }
+
+  const lookups = await fetchOrderLookups(
+    supabase,
+    context.shop.id,
+    context.employee?.id ?? null,
+  );
 
   return {
     mode: canonical.mode,
     products: canonical.products,
     priceBookId: canonical.priceBookId,
     priceBookName: canonical.priceBookName,
+    customers: lookups.customers,
+    employees: lookups.employees,
+    defaultEmployeeId: lookups.defaultEmployeeId,
   };
 });
 
@@ -341,19 +470,36 @@ async function getSalesOrderBuilderResolution() {
   const canonical = await buildCanonicalCatalog(supabase, context.shop.id);
 
   if (canonical) {
+    const lookups = await fetchOrderLookups(
+      supabase,
+      context.shop.id,
+      context.employee?.id ?? null,
+    );
+
     return {
       context,
       supabase,
       ...canonical,
+      customers: lookups.customers,
+      employees: lookups.employees,
+      defaultEmployeeId: lookups.defaultEmployeeId,
     };
   }
 
   const legacy = await buildLegacyCatalog();
+  const lookups = await fetchOrderLookups(
+    supabase,
+    context.shop.id,
+    context.employee?.id ?? null,
+  );
 
   return {
     context,
     supabase,
     ...legacy,
+    customers: lookups.customers,
+    employees: lookups.employees,
+    defaultEmployeeId: lookups.defaultEmployeeId,
   };
 }
 
@@ -377,7 +523,7 @@ export const getSalesOrders = cache(async (): Promise<SalesOrderDetailRecord[]> 
   const { data, error } = await supabase
     .from("sales_orders")
     .select(
-      "id, shop_id, order_no, sales_channel, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
+      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
     )
     .eq("shop_id", context.shop.id)
     .order("ordered_at", { ascending: false });
@@ -407,7 +553,7 @@ export const getSalesOrderById = cache(async (
   const { data, error } = await supabase
     .from("sales_orders")
     .select(
-      "id, shop_id, order_no, sales_channel, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
+      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
     )
     .eq("id", orderId)
     .eq("shop_id", context.shop.id)
@@ -418,13 +564,30 @@ export const getSalesOrderById = cache(async (
   }
 
   const detail = normalizeSalesOrderDetail(data as Record<string, unknown>);
+  let employeeNameSnapshot: string | null = null;
+
+  if (detail.employeeId) {
+    const { data: employeeRow } = await supabase
+      .from("employees")
+      .select("full_name, employee_code")
+      .eq("id", detail.employeeId)
+      .eq("shop_id", context.shop.id)
+      .maybeSingle();
+
+    if (employeeRow) {
+      const employee = employeeRow as Record<string, unknown>;
+      employeeNameSnapshot =
+        employee.full_name == null ? null : String(employee.full_name);
+    }
+  }
+
   const fulfillmentIssue = await fetchFulfillmentIssueSummaryForOrder(
     supabase,
     context.shop.id,
     orderId,
   );
 
-  return { ...detail, fulfillmentIssue };
+  return { ...detail, employeeNameSnapshot, fulfillmentIssue };
 });
 
 export async function createSalesOrderRecord(payload: OrderPayload) {
@@ -456,35 +619,107 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
 
   const orderNo = `SO-${orderedAt.slice(0, 7).replace("-", "")}-${String((count ?? 0) + 1).padStart(4, "0")}`;
 
+  const resolvedItems = payload.items.map((item) => {
+    const entry = variantIndex.get(item.variantId);
+
+    if (!entry) {
+      throw new Error(`Không tìm thấy biến thể ${item.variantId}.`);
+    }
+
+    const quantity = Math.max(safeNumber(item.quantity, 1), 1);
+    const unitPrice = Math.max(safeNumber(item.unitPrice), 0);
+    const standardCost = Math.max(safeNumber(entry.variant.totalCost), 0);
+    const isCanonical = mode === "canonical";
+    const priceBookItemId = isCanonical
+      ? priceBookItemIdByVariantId.get(item.variantId) ?? null
+      : null;
+
+    return {
+      shop_id: shop.id,
+      sales_order_id: "",
+      menu_item_variant_id: isCanonical ? item.variantId : null,
+      legacy_product_variant_id: isCanonical ? null : item.variantId,
+      price_book_item_id_snapshot: priceBookItemId,
+      item_name_snapshot: entry.product.name,
+      variant_label_snapshot: entry.variant.label,
+      weight_grams_snapshot: entry.variant.weightInGrams,
+      quantity,
+      unit_price_snapshot: unitPrice,
+      standard_cost_snapshot: standardCost,
+    };
+  });
+
+  const subtotalBeforeDiscount = roundCurrency(
+    resolvedItems.reduce(
+      (sum, item) => sum + item.quantity * item.unit_price_snapshot,
+      0,
+    ),
+  );
+  const totalCogs = roundCurrency(
+    resolvedItems.reduce(
+      (sum, item) => sum + item.quantity * item.standard_cost_snapshot,
+      0,
+    ),
+  );
+  const discountAmount = resolveOrderDiscountAmount(
+    subtotalBeforeDiscount,
+    payload.discountPercent,
+    payload.discountAmount,
+  );
+  const discountPercent =
+    Number.isFinite(payload.discountPercent ?? NaN) &&
+    (payload.discountPercent ?? 0) > 0
+      ? Math.max(safeNumber(payload.discountPercent), 0)
+      : 0;
+  const orderDiscountType: string | null =
+    discountAmount > 0
+      ? discountPercent > 0
+        ? "percent"
+        : "amount"
+      : null;
+  const orderDiscountValue: number | null =
+    discountAmount > 0
+      ? discountPercent > 0
+        ? discountPercent
+        : Math.max(safeNumber(payload.discountAmount), 0)
+      : null;
+  const shippingFee = Math.max(safeNumber(payload.shippingFee), 0);
+  const otherFee = Math.max(safeNumber(payload.otherFee), 0);
+  const totalAmount = roundCurrency(
+    Math.max(subtotalBeforeDiscount - discountAmount + shippingFee + otherFee, 0),
+  );
+  const grossProfit = roundCurrency(totalAmount - totalCogs);
+  const grossMargin = totalAmount > 0 ? grossProfit / totalAmount : 0;
+
   const { data: orderRow, error: orderError } = await supabase
     .from("sales_orders")
     .insert({
       shop_id: shop.id,
       order_no: orderNo,
-      sales_channel: payload.salesChannel,
+      sales_channel: payload.salesChannel ?? "manual",
+      order_type: payload.orderType ?? "order",
+      delivery_status: payload.deliveryStatus ?? "pending",
+      shipper_name: payload.shipperName?.trim() || null,
       ordered_at: orderedAt,
+      customer_id: payload.customerId ?? null,
       customer_name_snapshot: payload.customerName,
       customer_phone_snapshot: payload.customerPhone || null,
       customer_address_snapshot: payload.customerAddress || null,
-      employee_id: context.employee?.id ?? null,
-      status: payload.status,
+      employee_id: payload.employeeId ?? context.employee?.id ?? null,
+      status: "draft",
       payment_status: "unpaid",
       price_book_id_snapshot: mode === "canonical" ? priceBookId : null,
-      subtotal_before_discount: 0,
-      order_discount_type:
-        safeNumber(payload.discountAmount) > 0 ? "amount" : null,
-      order_discount_value:
-        safeNumber(payload.discountAmount) > 0
-          ? Math.max(safeNumber(payload.discountAmount), 0)
-          : null,
-      order_discount_amount: Math.max(safeNumber(payload.discountAmount), 0),
-      shipping_fee: Math.max(safeNumber(payload.shippingFee), 0),
-      other_fee: Math.max(safeNumber(payload.otherFee), 0),
-      total_amount: 0,
-      total_revenue: 0,
-      total_cogs: 0,
-      gross_profit: 0,
-      gross_margin: 0,
+      subtotal_before_discount: subtotalBeforeDiscount,
+      order_discount_type: orderDiscountType,
+      order_discount_value: orderDiscountValue,
+      order_discount_amount: discountAmount,
+      shipping_fee: shippingFee,
+      other_fee: otherFee,
+      total_amount: totalAmount,
+      total_revenue: totalAmount,
+      total_cogs: totalCogs,
+      gross_profit: grossProfit,
+      gross_margin: grossMargin,
       notes: payload.note || null,
     })
     .select("id, order_no")
@@ -494,40 +729,17 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
     throw new Error(orderError?.message ?? "Không tạo được đơn hàng.");
   }
 
-  const itemRows = payload.items.map((item) => {
-    const entry = variantIndex.get(item.variantId);
-
-    if (!entry) {
-      throw new Error(`Không tìm thấy biến thể ${item.variantId}.`);
-    }
-
-    const variant = entry.variant;
-    const isCanonical = mode === "canonical";
-    const priceBookItemId = isCanonical
-      ? priceBookItemIdByVariantId.get(item.variantId) ?? null
-      : null;
-
-    return {
-      shop_id: shop.id,
-      sales_order_id: orderRow.id,
-      menu_item_variant_id: isCanonical ? item.variantId : null,
-      legacy_product_variant_id: isCanonical ? null : item.variantId,
-      price_book_item_id_snapshot: priceBookItemId,
-      item_name_snapshot: entry.product.name,
-      variant_label_snapshot: variant.label,
-      weight_grams_snapshot: variant.weightInGrams,
-      quantity: Math.max(safeNumber(item.quantity, 1), 1),
-      unit_price_snapshot: Math.max(safeNumber(item.unitPrice), 0),
-      standard_cost_snapshot: Math.max(safeNumber(variant.totalCost), 0),
-      line_discount_type: null,
-      line_discount_value: null,
-      line_discount_amount: 0,
-      line_total_before_discount: 0,
-      line_total_after_discount: 0,
-      line_cost_total: 0,
-      line_profit_total: 0,
-    };
-  });
+  const itemRows = resolvedItems.map((item) => ({
+    ...item,
+    sales_order_id: orderRow.id,
+    line_discount_type: null,
+    line_discount_value: null,
+    line_discount_amount: 0,
+    line_total_before_discount: 0,
+    line_total_after_discount: 0,
+    line_cost_total: 0,
+    line_profit_total: 0,
+  }));
 
   const { error: itemError } = await supabase
     .from("sales_order_items")
@@ -537,20 +749,20 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
     throw new Error(itemError.message);
   }
 
-  if (payload.status !== "draft") {
-    const { error: statusError } = await supabase
-      .from("sales_orders")
-      .update({ status: payload.status })
-      .eq("id", orderRow.id)
-      .eq("shop_id", shop.id);
+  const paidAmount = Math.max(safeNumber(payload.paidAmount), 0);
 
-    if (statusError) {
-      throw new Error(statusError.message);
+  if (paidAmount > 0) {
+    const { error: paymentError } = await supabase.from("sales_payments").insert({
+      shop_id: shop.id,
+      sales_order_id: orderRow.id,
+      payment_method_id: null,
+      amount: paidAmount,
+      note: null,
+    });
+
+    if (paymentError) {
+      throw new Error(paymentError.message);
     }
-  }
-
-  if (payload.status === "confirmed") {
-    await createFulfillmentIssueDraftIfConfirmed(supabase, orderRow.id);
   }
 
   return {
@@ -567,6 +779,7 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
     throw new Error("Không tìm thấy đơn hàng.");
   }
 
+  const shopId = context.shop.id;
   if (detail.status !== "draft") {
     throw new Error("Chỉ có thể refresh giá cho đơn draft.");
   }
@@ -577,20 +790,54 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
     throw new Error("Supabase client is not available.");
   }
 
+  const supabaseClient = supabase;
+  const orderDiscountType = detail.orderDiscountType;
+  const orderDiscountValue = detail.orderDiscountValue;
+
+  async function finalizeRefresh(subtotalBeforeDiscount: number) {
+    if (
+      orderDiscountType === "percent" &&
+      orderDiscountValue != null
+    ) {
+      const updatedDiscountAmount = resolveOrderDiscountAmount(
+        subtotalBeforeDiscount,
+        orderDiscountValue,
+      );
+      const { error: discountError } = await supabaseClient
+        .from("sales_orders")
+        .update({ order_discount_amount: updatedDiscountAmount })
+        .eq("id", orderId)
+        .eq("shop_id", shopId);
+
+      if (discountError) {
+        throw new Error(discountError.message);
+      }
+    }
+
+    const { error: refreshError } = await supabaseClient.rpc(
+      "refresh_sales_order_totals",
+      { p_sales_order_id: orderId },
+    );
+
+    if (refreshError) {
+      throw new Error(refreshError.message);
+    }
+  }
+
   const canonicalIds = detail.items.filter((item) => item.menuItemVariantId != null);
 
   if (canonicalIds.length > 0) {
-    const canonical = await buildCanonicalCatalog(supabase, context.shop.id);
+    const canonical = await buildCanonicalCatalog(supabaseClient, shopId);
 
     if (!canonical) {
       throw new Error("Chưa có price book hợp lệ để refresh giá.");
     }
 
     const priceBookId = canonical.priceBookId;
-    const { data: priceItems } = await supabase
+    const { data: priceItems } = await supabaseClient
       .from("price_book_items")
       .select("id, menu_item_variant_id, sale_price, standard_cost")
-      .eq("shop_id", context.shop.id)
+      .eq("shop_id", shopId)
       .eq("price_book_id", priceBookId ?? "")
       .is("deleted_at", null)
       .eq("is_active", true);
@@ -606,6 +853,7 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
     }
 
     const canonicalIndex = buildVariantIndex(canonical.products);
+    let subtotalBeforeDiscount = 0;
 
     for (const line of detail.items) {
       if (!line.menuItemVariantId) {
@@ -620,8 +868,9 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
       const priceBookRow = priceMap.get(line.menuItemVariantId);
       const salePrice = safeNumber(priceBookRow?.sale_price, entry.variant.price);
       const standardCost = safeNumber(priceBookRow?.standard_cost, entry.variant.totalCost);
+      subtotalBeforeDiscount += salePrice * line.quantity;
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from("sales_order_items")
         .update({
           price_book_item_id_snapshot: priceBookRow?.id ? String(priceBookRow.id) : null,
@@ -633,28 +882,31 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
         })
         .eq("id", line.id)
         .eq("sales_order_id", orderId)
-        .eq("shop_id", context.shop.id);
+        .eq("shop_id", shopId);
 
       if (error) {
         throw new Error(error.message);
       }
     }
 
-    const { error: orderUpdateError } = await supabase
+    const { error: orderUpdateError } = await supabaseClient
       .from("sales_orders")
       .update({ price_book_id_snapshot: priceBookId })
       .eq("id", orderId)
-      .eq("shop_id", context.shop.id);
+      .eq("shop_id", shopId);
 
     if (orderUpdateError) {
       throw new Error(orderUpdateError.message);
     }
+
+    await finalizeRefresh(subtotalBeforeDiscount);
 
     return;
   }
 
   const legacyProducts = await getMenuProducts();
   const legacyIndex = buildVariantIndex(legacyProducts);
+  let subtotalBeforeDiscount = 0;
 
   for (const line of detail.items) {
     if (!line.legacyProductVariantId) {
@@ -666,24 +918,28 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
       continue;
     }
 
-    const { error } = await supabase
+    subtotalBeforeDiscount += entry.variant.price * line.quantity;
+
+    const { error } = await supabaseClient
       .from("sales_order_items")
-      .update({
-        price_book_item_id_snapshot: null,
-        item_name_snapshot: entry.product.name,
-        variant_label_snapshot: entry.variant.label,
-        weight_grams_snapshot: entry.variant.weightInGrams,
-        unit_price_snapshot: entry.variant.price,
-        standard_cost_snapshot: entry.variant.totalCost,
-      })
-      .eq("id", line.id)
-      .eq("sales_order_id", orderId)
-      .eq("shop_id", context.shop.id);
+        .update({
+          price_book_item_id_snapshot: null,
+          item_name_snapshot: entry.product.name,
+          variant_label_snapshot: entry.variant.label,
+          weight_grams_snapshot: entry.variant.weightInGrams,
+          unit_price_snapshot: entry.variant.price,
+          standard_cost_snapshot: entry.variant.totalCost,
+        })
+        .eq("id", line.id)
+        .eq("sales_order_id", orderId)
+        .eq("shop_id", shopId);
 
     if (error) {
       throw new Error(error.message);
     }
   }
+
+  await finalizeRefresh(subtotalBeforeDiscount);
 }
 
 export async function updateSalesOrderStatus(
@@ -729,6 +985,33 @@ export async function updateSalesOrderStatus(
 
   if (status === "confirmed" && previousStatus !== "confirmed") {
     await createFulfillmentIssueDraftIfConfirmed(supabase, orderId);
+  }
+}
+
+export async function updateSalesOrderDeliveryStatus(
+  orderId: string,
+  deliveryStatus: DeliveryStatus,
+) {
+  const context = await getAdminContext();
+
+  if (!context.shop) {
+    throw new Error("Missing active shop context.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    throw new Error("Supabase client is not available.");
+  }
+
+  const { error } = await supabase
+    .from("sales_orders")
+    .update({ delivery_status: deliveryStatus })
+    .eq("id", orderId)
+    .eq("shop_id", context.shop.id);
+
+  if (error) {
+    throw new Error(error.message);
   }
 }
 
@@ -861,6 +1144,16 @@ function normalizeSalesOrderDetail(
     shopId: safeString(row.shop_id),
     orderNo: safeString(row.order_no),
     salesChannel: safeString(row.sales_channel, "manual"),
+    orderType:
+      row.order_type == null
+        ? undefined
+        : (safeString(row.order_type) as OrderType),
+    deliveryStatus:
+      row.delivery_status == null
+        ? undefined
+        : (safeString(row.delivery_status) as DeliveryStatus),
+    shipperName:
+      row.shipper_name == null ? null : safeString(row.shipper_name),
     orderedAt: safeString(row.ordered_at, new Date().toISOString()),
     customerId:
       row.customer_id == null ? null : safeString(row.customer_id),
