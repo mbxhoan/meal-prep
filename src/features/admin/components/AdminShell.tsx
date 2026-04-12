@@ -41,6 +41,12 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: "/admin", label: "Trang chính", icon: FaHouse },
   {
+    href: "/admin/orders",
+    label: "Đơn hàng",
+    icon: FaClipboardList,
+    permission: "sales.order.read",
+  },
+  {
     href: "/admin/menu",
     label: "Món hàng",
     icon: FaUtensils,
@@ -50,12 +56,6 @@ const navItems: NavItem[] = [
     href: "/admin/master-data",
     label: "Danh mục",
     icon: FaBoxArchive,
-  },
-  {
-    href: "/admin/orders",
-    label: "Đơn hàng",
-    icon: FaClipboardList,
-    permission: "sales.order.read",
   },
   {
     href: "/admin/analytics",
@@ -240,6 +240,14 @@ export function AdminShell({
   const visibleNavItems = navItems.filter((item) =>
     item.permission ? context.permissions.includes(item.permission) : true,
   );
+  const hideShellHeader =
+    pathname === "/admin/menu" ||
+    pathname.startsWith("/admin/menu/") ||
+    pathname === "/admin/master-data" ||
+    pathname.startsWith("/admin/master-data/") ||
+    pathname === "/admin/analytics" ||
+    pathname === "/admin/orders" ||
+    pathname.startsWith("/admin/orders/");
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(244,114,32,0.12),_transparent_32%),linear-gradient(180deg,_#f6f7f1_0%,_#eef2e7_56%,_#f6f1e7_100%)] text-slate-900">
@@ -252,11 +260,7 @@ export function AdminShell({
           }`}
         >
           <div className="flex items-center justify-between">
-            {collapsed ? (
-              <div className="mx-auto text-lg">
-                <FaBoxArchive />
-              </div>
-            ) : (
+            {collapsed ? null : (
               <div>
                 <p className="text-[10px] uppercase tracking-[0.24em] text-white/45">
                   MealFit
@@ -362,75 +366,94 @@ export function AdminShell({
         ) : null}
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <header className="sticky top-3 z-20 rounded-[20px] border border-white/70 bg-white/82 px-3.5 py-2 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:px-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-start gap-3">
+          {hideShellHeader ? (
+            <div className="sticky top-3 z-20 rounded-[20px] border border-white/70 bg-white/82 px-3.5 py-2 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:hidden">
+              <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => setOpen(true)}
-                  className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 md:hidden"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-700"
+                  aria-label="Mở menu"
                 >
                   <FaBars />
                 </button>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-slate-400">
-                    {header.eyebrow}
-                  </p>
-                  {header.title ? (
-                    <h1 className="mt-0.5 truncate text-[13px] font-semibold tracking-tight text-slate-900 md:text-sm">
-                      {header.title}
-                    </h1>
-                  ) : null}
-                  <p className="mt-0.5 flex max-w-3xl items-center gap-2 text-[11px] leading-4 text-slate-600">
-                    <FaChartColumn className="shrink-0 text-[#51724f]" />
-                    <span className="truncate">{header.description}</span>
-                  </p>
-                  {context.shop ? (
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <StatusPill
-                        label={context.shop.name}
-                        tone="info"
-                      />
-                      {context.shops.length > 1 ? (
-                        <StatusPill
-                          label={`${context.shops.length} shop`}
-                          tone="muted"
-                        />
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-2">
-                {header.action ? (
-                  <Link
-                    href={header.action.href}
-                    prefetch
-                    title={header.action.label}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#18352d] text-white transition hover:opacity-90"
-                  >
-                    <FaArrowRight className="text-xs" />
-                  </Link>
-                ) : null}
-                <div
-                  title={
-                    context.mode === "live"
-                      ? "Đang kết nối Supabase"
-                      : "Demo fallback đang bật"
-                  }
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-full border ${
-                    context.mode === "live"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-amber-200 bg-amber-50 text-amber-700"
-                  }`}
-                >
-                  <FaBolt />
-                </div>
-                <LogoutButton compact disabled={context.mode === "demo"} />
+                <p className="truncate text-[12px] font-medium text-slate-700">
+                  {header.title ?? header.eyebrow}
+                </p>
+                <div className="w-9" />
               </div>
             </div>
-          </header>
+          ) : (
+            <header className="sticky top-3 z-20 rounded-[20px] border border-white/70 bg-white/82 px-3.5 py-2 shadow-[0_20px_70px_-40px_rgba(15,23,42,0.45)] backdrop-blur md:px-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(true)}
+                    className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-700 md:hidden"
+                  >
+                    <FaBars />
+                  </button>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-slate-400">
+                      {header.eyebrow}
+                    </p>
+                    {header.title ? (
+                      <h1 className="mt-0.5 truncate text-[13px] font-semibold tracking-tight text-slate-900 md:text-sm">
+                        {header.title}
+                      </h1>
+                    ) : null}
+                    <p className="mt-0.5 flex max-w-3xl items-center gap-2 text-[11px] leading-4 text-slate-600">
+                      <FaChartColumn className="shrink-0 text-[#51724f]" />
+                      <span className="truncate">{header.description}</span>
+                    </p>
+                    {context.shop ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <StatusPill
+                          label={context.shop.name}
+                          tone="info"
+                        />
+                        {context.shops.length > 1 ? (
+                          <StatusPill
+                            label={`${context.shops.length} shop`}
+                            tone="muted"
+                          />
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
+                  {header.action ? (
+                    <Link
+                      href={header.action.href}
+                      prefetch
+                      title={header.action.label}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#18352d] text-white transition hover:opacity-90"
+                    >
+                      <FaArrowRight className="text-xs" />
+                    </Link>
+                  ) : null}
+                  <div
+                    title={
+                      context.mode === "live"
+                        ? "Đang kết nối Supabase"
+                        : "Demo fallback đang bật"
+                    }
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border ${
+                      context.mode === "live"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-amber-200 bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    <FaBolt />
+                  </div>
+                  <LogoutButton compact disabled={context.mode === "demo"} />
+                </div>
+              </div>
+            </header>
+          )}
 
           <main className="min-w-0 flex-1">{children}</main>
         </div>

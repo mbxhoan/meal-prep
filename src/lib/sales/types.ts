@@ -119,6 +119,20 @@ export interface SalesOrderBuilderData {
   defaultEmployeeId: string | null;
 }
 
+export interface SalesQuickCustomerState {
+  status: "idle" | "success" | "error";
+  message: string;
+  mode: "demo" | "live";
+  customer: SalesOrderCustomerOption | null;
+}
+
+export interface SalesQuickEmployeeState {
+  status: "idle" | "success" | "error";
+  message: string;
+  mode: "demo" | "live";
+  employee: SalesOrderEmployeeOption | null;
+}
+
 export interface SalesOrderCustomerOption {
   id: string;
   code: string | null;

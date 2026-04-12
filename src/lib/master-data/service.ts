@@ -234,7 +234,7 @@ export async function saveMasterDataRecord(
   entity: MasterDataEntityKey,
   values: Record<string, unknown>,
   recordId?: string | null,
-) {
+): Promise<string> {
   const config = getEntityConfig(entity);
   const context = await getAdminContext();
 
@@ -255,13 +255,15 @@ export async function saveMasterDataRecord(
     recordId,
   );
 
-  const { error } = await supabase.from(config.table).upsert(payload, {
+  const { data, error } = await supabase.from(config.table).upsert(payload, {
     onConflict: "id",
-  });
+  }).select("id").single();
 
   if (error) {
     throw new Error(error.message);
   }
+
+  return String(data?.id ?? payload.id ?? "");
 }
 
 export async function deleteMasterDataRecord(

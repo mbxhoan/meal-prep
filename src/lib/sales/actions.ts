@@ -4,7 +4,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 import { PermissionDeniedError, requirePermission } from "@/lib/rbac/server";
+import { saveMasterDataRecord } from "@/lib/master-data/service";
 import type { ActionState, OrderPayload, OrderStatus } from "@/lib/admin/types";
+import type {
+  SalesOrderCustomerOption,
+  SalesOrderEmployeeOption,
+  SalesQuickEmployeeState,
+  SalesQuickCustomerState,
+} from "@/lib/sales/types";
 import {
   createSalesOrderRecord,
   recordSalesPayment,
@@ -12,7 +19,7 @@ import {
   updateSalesOrderDeliveryStatus,
   updateSalesOrderStatus,
 } from "@/lib/sales/service";
-import { parseJsonField, toNumber, toNullableText } from "@/lib/sales/validation";
+import { parseJsonField, toNumber, toNullableText, toText } from "@/lib/sales/validation";
 
 const demoSuccess = (message: string): ActionState => ({
   status: "success",
@@ -46,6 +53,51 @@ function permissionForDeliveryStatus(deliveryStatus: "pending" | "delivered") {
   return deliveryStatus === "delivered"
     ? "sales.order.confirm"
     : "sales.order.update_draft";
+}
+
+const quickCustomerSuccess = (
+  message: string,
+  customer: SalesOrderCustomerOption,
+  mode: SalesQuickCustomerState["mode"],
+): SalesQuickCustomerState => ({
+  status: "success",
+  message,
+  mode,
+  customer,
+});
+
+const quickCustomerError = (
+  message: string,
+  mode: SalesQuickCustomerState["mode"],
+): SalesQuickCustomerState => ({
+  status: "error",
+  message,
+  mode,
+  customer: null,
+});
+
+function generateQuickCustomerCode(name: string, phone: string | null) {
+  const phoneDigits = (phone ?? "").replace(/\D/g, "").slice(-4);
+  const nameSeed = toText(name)
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .slice(0, 3)
+    .toUpperCase();
+  const stamp = Date.now().toString(36).toUpperCase().slice(-6);
+  const prefix = phoneDigits.length > 0 ? phoneDigits : nameSeed || "NEW";
+
+  return `KH-${prefix}-${stamp}`;
+}
+
+function generateQuickEmployeeCode(name: string, phone: string | null) {
+  const phoneDigits = (phone ?? "").replace(/\D/g, "").slice(-4);
+  const nameSeed = toText(name)
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .slice(0, 3)
+    .toUpperCase();
+  const stamp = Date.now().toString(36).toUpperCase().slice(-6);
+  const prefix = phoneDigits.length > 0 ? phoneDigits : nameSeed || "NEW";
+
+  return `NV-${prefix}-${stamp}`;
 }
 
 export async function createSalesOrderAction(
@@ -82,6 +134,169 @@ export async function createSalesOrderAction(
 
     return actionError(
       error instanceof Error ? error.message : "Không tạo được đơn hàng.",
+      "live",
+    );
+  }
+}
+
+export async function quickCreateCustomerAction(
+  _previousState: SalesQuickCustomerState,
+  formData: FormData,
+): Promise<SalesQuickCustomerState> {
+  const name = toText(formData.get("customerName"));
+  const phone = toNullableText(formData.get("customerPhone"));
+  const address = toNullableText(formData.get("customerAddress"));
+  const note = toNullableText(formData.get("customerQuickNote"));
+
+  if (name.length === 0) {
+    return quickCustomerError("Vui lòng nhập tên khách.", "demo");
+  }
+
+  const code = generateQuickCustomerCode(name, phone);
+
+  if (!isSupabaseConfigured()) {
+    return quickCustomerSuccess(
+      "Đã thêm khách mới trong chế độ demo.",
+      {
+        id: `demo-customer-${Date.now().toString(36)}`,
+        code,
+        name,
+        phone,
+        address,
+        note,
+      },
+      "demo",
+    );
+  }
+
+  try {
+    await requirePermission("master.customer.create");
+    const customerId = await saveMasterDataRecord(
+      "customers",
+      {
+        code,
+        name,
+        phone,
+        address,
+        note,
+        is_active: true,
+      },
+      null,
+    );
+
+    revalidatePath("/admin/master-data");
+    revalidatePath("/admin/master-data/customers");
+    revalidatePath("/admin/orders/new");
+
+    return quickCustomerSuccess(
+      "Đã thêm khách mới.",
+      {
+        id: customerId,
+        code,
+        name,
+        phone,
+        address,
+        note,
+      },
+      "live",
+    );
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return quickCustomerError("Bạn không có quyền thêm khách hàng.", "live");
+    }
+
+    return quickCustomerError(
+      error instanceof Error ? error.message : "Không thêm được khách hàng.",
+      "live",
+    );
+  }
+}
+
+const quickEmployeeSuccess = (
+  message: string,
+  employee: SalesOrderEmployeeOption,
+  mode: SalesQuickEmployeeState["mode"],
+): SalesQuickEmployeeState => ({
+  status: "success",
+  message,
+  mode,
+  employee,
+});
+
+const quickEmployeeError = (
+  message: string,
+  mode: SalesQuickEmployeeState["mode"],
+): SalesQuickEmployeeState => ({
+  status: "error",
+  message,
+  mode,
+  employee: null,
+});
+
+export async function quickCreateEmployeeAction(
+  _previousState: SalesQuickEmployeeState,
+  formData: FormData,
+): Promise<SalesQuickEmployeeState> {
+  const name = toText(formData.get("employeeName"));
+  const phone = toNullableText(formData.get("employeePhone"));
+  const jobTitle = toNullableText(formData.get("employeeJobTitle"));
+
+  if (name.length === 0) {
+    return quickEmployeeError("Vui lòng nhập tên nhân viên.", "demo");
+  }
+
+  const code = generateQuickEmployeeCode(name, phone);
+
+  if (!isSupabaseConfigured()) {
+    return quickEmployeeSuccess(
+      "Đã thêm nhân viên mới trong chế độ demo.",
+      {
+        id: `demo-employee-${Date.now().toString(36)}`,
+        employeeCode: code,
+        fullName: name,
+        phone,
+        jobTitle,
+      },
+      "demo",
+    );
+  }
+
+  try {
+    await requirePermission("master.employee.create");
+    const employeeId = await saveMasterDataRecord(
+      "employees",
+      {
+        employee_code: code,
+        full_name: name,
+        phone,
+        job_title: jobTitle,
+        is_active: true,
+      },
+      null,
+    );
+
+    revalidatePath("/admin/master-data");
+    revalidatePath("/admin/master-data/employees");
+    revalidatePath("/admin/orders/new");
+
+    return quickEmployeeSuccess(
+      "Đã thêm nhân viên mới.",
+      {
+        id: employeeId,
+        employeeCode: code,
+        fullName: name,
+        phone,
+        jobTitle,
+      },
+      "live",
+    );
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return quickEmployeeError("Bạn không có quyền thêm nhân viên.", "live");
+    }
+
+    return quickEmployeeError(
+      error instanceof Error ? error.message : "Không thêm được nhân viên.",
       "live",
     );
   }

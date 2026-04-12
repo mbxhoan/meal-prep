@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useMemo, useState } from "react";
-import { FaPlus, FaTrash } from "react-icons/fa6";
+import { FaEye, FaPlus, FaRotateLeft, FaTrash } from "react-icons/fa6";
 import { formatCurrency, roundCurrency } from "@/lib/admin/format";
 import {
   GuardrailChecklist,
@@ -9,16 +10,21 @@ import {
 } from "@/features/admin/components";
 import { ADMIN_SIMPLE_MODE } from "@/features/admin/config";
 import type {
-  DeliveryStatus,
   MenuProduct,
   MenuVariant,
   OrderType,
   SalesChannel,
 } from "@/lib/admin/types";
-import { createSalesOrderAction } from "@/lib/sales/actions";
+import {
+  createSalesOrderAction,
+  quickCreateCustomerAction,
+  quickCreateEmployeeAction,
+} from "@/lib/sales/actions";
 import type {
   SalesOrderCustomerOption,
   SalesOrderEmployeeOption,
+  SalesQuickEmployeeState,
+  SalesQuickCustomerState,
 } from "@/lib/sales/types";
 
 const initialState = {
@@ -26,6 +32,20 @@ const initialState = {
   message: "",
   mode: "demo",
 } as const;
+
+const initialQuickCustomerState: SalesQuickCustomerState = {
+  status: "idle",
+  message: "",
+  mode: "demo",
+  customer: null,
+};
+
+const initialQuickEmployeeState: SalesQuickEmployeeState = {
+  status: "idle",
+  message: "",
+  mode: "demo",
+  employee: null,
+};
 
 type BuilderLine = {
   id: string;
@@ -67,14 +87,20 @@ export function OrderBuilder({
 }) {
   const variantEntries = useMemo(() => buildVariantIndex(products), [products]);
   const fallbackVariant = variantEntries[0]?.variant ?? null;
-  const defaultCustomerId = customers[0]?.id ?? "";
-  const [customerId, setCustomerId] = useState(defaultCustomerId);
-  const [employeeId, setEmployeeId] = useState(defaultEmployeeId ?? employees[0]?.id ?? "");
+  const [customerOptions, setCustomerOptions] = useState(customers);
+  const [employeeOptions, setEmployeeOptions] = useState(employees);
+  const [customerId, setCustomerId] = useState(customerOptions[0]?.id ?? "__new__");
+  const [employeeId, setEmployeeId] = useState(
+    defaultEmployeeId ?? employeeOptions[0]?.id ?? "__new__",
+  );
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
+  const [employeePhone, setEmployeePhone] = useState("");
+  const [employeeJobTitle, setEmployeeJobTitle] = useState("");
   const [orderType, setOrderType] = useState<OrderType>("order");
-  const [deliveryStatus, setDeliveryStatus] = useState<DeliveryStatus>("pending");
+  const deliveryStatus = "pending" as const;
   const [shipperName, setShipperName] = useState("");
   const [discountPercent, setDiscountPercent] = useState("0");
   const [shippingFee, setShippingFee] = useState("25000");
@@ -94,10 +120,28 @@ export function OrderBuilder({
       : [],
   );
   const [state, action, pending] = useActionState(createSalesOrderAction, initialState);
+  const [quickCustomerState, quickCustomerAction, quickCustomerPending] = useActionState(
+    quickCreateCustomerAction,
+    initialQuickCustomerState,
+  );
+  const [quickEmployeeState, quickEmployeeAction, quickEmployeePending] = useActionState(
+    quickCreateEmployeeAction,
+    initialQuickEmployeeState,
+  );
 
-  const selectedCustomer = customers.find((customer) => customer.id === customerId) ?? null;
+  const selectedCustomer =
+    customerId === "__new__"
+      ? null
+      : customerOptions.find((customer) => customer.id === customerId) ?? null;
 
   useEffect(() => {
+    if (customerId === "__new__") {
+      setCustomerName("");
+      setCustomerPhone("");
+      setCustomerAddress("");
+      return;
+    }
+
     if (!selectedCustomer) {
       return;
     }
@@ -105,15 +149,56 @@ export function OrderBuilder({
     setCustomerName(selectedCustomer.name);
     setCustomerPhone(selectedCustomer.phone ?? "");
     setCustomerAddress(selectedCustomer.address ?? "");
-  }, [selectedCustomer]);
+  }, [customerId, selectedCustomer]);
 
   useEffect(() => {
-    if (employeeId.length > 0) {
+    if (quickCustomerState.status !== "success" || !quickCustomerState.customer) {
       return;
     }
 
-    setEmployeeId(defaultEmployeeId ?? employees[0]?.id ?? "");
-  }, [defaultEmployeeId, employeeId, employees]);
+    const createdCustomer = quickCustomerState.customer;
+
+    setCustomerOptions((current) => {
+      const withoutDuplicate = current.filter(
+        (customer) => customer.id !== createdCustomer.id,
+      );
+
+      return [createdCustomer, ...withoutDuplicate];
+    });
+    setCustomerId(createdCustomer.id);
+    setCustomerName(createdCustomer.name);
+    setCustomerPhone(createdCustomer.phone ?? "");
+    setCustomerAddress(createdCustomer.address ?? "");
+  }, [quickCustomerState.customer, quickCustomerState.status]);
+
+  useEffect(() => {
+    if (employeeId === "__new__") {
+      setEmployeeName("");
+      setEmployeePhone("");
+      setEmployeeJobTitle("");
+      return;
+    }
+  }, [employeeId]);
+
+  useEffect(() => {
+    if (quickEmployeeState.status !== "success" || !quickEmployeeState.employee) {
+      return;
+    }
+
+    const createdEmployee = quickEmployeeState.employee;
+
+    setEmployeeOptions((current) => {
+      const withoutDuplicate = current.filter(
+        (employee) => employee.id !== createdEmployee.id,
+      );
+
+      return [createdEmployee, ...withoutDuplicate];
+    });
+    setEmployeeId(createdEmployee.id);
+    setEmployeeName(createdEmployee.fullName);
+    setEmployeePhone(createdEmployee.phone ?? "");
+    setEmployeeJobTitle(createdEmployee.jobTitle ?? "");
+  }, [quickEmployeeState.employee, quickEmployeeState.status]);
 
   const lineSummaries = lines.map((line) => {
     const entry = variantEntries.find((variantEntry) => variantEntry.variant.id === line.variantId);
@@ -123,9 +208,11 @@ export function OrderBuilder({
 
     return {
       ...line,
+      productId: entry?.product.id ?? "",
       productName: entry?.product.name ?? "Chọn món",
       variantLabel: entry?.variant.label ?? "",
       weightInGrams: entry?.variant.weightInGrams ?? null,
+      defaultUnitPrice: entry?.variant.price ?? line.unitPrice,
       unitCost,
       lineRevenue,
       lineCost,
@@ -148,6 +235,8 @@ export function OrderBuilder({
   );
   const paidAmountValue = Math.max(Number(paidAmount || 0), 0);
   const balanceDue = roundCurrency(Math.max(totalPayable - paidAmountValue, 0));
+  const orderCustomerId = customerId === "__new__" ? null : customerId || null;
+  const orderEmployeeId = employeeId === "__new__" ? null : employeeId || null;
 
   return (
     <form action={action} className="space-y-5">
@@ -167,11 +256,11 @@ export function OrderBuilder({
         type="hidden"
         name="payload"
         value={JSON.stringify({
-          customerId: customerId || null,
+          customerId: orderCustomerId,
           customerName,
           customerPhone: customerPhone || null,
           customerAddress: customerAddress || null,
-          employeeId: employeeId || null,
+          employeeId: orderEmployeeId,
           salesChannel: "manual" satisfies SalesChannel,
           orderType,
           deliveryStatus,
@@ -195,21 +284,60 @@ export function OrderBuilder({
           <section className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <div className="grid gap-3 md:grid-cols-2">
               <label className="block md:col-span-2">
-                <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
-                  Khách hàng
-                </span>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="block text-[13px] font-medium text-slate-700">
+                    Khách hàng
+                  </span>
+                  {customerId === "__new__" ? (
+                    <button
+                      type="submit"
+                      formAction={quickCustomerAction}
+                      formNoValidate
+                      disabled={
+                        quickCustomerPending || customerName.trim().length === 0
+                      }
+                      className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {quickCustomerPending ? "Đang lưu..." : "Lưu khách mới"}
+                    </button>
+                  ) : null}
+                </div>
                 <select
                   value={customerId}
-                  onChange={(event) => setCustomerId(event.target.value)}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+
+                    setCustomerId(nextValue);
+
+                    if (nextValue === "__new__") {
+                      setCustomerName("");
+                      setCustomerPhone("");
+                      setCustomerAddress("");
+                    }
+                  }}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                 >
-                  <option value="">Chọn khách hàng</option>
-                  {customers.map((customer) => (
+                  <option value="__new__">+ Thêm khách mới</option>
+                  {customerOptions.map((customer) => (
                     <option key={customer.id} value={customer.id}>
                       {formatCustomerLabel(customer)}
                     </option>
                   ))}
                 </select>
+                <p className="mt-1 text-[12px] leading-5 text-slate-500">
+                  Chọn khách có sẵn hoặc thêm nhanh khách mới ngay tại đây.
+                </p>
+                {quickCustomerState.status !== "idle" ? (
+                  <p
+                    className={`mt-2 rounded-2xl px-3 py-2 text-[12px] ${
+                      quickCustomerState.status === "success"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-rose-50 text-rose-700"
+                    }`}
+                  >
+                    {quickCustomerState.message}
+                  </p>
+                ) : null}
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
@@ -246,21 +374,98 @@ export function OrderBuilder({
                 />
               </label>
               <label className="block">
-                <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
-                  Nhân viên
-                </span>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="block text-[13px] font-medium text-slate-700">
+                    Nhân viên
+                  </span>
+                  {employeeId === "__new__" ? (
+                    <button
+                      type="submit"
+                      formAction={quickEmployeeAction}
+                      formNoValidate
+                      disabled={
+                        quickEmployeePending || employeeName.trim().length === 0
+                      }
+                      className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {quickEmployeePending ? "Đang lưu..." : "Lưu nhân viên mới"}
+                    </button>
+                  ) : null}
+                </div>
                 <select
                   value={employeeId}
-                  onChange={(event) => setEmployeeId(event.target.value)}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+
+                    setEmployeeId(nextValue);
+
+                    if (nextValue === "__new__") {
+                      setEmployeeName("");
+                      setEmployeePhone("");
+                      setEmployeeJobTitle("");
+                    }
+                  }}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
                 >
-                  <option value="">Chọn nhân viên</option>
-                  {employees.map((employee) => (
+                  <option value="__new__">+ Thêm nhân viên mới</option>
+                  {employeeOptions.map((employee) => (
                     <option key={employee.id} value={employee.id}>
                       {formatEmployeeLabel(employee)}
                     </option>
                   ))}
                 </select>
+                <p className="mt-1 text-[12px] leading-5 text-slate-500">
+                  Chọn nhân viên có sẵn hoặc thêm nhanh nhân viên mới ngay tại đây.
+                </p>
+                {employeeId === "__new__" ? (
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <label className="block md:col-span-2">
+                      <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                        Tên nhân viên
+                      </span>
+                      <input
+                        required
+                        value={employeeName}
+                        onChange={(event) => setEmployeeName(event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                        placeholder="Nguyễn Văn A"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                        Số điện thoại
+                      </span>
+                      <input
+                        value={employeePhone}
+                        onChange={(event) => setEmployeePhone(event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                        placeholder="090..."
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                        Chức danh
+                      </span>
+                      <input
+                        value={employeeJobTitle}
+                        onChange={(event) => setEmployeeJobTitle(event.target.value)}
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                        placeholder="Bán hàng"
+                      />
+                    </label>
+                    {quickEmployeeState.status !== "idle" ? (
+                      <p
+                        className={`md:col-span-2 rounded-2xl px-3 py-2 text-[12px] ${
+                          quickEmployeeState.status === "success"
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {quickEmployeeState.message}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
@@ -273,21 +478,6 @@ export function OrderBuilder({
                 >
                   <option value="order">Order</option>
                   <option value="ready_made">Hàng sẵn</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-[13px] font-medium text-slate-700">
-                  Trạng thái giao hàng
-                </span>
-                <select
-                  value={deliveryStatus}
-                  onChange={(event) =>
-                    setDeliveryStatus(event.target.value as DeliveryStatus)
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-                >
-                  <option value="pending">Chưa giao hàng</option>
-                  <option value="delivered">Đã giao hàng</option>
                 </select>
               </label>
               <label className="block md:col-span-2">
@@ -319,13 +509,40 @@ export function OrderBuilder({
 
           <section className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-                  Chi tiết đơn
-                </p>
-                <h2 className="mt-1 text-base font-semibold text-slate-900">
-                  Dòng món
-                </h2>
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+                    Chi tiết đơn
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-slate-900">
+                      Dòng món
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLines((current) =>
+                          current.map((line) => {
+                            const entry = variantEntries.find(
+                              (variantEntry) => variantEntry.variant.id === line.variantId,
+                            );
+
+                            return {
+                              ...line,
+                              unitPrice: entry?.variant.price ?? line.unitPrice,
+                            };
+                          }),
+                        );
+                      }}
+                      title="Về giá mặc định"
+                      aria-label="Về giá mặc định"
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    >
+                      <FaRotateLeft className="text-[11px]" />
+                      <span>Giá mặc định</span>
+                    </button>
+                  </div>
+                </div>
               </div>
               <button
                 type="button"
@@ -431,25 +648,48 @@ export function OrderBuilder({
                           />
                         </td>
                         <td className="px-3 py-3">
-                          <input
-                            type="number"
-                            min="0"
-                            step="1000"
-                            value={line.unitPrice}
-                            onChange={(event) =>
-                              setLines((current) =>
-                                current.map((entry) =>
-                                  entry.id === line.id
-                                    ? {
-                                        ...entry,
-                                        unitPrice: Number(event.target.value || 0),
-                                      }
-                                    : entry,
-                                ),
-                              )
-                            }
-                            className="w-28 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none"
-                          />
+                          <div className="flex flex-col gap-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={line.unitPrice}
+                              onChange={(event) =>
+                                setLines((current) =>
+                                  current.map((entry) =>
+                                    entry.id === line.id
+                                      ? {
+                                          ...entry,
+                                          unitPrice: Number(event.target.value || 0),
+                                        }
+                                      : entry,
+                                  ),
+                                )
+                              }
+                              className="w-28 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setLines((current) =>
+                                  current.map((entry) =>
+                                    entry.id === line.id
+                                      ? {
+                                          ...entry,
+                                          unitPrice: summary.defaultUnitPrice,
+                                        }
+                                      : entry,
+                                  ),
+                                )
+                              }
+                              title="Về giá mặc định của món này"
+                              aria-label="Về giá mặc định của món này"
+                              className="inline-flex items-center gap-1 self-start rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                            >
+                              <FaRotateLeft className="text-[10px]" />
+                              <span>Mặc định</span>
+                            </button>
+                          </div>
                         </td>
                         <td className="px-3 py-3 font-medium text-slate-900">
                           {formatCurrency(summary.lineRevenue)}
@@ -458,21 +698,41 @@ export function OrderBuilder({
                           </div>
                         </td>
                         <td className="px-3 py-3">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setLines((current) =>
-                                current.length > 1
-                                  ? current.filter((entry) => entry.id !== line.id)
-                                  : current,
-                              )
-                            }
-                            title="Xóa dòng"
-                            aria-label="Xóa dòng"
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
-                          >
-                            <FaTrash className="text-sm" />
-                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={
+                                summary.productId
+                                  ? `/admin/menu/${summary.productId}`
+                                  : "#"
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Xem món"
+                              aria-label="Xem món"
+                              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-slate-700 transition ${
+                                summary.productId
+                                  ? "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+                                  : "pointer-events-none border-slate-100 bg-slate-50/60 opacity-40"
+                              }`}
+                            >
+                              <FaEye className="text-sm" />
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setLines((current) =>
+                                  current.length > 1
+                                    ? current.filter((entry) => entry.id !== line.id)
+                                    : current,
+                                )
+                              }
+                              title="Xóa dòng"
+                              aria-label="Xóa dòng"
+                              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
+                            >
+                              <FaTrash className="text-sm" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
