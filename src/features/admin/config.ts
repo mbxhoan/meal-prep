@@ -28,13 +28,13 @@ export function getAdminGuideConfig(pathname: string): AdminGuideConfig | null {
 
   if (pathname === "/admin/menu" || pathname.startsWith("/admin/menu/")) {
     return {
-      storageKey: "mealfit-admin-guide-menu-v2",
-      title: "Thêm món rất nhanh",
-      summary: "Mỗi món chỉ cần tên, nhóm và giá bán.",
+      storageKey: "mealfit-admin-guide-menu-v3",
+      title: "Món và combo",
+      summary: "Món giữ giá riêng, combo ghép nhiều món và có thể sao chép nhanh.",
       steps: [
-        "Nhập tên món.",
-        "Chọn nhóm và giá bán.",
-        "Lưu để giá dùng ngay khi tạo đơn.",
+        "Nhập tên món, chọn nhóm và nhập ít nhất 1 loại có giá.",
+        "Vào phần combo để ghép nhiều món vào cùng một gói.",
+        "Bấm sao chép nếu muốn tạo combo mới từ combo cũ rất nhanh.",
       ],
       actionHref: "/admin/menu/new",
       actionLabel: "Thêm món",

@@ -198,6 +198,7 @@ export interface UserRoleAssignmentView {
 export interface OrderItem {
   id: string;
   orderId: string;
+  itemType?: "menu_item" | "combo";
   productId: string;
   productName: string;
   variantId: string;
@@ -223,6 +224,23 @@ export interface OrderItem {
   legacyProductVariantId?: string | null;
   menuItemVariantId?: string | null;
   priceBookItemIdSnapshot?: string | null;
+  comboIdSnapshot?: string | null;
+  comboCodeSnapshot?: string | null;
+  comboNameSnapshot?: string | null;
+  comboDefaultSalePriceSnapshot?: number | null;
+  comboComponentsSnapshot?: Array<{
+    menuItemVariantId: string;
+    menuItemName: string;
+    variantLabel: string | null;
+    weightGrams: number | null;
+    quantity: number;
+    unitSalePrice: number;
+    unitCost: number;
+    lineSaleTotal: number;
+    lineCostTotal: number;
+    displayText: string;
+    sortOrder?: number;
+  }> | null;
 }
 
 export interface OrderRecord {
@@ -302,6 +320,13 @@ export interface ActionState {
   status: "idle" | "success" | "error";
   message: string;
   mode: AdminMode;
+  references?: ActionReference[];
+}
+
+export interface ActionReference {
+  label: string;
+  href: string;
+  note?: string;
 }
 
 export interface MenuProductPayload {
@@ -361,7 +386,9 @@ export interface OrderPayload {
   otherFee: number;
   note: string;
   items: Array<{
-    variantId: string;
+    itemType?: "menu_item" | "combo";
+    variantId?: string;
+    comboId?: string;
     quantity: number;
     unitPrice: number;
   }>;

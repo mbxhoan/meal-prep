@@ -19,6 +19,14 @@ import {
   getDefaultDraftValue,
   getNestedValue,
 } from "@/lib/master-data/validation";
+import {
+  StickyFormFooter,
+  getImageShellClassName,
+  getSelectClassName,
+  getTextFieldClassName,
+  getTextareaClassName,
+  getToggleLabelClassName,
+} from "@/features/admin/components/form-ux";
 import type {
   MasterDataEntityConfig,
   MasterDataOptionGroup,
@@ -147,6 +155,10 @@ export function MasterDataCrudPage({
 
   const selectedRow =
     rows.find((row) => row.id === selectedId) ?? null;
+  const initialDraft = useMemo(
+    () => buildDraftFromRow(config, selectedRow),
+    [config, selectedRow],
+  );
   const filteredRows = useMemo(() => {
     const searchable = config.searchFields;
     const normalizedQuery = query.trim().toLowerCase();
@@ -374,18 +386,19 @@ export function MasterDataCrudPage({
             ) : null}
           </div>
 
-          <form action={action} className="mt-6 space-y-4">
+          <form action={action} className="mt-6 space-y-4 pb-36">
             <input type="hidden" name="payload" value={payload} />
 
             <div className="grid gap-4 md:grid-cols-2">
               {config.fields.map((field) => {
                 const fieldValue = draft[field.name];
+                const fieldDirty = fieldValue !== initialDraft[field.name];
 
                 if (field.type === "checkbox") {
                   return (
                     <label
                       key={field.name}
-                      className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+                      className={getToggleLabelClassName(fieldDirty)}
                     >
                       <input
                         type="checkbox"
@@ -413,7 +426,7 @@ export function MasterDataCrudPage({
                         }
                         rows={4}
                         placeholder={field.placeholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                        className={getTextareaClassName(fieldDirty)}
                       />
                     </label>
                   );
@@ -436,7 +449,7 @@ export function MasterDataCrudPage({
                         onChange={(event) =>
                           handleFieldChange(field.name, event.target.value)
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                        className={getSelectClassName(fieldDirty)}
                       >
                         <option value="">Chọn {field.label.toLowerCase()}</option>
                         {options.map((option) => (
@@ -451,7 +464,10 @@ export function MasterDataCrudPage({
 
                 if (field.type === "image") {
                   return (
-                    <div key={field.name} className="md:col-span-2">
+                    <div
+                      key={field.name}
+                      className={`md:col-span-2 ${getImageShellClassName(fieldDirty)}`}
+                    >
                       <ImageUploader
                         value={String(fieldValue ?? "")}
                         onChange={(nextValue) =>
@@ -466,6 +482,7 @@ export function MasterDataCrudPage({
                           field.helpText ??
                           `Dùng bucket product-media. Ảnh sẽ được lưu cho ${config.title.toLowerCase()}.`
                         }
+                        className="border-0 bg-transparent p-0"
                       />
                     </div>
                   );
@@ -492,39 +509,26 @@ export function MasterDataCrudPage({
                       step={field.step}
                       min={field.min}
                       max={field.max}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                      className={getTextFieldClassName(fieldDirty)}
                     />
                   </label>
                 );
               })}
             </div>
 
-            {state.message ? (
-              <p
-                className={`rounded-2xl px-4 py-3 text-sm ${
-                  state.status === "success"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-rose-50 text-rose-700"
-                }`}
-              >
-                {state.message}
-              </p>
-            ) : null}
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-500">
-                {selectedRow
+            <StickyFormFooter
+              note={
+                selectedRow
                   ? "Lưu sẽ cập nhật bản ghi hiện tại."
-                  : "Lưu sẽ tạo bản ghi mới trong shop hiện tại."}
-              </p>
-              <button
-                type="submit"
-                disabled={pending}
-                className="inline-flex items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {pending ? "Đang lưu..." : "Lưu"}
-              </button>
-            </div>
+                  : "Lưu sẽ tạo bản ghi mới trong shop hiện tại."
+              }
+              message={state.message || undefined}
+              messageTone={state.status === "success" ? "success" : "danger"}
+              submitLabel="Lưu"
+              pendingLabel="Đang lưu..."
+              pending={pending}
+              disabled={pending}
+            />
           </form>
         </section>
       ) : null}

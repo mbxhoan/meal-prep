@@ -69,6 +69,28 @@ export function SalesOrderBill({
   const shippingAndSubtotal = roundCurrency(order.subtotalBeforeDiscount + order.shippingFee);
   const discountAllocations = allocateDiscountAcrossLines(order, order.orderDiscountAmount);
 
+  function renderComboDetails(
+    components:
+      | Array<{
+          displayText: string;
+          menuItemName: string;
+          variantLabel: string | null;
+          weightGrams: number | null;
+          quantity: number;
+        }>
+      | null
+      | undefined,
+  ) {
+    if (!components || components.length === 0) {
+      return "—";
+    }
+
+    return components
+      .map((component) => component.displayText)
+      .filter((part) => part.length > 0)
+      .join("\n");
+  }
+
   return (
     <div className="space-y-4 pb-8">
       <section className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
@@ -235,6 +257,7 @@ export function SalesOrderBill({
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {order.items.map((item, index) => {
+                const isCombo = item.itemType === "combo" || item.comboIdSnapshot != null;
                 const lineSubtotal =
                   item.lineTotalBeforeDiscount ||
                   item.lineTotalAfterDiscount ||
@@ -247,23 +270,26 @@ export function SalesOrderBill({
                   item.weightGramsSnapshot == null
                     ? null
                     : roundCurrency(item.weightGramsSnapshot * item.quantity);
+                const comboDetails = renderComboDetails(item.comboComponentsSnapshot);
 
                 return (
                   <tr key={item.id} className="align-top">
                     <td className="px-3 py-3">
                       <p className="font-medium text-slate-900">
-                        {item.itemNameSnapshot}
+                        {isCombo ? item.comboNameSnapshot ?? item.itemNameSnapshot : item.itemNameSnapshot}
                       </p>
                       <p className="mt-1 text-[12px] text-slate-500">
-                        {item.variantLabelSnapshot ?? "—"}
+                        {isCombo
+                          ? item.comboCodeSnapshot ?? item.variantLabelSnapshot ?? "Combo"
+                          : item.variantLabelSnapshot ?? "—"}
                       </p>
                     </td>
                     <td className="px-3 py-3 text-slate-700">
-                      {weightTotal == null ? "—" : `${weightTotal}g`}
+                      {isCombo ? "—" : weightTotal == null ? "—" : `${weightTotal}g`}
                     </td>
                     <td className="px-3 py-3 text-slate-700">{item.quantity}</td>
                     <td className="px-3 py-3 text-slate-700">
-                      {weightTotal == null ? "—" : `${weightTotal}g`}
+                      {isCombo ? "—" : weightTotal == null ? "—" : `${weightTotal}g`}
                     </td>
                     <td className="px-3 py-3 font-medium text-slate-900">
                       {formatCurrency(item.unitPriceSnapshot)}
@@ -286,8 +312,12 @@ export function SalesOrderBill({
                     <td className="px-3 py-3 font-medium text-slate-900">
                       {formatCurrency(lineProfitAfterDiscount)}
                     </td>
-                    <td className="px-3 py-3 text-slate-700">Món lẻ</td>
-                    <td className="px-3 py-3 text-slate-500">—</td>
+                    <td className="px-3 py-3 text-slate-700">
+                      {isCombo ? "Combo" : "Món lẻ"}
+                    </td>
+                    <td className="px-3 py-3 whitespace-pre-line text-slate-500">
+                      {isCombo ? comboDetails : "—"}
+                    </td>
                   </tr>
                 );
               })}

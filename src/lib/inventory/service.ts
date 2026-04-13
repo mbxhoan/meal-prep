@@ -4,6 +4,7 @@ import {
   createSupabaseServerClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/server";
+import { createId } from "@/lib/id";
 import type {
   InventoryCorePageData,
   InventoryCorePermissions,
@@ -247,7 +248,7 @@ export async function saveInventoryReceiptDraft(
     throw new Error("Supabase client is not available.");
   }
 
-  const receiptId = payload.receiptId ?? crypto.randomUUID();
+  const receiptId = payload.receiptId ?? createId("receipt");
   const receiptNo = payload.receiptNo.trim();
   const items = payload.items ?? [];
 
@@ -329,7 +330,7 @@ export async function saveInventoryIssueDraft(
     throw new Error("Supabase client is not available.");
   }
 
-  const issueId = payload.issueId ?? crypto.randomUUID();
+  const issueId = payload.issueId ?? createId("issue");
   const issueNo = payload.issueNo.trim();
   const items = payload.items ?? [];
 

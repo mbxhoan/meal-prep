@@ -13,6 +13,8 @@ import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase
 import { getAdminContext } from "@/lib/admin/service";
 import type {
   SalesOrderBuilderData,
+  SalesComboComponentOption,
+  SalesComboOption,
   SalesOrderCustomerOption,
   SalesOrderDetailRecord,
   SalesOrderFulfillmentIssueSummary,
@@ -60,6 +62,209 @@ function buildVariantIndex(products: MenuProduct[]) {
   }
 
   return entries;
+}
+
+function buildComboComponentText(
+  productName: string,
+  variantLabel: string | null,
+  quantity: number,
+  weightGrams: number | null,
+) {
+  const parts = [productName, variantLabel];
+
+  if (weightGrams != null) {
+    parts.push(`${weightGrams}g`);
+  }
+
+  parts.push(`x${quantity}`);
+
+  return parts.filter((part) => part != null && String(part).trim().length > 0).join(" ");
+}
+
+function buildDemoCombos(products: MenuProduct[]): SalesComboOption[] {
+  const pickVariant = (productSlug: string) => {
+    const product = products.find((entry) => entry.slug === productSlug);
+    return product?.variants[0] ?? null;
+  };
+
+  const chicken = pickVariant("marinated-chicken");
+  const beef = pickVariant("prime-beef");
+  const ribs = pickVariant("bbq-ribs");
+  const salmon = pickVariant("orange-salmon");
+
+  const combos: SalesComboOption[] = [];
+
+  if (chicken && beef && ribs) {
+    const components: SalesComboComponentOption[] = [
+      chicken,
+      beef,
+      ribs,
+    ].map((variant, index) => ({
+      menuItemVariantId: variant.id,
+      menuItemName: products.find((product) =>
+        product.variants.some((entry) => entry.id === variant.id),
+      )?.name ?? "Món",
+      variantLabel: variant.label,
+      weightGrams: variant.weightInGrams ?? null,
+      quantity: 1,
+      unitSalePrice: variant.price,
+      unitCost: variant.totalCost,
+      lineSaleTotal: variant.price,
+      lineCostTotal: variant.totalCost,
+      sortOrder: index,
+      displayText: buildComboComponentText(
+        products.find((product) =>
+          product.variants.some((entry) => entry.id === variant.id),
+        )?.name ?? "Món",
+        variant.label,
+        1,
+        variant.weightInGrams ?? null,
+      ),
+    }));
+
+    const defaultSalePrice = roundCurrency(
+      components.reduce((sum, component) => sum + component.lineSaleTotal, 0),
+    );
+    const totalCost = roundCurrency(
+      components.reduce((sum, component) => sum + component.lineCostTotal, 0),
+    );
+
+    combos.push({
+      id: "demo-combo-lean",
+      code: "CB002",
+      name: "Combo giảm cân",
+      salePrice: roundCurrency(defaultSalePrice - 48000),
+      defaultSalePrice,
+      totalCost,
+      grossProfit: roundCurrency(roundCurrency(defaultSalePrice - 48000) - totalCost),
+      grossMargin:
+        roundCurrency(defaultSalePrice - 48000) > 0
+          ? roundCurrency(roundCurrency(defaultSalePrice - 48000) - totalCost) /
+            roundCurrency(defaultSalePrice - 48000)
+          : 0,
+      notes: "Combo mẫu cho chế độ demo.",
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+      components,
+    });
+  }
+
+  if (chicken && salmon) {
+    const components: SalesComboComponentOption[] = [chicken, salmon].map((variant, index) => ({
+      menuItemVariantId: variant.id,
+      menuItemName: products.find((product) =>
+        product.variants.some((entry) => entry.id === variant.id),
+      )?.name ?? "Món",
+      variantLabel: variant.label,
+      weightGrams: variant.weightInGrams ?? null,
+      quantity: 1,
+      unitSalePrice: variant.price,
+      unitCost: variant.totalCost,
+      lineSaleTotal: variant.price,
+      lineCostTotal: variant.totalCost,
+      sortOrder: index,
+      displayText: buildComboComponentText(
+        products.find((product) =>
+          product.variants.some((entry) => entry.id === variant.id),
+        )?.name ?? "Món",
+        variant.label,
+        1,
+        variant.weightInGrams ?? null,
+      ),
+    }));
+
+    const defaultSalePrice = roundCurrency(
+      components.reduce((sum, component) => sum + component.lineSaleTotal, 0),
+    );
+    const totalCost = roundCurrency(
+      components.reduce((sum, component) => sum + component.lineCostTotal, 0),
+    );
+    const salePrice = roundCurrency(defaultSalePrice - 35000);
+
+    combos.push({
+      id: "demo-combo-fit",
+      code: "CB004",
+      name: "Combo Power Fit",
+      salePrice,
+      defaultSalePrice,
+      totalCost,
+      grossProfit: roundCurrency(salePrice - totalCost),
+      grossMargin: salePrice > 0 ? roundCurrency(salePrice - totalCost) / salePrice : 0,
+      notes: "Combo mẫu cho chế độ demo.",
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+      components,
+    });
+  }
+
+  return combos;
+}
+
+function normalizeComboOption(row: Record<string, unknown>): SalesComboOption {
+  const components = Array.isArray(row.combo_items)
+    ? row.combo_items
+        .map((entry) => {
+        const item = entry as Record<string, unknown>;
+        const variant = (item.menu_item_variants ?? {}) as Record<string, unknown>;
+        const menuItem = (variant.menu_items ?? {}) as Record<string, unknown>;
+        const menuItemName = String(menuItem.name ?? "Món");
+        const variantLabel = item.variant_label_snapshot == null
+          ? (variant.label == null ? null : String(variant.label))
+          : String(item.variant_label_snapshot);
+        const weightGrams = item.weight_grams_snapshot == null
+          ? (variant.weight_grams == null ? null : safeNumber(variant.weight_grams))
+          : safeNumber(item.weight_grams_snapshot);
+        const quantity = Math.max(safeNumber(item.quantity, 1), 1);
+        const unitSalePrice = safeNumber(item.unit_sale_price_snapshot, 0);
+        const unitCost = safeNumber(item.unit_cost_snapshot, 0);
+        const lineSaleTotal = safeNumber(item.line_sale_total, unitSalePrice * quantity);
+        const lineCostTotal = safeNumber(item.line_cost_total, unitCost * quantity);
+        const displayText =
+          String(item.display_text ?? "").trim().length > 0
+            ? String(item.display_text)
+            : buildComboComponentText(menuItemName, variantLabel, quantity, weightGrams);
+
+        return {
+          menuItemVariantId: String(item.menu_item_variant_id ?? ""),
+          menuItemName,
+          variantLabel,
+          weightGrams,
+          quantity,
+          unitSalePrice,
+          unitCost,
+          lineSaleTotal,
+          lineCostTotal,
+          sortOrder: safeNumber(item.sort_order, 0),
+          displayText,
+        } satisfies SalesComboComponentOption;
+      })
+        .sort((left, right) => {
+          const leftOrder = left.sortOrder ?? 0;
+          const rightOrder = right.sortOrder ?? 0;
+
+          return leftOrder - rightOrder || left.menuItemVariantId.localeCompare(right.menuItemVariantId);
+        })
+    : [];
+
+  return {
+    id: String(row.id ?? ""),
+    code: row.code == null ? null : String(row.code),
+    name: String(row.name ?? "Combo"),
+    salePrice: safeNumber(row.sale_price, 0),
+    defaultSalePrice: safeNumber(row.default_sale_price, 0),
+    totalCost: safeNumber(row.total_cost, 0),
+    grossProfit: safeNumber(row.gross_profit, 0),
+    grossMargin: safeNumber(row.gross_margin, 0),
+    notes: row.notes == null ? null : String(row.notes),
+    isActive: row.is_active !== false,
+    updatedAt: String(row.updated_at ?? new Date().toISOString()),
+    components: components.sort((left, right) => {
+      const leftOrder = left.sortOrder ?? 0;
+      const rightOrder = right.sortOrder ?? 0;
+
+      return leftOrder - rightOrder || left.menuItemVariantId.localeCompare(right.menuItemVariantId);
+    }),
+  };
 }
 
 function normalizeCustomerOption(
@@ -219,6 +424,20 @@ async function buildCanonicalCatalog(
     return null;
   }
 
+  const { data: comboRows, error: comboRowsError } = await supabase
+    .from("combos")
+    .select(
+      "id, shop_id, code, name, sale_price, default_sale_price, total_cost, gross_profit, gross_margin, notes, is_active, updated_at, combo_items(id, combo_id, menu_item_variant_id, quantity, unit_sale_price_snapshot, unit_cost_snapshot, line_sale_total, line_cost_total, display_text, sort_order, is_active, notes, menu_item_variants(label, weight_grams, menu_items(name)))",
+    )
+    .eq("shop_id", shopId)
+    .is("deleted_at", null)
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false });
+
+  if (comboRowsError) {
+    return null;
+  }
+
   const { data: priceBookItems, error: priceBookItemsError } = await supabase
     .from("price_book_items")
     .select(
@@ -303,9 +522,14 @@ async function buildCanonicalCatalog(
     } satisfies MenuProduct;
   });
 
+  const combos = (comboRows ?? []).map((row) =>
+    normalizeComboOption(row as Record<string, unknown>),
+  );
+
   return {
     mode: "canonical",
     products,
+    combos,
     priceBookId,
     priceBookName,
     priceBookItemIdByVariantId,
@@ -321,6 +545,7 @@ async function buildLegacyCatalog(): Promise<CatalogResolution> {
   return {
     mode: "legacy",
     products,
+    combos: buildDemoCombos(products),
     priceBookId: null,
     priceBookName: null,
     priceBookItemIdByVariantId: new Map<string, string>(),
@@ -392,6 +617,7 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
     return {
       mode: legacy.mode,
       products: legacy.products,
+      combos: legacy.combos,
       priceBookId: legacy.priceBookId,
       priceBookName: legacy.priceBookName,
       customers: legacy.customers,
@@ -408,6 +634,7 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
     return {
       mode: legacy.mode,
       products: legacy.products,
+      combos: legacy.combos,
       priceBookId: legacy.priceBookId,
       priceBookName: legacy.priceBookName,
       customers: legacy.customers,
@@ -429,6 +656,7 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
     return {
       mode: legacy.mode,
       products: legacy.products,
+      combos: legacy.combos,
       priceBookId: legacy.priceBookId,
       priceBookName: legacy.priceBookName,
       customers: lookups.customers,
@@ -446,6 +674,7 @@ export const getSalesOrderBuilderData = cache(async (): Promise<SalesOrderBuilde
   return {
     mode: canonical.mode,
     products: canonical.products,
+    combos: canonical.combos,
     priceBookId: canonical.priceBookId,
     priceBookName: canonical.priceBookName,
     customers: lookups.customers,
@@ -523,7 +752,7 @@ export const getSalesOrders = cache(async (): Promise<SalesOrderDetailRecord[]> 
   const { data, error } = await supabase
     .from("sales_orders")
     .select(
-      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
+      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, item_type, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_default_sale_price_snapshot, combo_components_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
     )
     .eq("shop_id", context.shop.id)
     .order("ordered_at", { ascending: false });
@@ -553,7 +782,7 @@ export const getSalesOrderById = cache(async (
   const { data, error } = await supabase
     .from("sales_orders")
     .select(
-      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
+      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, item_type, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_default_sale_price_snapshot, combo_components_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
     )
     .eq("id", orderId)
     .eq("shop_id", context.shop.id)
@@ -592,8 +821,15 @@ export const getSalesOrderById = cache(async (
 
 export async function createSalesOrderRecord(payload: OrderPayload) {
   const resolution = await getSalesOrderBuilderResolution();
-  const { context, supabase, products, mode, priceBookId, priceBookItemIdByVariantId } =
-    resolution;
+  const {
+    context,
+    supabase,
+    products,
+    combos,
+    mode,
+    priceBookId,
+    priceBookItemIdByVariantId,
+  } = resolution;
   const shop = context.shop;
 
   if (!shop) {
@@ -601,6 +837,7 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
   }
 
   const variantIndex = buildVariantIndex(products);
+  const comboIndex = new Map(combos.map((combo) => [combo.id, combo]));
   const orderedAt = new Date().toISOString();
   const orderDate = new Date(orderedAt);
   const monthStart = new Date(
@@ -620,14 +857,47 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
   const orderNo = `SO-${orderedAt.slice(0, 7).replace("-", "")}-${String((count ?? 0) + 1).padStart(4, "0")}`;
 
   const resolvedItems = payload.items.map((item) => {
+    const quantity = Math.max(safeNumber(item.quantity, 1), 1);
+    const unitPrice = Math.max(safeNumber(item.unitPrice), 0);
+
+    if (item.itemType === "combo" || item.comboId) {
+      const combo = comboIndex.get(String(item.comboId ?? ""));
+
+      if (!combo) {
+        throw new Error(`Không tìm thấy combo ${item.comboId}.`);
+      }
+
+      return {
+        shop_id: shop.id,
+        sales_order_id: "",
+        item_type: "combo",
+        menu_item_variant_id: null,
+        legacy_product_variant_id: null,
+        price_book_item_id_snapshot: null,
+        combo_id_snapshot: combo.id,
+        combo_code_snapshot: combo.code,
+        combo_name_snapshot: combo.name,
+        combo_default_sale_price_snapshot: combo.defaultSalePrice,
+        combo_components_snapshot: combo.components,
+        item_name_snapshot: combo.name,
+        variant_label_snapshot: "Combo",
+        weight_grams_snapshot: null,
+        quantity,
+        unit_price_snapshot: unitPrice,
+        standard_cost_snapshot: Math.max(safeNumber(combo.totalCost), 0),
+      };
+    }
+
+    if (!item.variantId) {
+      throw new Error("Thiếu biến thể cho món lẻ.");
+    }
+
     const entry = variantIndex.get(item.variantId);
 
     if (!entry) {
       throw new Error(`Không tìm thấy biến thể ${item.variantId}.`);
     }
 
-    const quantity = Math.max(safeNumber(item.quantity, 1), 1);
-    const unitPrice = Math.max(safeNumber(item.unitPrice), 0);
     const standardCost = Math.max(safeNumber(entry.variant.totalCost), 0);
     const isCanonical = mode === "canonical";
     const priceBookItemId = isCanonical
@@ -637,9 +907,15 @@ export async function createSalesOrderRecord(payload: OrderPayload) {
     return {
       shop_id: shop.id,
       sales_order_id: "",
+      item_type: "menu_item",
       menu_item_variant_id: isCanonical ? item.variantId : null,
       legacy_product_variant_id: isCanonical ? null : item.variantId,
       price_book_item_id_snapshot: priceBookItemId,
+      combo_id_snapshot: null,
+      combo_code_snapshot: null,
+      combo_name_snapshot: null,
+      combo_default_sale_price_snapshot: null,
+      combo_components_snapshot: null,
       item_name_snapshot: entry.product.name,
       variant_label_snapshot: entry.variant.label,
       weight_grams_snapshot: entry.variant.weightInGrams,
@@ -824,9 +1100,10 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
     }
   }
 
-  const canonicalIds = detail.items.filter((item) => item.menuItemVariantId != null);
+  const canonicalMenuLines = detail.items.filter((item) => item.menuItemVariantId != null);
+  const canonicalComboLines = detail.items.filter((item) => item.comboIdSnapshot != null);
 
-  if (canonicalIds.length > 0) {
+  if (canonicalMenuLines.length > 0 || canonicalComboLines.length > 0) {
     const canonical = await buildCanonicalCatalog(supabaseClient, shopId);
 
     if (!canonical) {
@@ -853,32 +1130,69 @@ export async function refreshSalesOrderDraftPrices(orderId: string) {
     }
 
     const canonicalIndex = buildVariantIndex(canonical.products);
+    const comboIndex = new Map(canonical.combos.map((combo) => [combo.id, combo]));
     let subtotalBeforeDiscount = 0;
 
     for (const line of detail.items) {
-      if (!line.menuItemVariantId) {
+      if (line.menuItemVariantId) {
+        const entry = canonicalIndex.get(line.menuItemVariantId);
+
+        if (!entry) {
+          continue;
+        }
+
+        const priceBookRow = priceMap.get(line.menuItemVariantId);
+        const salePrice = safeNumber(priceBookRow?.sale_price, entry.variant.price);
+        const standardCost = safeNumber(priceBookRow?.standard_cost, entry.variant.totalCost);
+        subtotalBeforeDiscount += salePrice * line.quantity;
+
+        const { error } = await supabaseClient
+          .from("sales_order_items")
+          .update({
+            price_book_item_id_snapshot: priceBookRow?.id ? String(priceBookRow.id) : null,
+            item_name_snapshot: entry.product.name,
+            variant_label_snapshot: entry.variant.label,
+            weight_grams_snapshot: entry.variant.weightInGrams,
+            unit_price_snapshot: salePrice,
+            standard_cost_snapshot: standardCost,
+          })
+          .eq("id", line.id)
+          .eq("sales_order_id", orderId)
+          .eq("shop_id", shopId);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
         continue;
       }
 
-      const entry = canonicalIndex.get(line.menuItemVariantId);
-      if (!entry) {
+      if (!line.comboIdSnapshot) {
         continue;
       }
 
-      const priceBookRow = priceMap.get(line.menuItemVariantId);
-      const salePrice = safeNumber(priceBookRow?.sale_price, entry.variant.price);
-      const standardCost = safeNumber(priceBookRow?.standard_cost, entry.variant.totalCost);
-      subtotalBeforeDiscount += salePrice * line.quantity;
+      const combo = comboIndex.get(line.comboIdSnapshot);
+
+      if (!combo) {
+        continue;
+      }
+
+      subtotalBeforeDiscount += combo.salePrice * line.quantity;
 
       const { error } = await supabaseClient
         .from("sales_order_items")
         .update({
-          price_book_item_id_snapshot: priceBookRow?.id ? String(priceBookRow.id) : null,
-          item_name_snapshot: entry.product.name,
-          variant_label_snapshot: entry.variant.label,
-          weight_grams_snapshot: entry.variant.weightInGrams,
-          unit_price_snapshot: salePrice,
-          standard_cost_snapshot: standardCost,
+          price_book_item_id_snapshot: null,
+          item_name_snapshot: combo.name,
+          variant_label_snapshot: "Combo",
+          weight_grams_snapshot: null,
+          unit_price_snapshot: combo.salePrice,
+          standard_cost_snapshot: combo.totalCost,
+          combo_id_snapshot: combo.id,
+          combo_code_snapshot: combo.code,
+          combo_name_snapshot: combo.name,
+          combo_default_sale_price_snapshot: combo.defaultSalePrice,
+          combo_components_snapshot: combo.components,
         })
         .eq("id", line.id)
         .eq("sales_order_id", orderId)
@@ -1052,12 +1366,50 @@ function normalizeSalesOrderDetail(
   row: Record<string, unknown>,
 ): SalesOrderDetailRecord {
   const items = Array.isArray(row.sales_order_items)
-    ? row.sales_order_items.map((entry) => {
+    ? row.sales_order_items
+        .map((entry) => {
         const item = entry as Record<string, unknown>;
+        const comboComponents = Array.isArray(item.combo_components_snapshot)
+          ? item.combo_components_snapshot.map((component) => {
+              const rowComponent = component as Record<string, unknown>;
+
+              return {
+                menuItemVariantId: safeString(rowComponent.menuItemVariantId ?? rowComponent.menu_item_variant_id),
+                menuItemName: safeString(rowComponent.menuItemName ?? rowComponent.menu_item_name),
+                variantLabel:
+                  rowComponent.variantLabel == null && rowComponent.variant_label == null
+                    ? null
+                    : safeString(rowComponent.variantLabel ?? rowComponent.variant_label),
+                weightGrams:
+                  rowComponent.weightGrams == null && rowComponent.weight_grams == null
+                    ? null
+                    : safeNumber(rowComponent.weightGrams ?? rowComponent.weight_grams),
+                quantity: safeNumber(rowComponent.quantity, 1),
+                unitSalePrice: safeNumber(
+                  rowComponent.unitSalePrice ?? rowComponent.unit_sale_price ?? 0,
+                ),
+                unitCost: safeNumber(rowComponent.unitCost ?? rowComponent.unit_cost ?? 0),
+                lineSaleTotal: safeNumber(
+                  rowComponent.lineSaleTotal ?? rowComponent.line_sale_total ?? 0,
+                ),
+                lineCostTotal: safeNumber(
+                  rowComponent.lineCostTotal ?? rowComponent.line_cost_total ?? 0,
+                ),
+                sortOrder:
+                  rowComponent.sortOrder == null && rowComponent.sort_order == null
+                    ? undefined
+                    : safeNumber(rowComponent.sortOrder ?? rowComponent.sort_order, 0),
+                displayText: safeString(
+                  rowComponent.displayText ?? rowComponent.display_text,
+                ),
+              };
+            })
+          : null;
 
         return {
           id: safeString(item.id),
           salesOrderId: safeString(item.sales_order_id),
+          itemType: item.item_type == null ? undefined : (safeString(item.item_type) as "menu_item" | "combo"),
           menuItemVariantId:
             item.menu_item_variant_id == null
               ? null
@@ -1082,6 +1434,17 @@ function normalizeSalesOrderDetail(
           quantity: safeNumber(item.quantity, 0),
           unitPriceSnapshot: safeNumber(item.unit_price_snapshot, 0),
           standardCostSnapshot: safeNumber(item.standard_cost_snapshot, 0),
+          comboIdSnapshot:
+            item.combo_id_snapshot == null ? null : safeString(item.combo_id_snapshot),
+          comboCodeSnapshot:
+            item.combo_code_snapshot == null ? null : safeString(item.combo_code_snapshot),
+          comboNameSnapshot:
+            item.combo_name_snapshot == null ? null : safeString(item.combo_name_snapshot),
+          comboDefaultSalePriceSnapshot:
+            item.combo_default_sale_price_snapshot == null
+              ? null
+              : safeNumber(item.combo_default_sale_price_snapshot),
+          comboComponentsSnapshot: comboComponents,
           lineDiscountType:
             item.line_discount_type == null
               ? null

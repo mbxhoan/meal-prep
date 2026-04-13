@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
   },
   {
     href: "/admin/menu",
-    label: "Món hàng",
+    label: "Món & Combo",
     icon: FaUtensils,
     permission: "master.menu.read",
   },
@@ -111,9 +111,17 @@ function getHeaderConfig(pathname: string): HeaderConfig {
     };
   }
 
+  if (pathname === "/admin/menu/new") {
+    return {
+      eyebrow: "Món & Combo",
+      title: "Thêm món",
+      description: "Nhập tên, nhóm và ít nhất 1 loại có giá.",
+    };
+  }
+
   if (pathname.startsWith("/admin/menu/")) {
     return {
-      eyebrow: "Món hàng",
+      eyebrow: "Món & Combo",
       title: "Sửa món",
       description: "Tên món, giá và ảnh.",
     };
@@ -121,9 +129,9 @@ function getHeaderConfig(pathname: string): HeaderConfig {
 
   if (pathname === "/admin/menu") {
     return {
-      eyebrow: "Món hàng",
-      title: "Danh sách món",
-      description: "Thêm món và sửa giá.",
+      eyebrow: "Món & Combo",
+      title: "Danh sách món & combo",
+      description: "Thêm món, sửa giá và sao chép combo.",
     };
   }
 
@@ -343,15 +351,16 @@ export function AdminShell({
 
           <div className="mt-auto pt-6">
             <Link
+              target="_blank"
               href="/"
               prefetch
               className={`flex items-center rounded-2xl border border-white/10 px-3 py-2.5 text-[13px] font-medium text-white/75 transition hover:bg-white/8 hover:text-white ${
                 collapsed ? "justify-center" : "gap-3"
               }`}
-              title="Về trang bán hàng"
+              title="Mở trang bán hàng"
             >
               <FaArrowUpRightFromSquare />
-              {!collapsed ? <span>Về trang bán hàng</span> : null}
+              {!collapsed ? <span>Mở trang bán hàng</span> : null}
             </Link>
           </div>
         </aside>

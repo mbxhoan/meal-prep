@@ -7,9 +7,7 @@ import {
 } from "react-icons/fa6";
 import {
   ExportExcelButton,
-  GuidedWorkflowCard,
   MetricCard,
-  PageHeader,
   StatusPill,
   formatOrderStatusLabel,
   statusTone,
@@ -33,11 +31,19 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-4 pb-8">
-      <PageHeader
-        eyebrow="Bán hàng"
-        title="Bắt đầu"
-        description="Chỉ cần 3 chỗ: Món hàng, Đơn hàng và Doanh thu."
-        action={
+      <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Bán hàng
+            </p>
+            <h1 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">
+              Bắt đầu
+            </h1>
+            <p className="mt-1 text-[13px] leading-5 text-slate-500">
+              Chỉ cần 3 chỗ: Món hàng, Đơn hàng và Doanh thu.
+            </p>
+          </div>
           <Link
             href="/admin/orders/new"
             className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-3 py-1.5 text-[13px] font-medium text-white transition hover:opacity-90"
@@ -45,95 +51,79 @@ export default async function AdminDashboardPage() {
             <FaArrowRight className="text-xs" />
             <span>Tạo đơn</span>
           </Link>
-        }
-      />
-
-      <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="space-y-4">
-          <GuidedWorkflowCard
-            eyebrow="Hôm nay"
-            title="Làm 3 việc"
-            description="Giữ màn hình ngắn để dễ thao tác."
-            steps={[
-              "Mở Món hàng nếu có món mới hoặc cần sửa giá.",
-              "Mở Đơn hàng để tạo bill và chốt trạng thái.",
-              "Mở Doanh thu để xem tiền trong ngày.",
-            ]}
-          />
-
-          <div className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.35)]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
-              Lối tắt
-            </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <Link
-                href="/admin/menu"
-                className="inline-flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-              >
-                <span>Món hàng</span>
-                <FaArrowRight className="text-xs" />
-              </Link>
-              <Link
-                href="/admin/orders"
-                className="inline-flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-              >
-                <span>Đơn hàng</span>
-                <FaArrowRight className="text-xs" />
-              </Link>
-              <Link
-                href="/admin/analytics"
-                className="inline-flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
-              >
-                <span>Doanh thu</span>
-                <FaArrowRight className="text-xs" />
-              </Link>
-            </div>
-          </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-          <MetricCard
-            label="Doanh thu 30 ngày"
-            value={formatCurrency(snapshot.revenue30d)}
-            hint="Chỉ đơn đã chốt."
-            icon={<FaMoneyBillTrendUp />}
-          />
-          <MetricCard
-            label="Doanh thu hôm nay"
-            value={formatCurrency(snapshot.todayRevenue)}
-            hint={`${snapshot.todayOrders} đơn trong ngày`}
-            icon={<FaClipboardList />}
-          />
-          <MetricCard
-            label="Đơn 30 ngày"
-            value={`${snapshot.orderCount30d} đơn`}
-            hint="Đơn hợp lệ trong 30 ngày."
-            icon={<FaClipboardList />}
-          />
-          <MetricCard
-            label="Đơn chờ"
-            value={`${snapshot.openOrders} đơn`}
-            hint="Cần xem tiếp."
-            icon={<FaClipboardList />}
-          />
-          <MetricCard
-            label="Bill trung bình"
-            value={formatCurrency(snapshot.avgOrderValue)}
-            hint="Giá trị đơn trung bình."
-            icon={<FaMoneyBillTrendUp />}
-          />
-          <MetricCard
-            label="Tỷ lệ lãi"
-            value={formatPercent(snapshot.grossMargin30d)}
-            hint={`Lãi ${formatCurrency(snapshot.profit30d)}`}
-            icon={<FaUtensils />}
-          />
-          <MetricCard
-            label="Món đang bán"
-            value={`${snapshot.menuCount} món`}
-            hint="Đang hiển thị bán."
-            icon={<FaUtensils />}
-          />
+        <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+              Hôm nay
+            </p>
+            <h2 className="mt-1 text-base font-semibold text-slate-900">
+              Làm 3 việc
+            </h2>
+            <p className="mt-1 text-[13px] leading-5 text-slate-500">
+              Giữ màn hình ngắn để dễ thao tác.
+            </p>
+            <div className="mt-4 grid gap-2">
+              <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700">
+                <span>Mở Món hàng nếu có món mới hoặc cần sửa giá.</span>
+                <FaArrowRight className="ml-3 shrink-0 text-xs" />
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700">
+                <span>Mở Đơn hàng để tạo bill và chốt trạng thái.</span>
+                <FaArrowRight className="ml-3 shrink-0 text-xs" />
+              </div>
+              <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700">
+                <span>Mở Doanh thu để xem tiền trong ngày.</span>
+                <FaArrowRight className="ml-3 shrink-0 text-xs" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+            <MetricCard
+              label="Doanh thu 30 ngày"
+              value={formatCurrency(snapshot.revenue30d)}
+              hint="Chỉ đơn đã chốt."
+              icon={<FaMoneyBillTrendUp />}
+            />
+            <MetricCard
+              label="Doanh thu hôm nay"
+              value={formatCurrency(snapshot.todayRevenue)}
+              hint={`${snapshot.todayOrders} đơn trong ngày`}
+              icon={<FaClipboardList />}
+            />
+            <MetricCard
+              label="Đơn 30 ngày"
+              value={`${snapshot.orderCount30d} đơn`}
+              hint="Đơn hợp lệ trong 30 ngày."
+              icon={<FaClipboardList />}
+            />
+            <MetricCard
+              label="Đơn chờ"
+              value={`${snapshot.openOrders} đơn`}
+              hint="Cần xem tiếp."
+              icon={<FaClipboardList />}
+            />
+            <MetricCard
+              label="Bill trung bình"
+              value={formatCurrency(snapshot.avgOrderValue)}
+              hint="Giá trị đơn trung bình."
+              icon={<FaMoneyBillTrendUp />}
+            />
+            <MetricCard
+              label="Tỷ lệ lãi"
+              value={formatPercent(snapshot.grossMargin30d)}
+              hint={`Lãi ${formatCurrency(snapshot.profit30d)}`}
+              icon={<FaUtensils />}
+            />
+            <MetricCard
+              label="Món đang bán"
+              value={`${snapshot.menuCount} món`}
+              hint="Đang hiển thị bán."
+              icon={<FaUtensils />}
+            />
+          </div>
         </div>
       </section>
 

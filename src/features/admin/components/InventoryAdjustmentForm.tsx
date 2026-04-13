@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { GuardrailChecklist } from "@/features/admin/components";
+import { StickyFormFooter } from "@/features/admin/components/form-ux";
 import { recordInventoryMovementAction } from "@/lib/admin/actions";
 import { formatCurrency } from "@/lib/admin/format";
 import type { InventoryItem, InventoryMovementType } from "@/lib/admin/types";
@@ -35,7 +36,7 @@ export function InventoryAdjustmentForm({ item }: { item: InventoryItem }) {
   return (
     <form
       action={action}
-      className="rounded-[28px] border border-slate-200 bg-white p-4"
+      className="rounded-[28px] border border-slate-200 bg-white p-4 pb-36"
       onSubmit={(event) => {
         if (
           !window.confirm(
@@ -141,31 +142,20 @@ export function InventoryAdjustmentForm({ item }: { item: InventoryItem }) {
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-500">
-          Biến động sẽ ghi vào <code>inventory_movements</code>. Trigger DB sẽ tự
-          cập nhật tồn kho và cost bình quân.
-        </p>
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Đang lưu..." : "Ghi nhận"}
-        </button>
-      </div>
-
-      {state.status !== "idle" ? (
-        <p
-          className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
-            state.status === "success"
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-rose-50 text-rose-700"
-          }`}
-        >
-          {state.message}
-        </p>
-      ) : null}
+      <StickyFormFooter
+        note={
+          <>
+            Biến động sẽ ghi vào <code>inventory_movements</code>. Trigger DB sẽ
+            tự cập nhật tồn kho và cost bình quân.
+          </>
+        }
+        message={state.status !== "idle" ? state.message : undefined}
+        messageTone={state.status === "success" ? "success" : "danger"}
+        submitLabel="Ghi nhận"
+        pendingLabel="Đang lưu..."
+        pending={pending}
+        disabled={pending}
+      />
     </form>
   );
 }

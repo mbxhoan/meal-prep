@@ -1,13 +1,14 @@
 import { ProductEditorForm } from "@/features/admin/components";
 import { getCategories } from "@/lib/admin/service";
+import { createId } from "@/lib/id";
 import type { MenuProduct, MenuVariant } from "@/lib/admin/types";
 
-function makeBlankVariant(productId: string, weightInGrams: number, index: number): MenuVariant {
+function makeBlankVariant(productId: string): MenuVariant {
   return {
-    id: crypto.randomUUID(),
+    id: createId("variant"),
     productId,
-    label: `${weightInGrams}g`,
-    weightInGrams,
+    label: "",
+    weightInGrams: null,
     price: 0,
     compareAtPrice: null,
     standardCost: 0,
@@ -18,15 +19,15 @@ function makeBlankVariant(productId: string, weightInGrams: number, index: numbe
     totalCost: 0,
     grossProfit: 0,
     grossMargin: 0,
-    isDefault: index === 0,
+    isDefault: true,
     isActive: true,
-    sortOrder: index,
+    sortOrder: 0,
     recipeComponents: [],
   };
 }
 
 function makeBlankProduct(): MenuProduct {
-  const id = crypto.randomUUID();
+  const id = createId("product");
 
   return {
     id,
@@ -41,11 +42,7 @@ function makeBlankProduct(): MenuProduct {
     isPublished: true,
     sortOrder: 0,
     updatedAt: new Date().toISOString(),
-    variants: [
-      makeBlankVariant(id, 100, 0),
-      makeBlankVariant(id, 150, 1),
-      makeBlankVariant(id, 200, 2),
-    ],
+    variants: [makeBlankVariant(id)],
   };
 }
 

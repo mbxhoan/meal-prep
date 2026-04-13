@@ -7,6 +7,7 @@ import {
   createSupabaseBrowserClient,
   isSupabaseConfigured,
 } from "@/lib/supabase/client";
+import { createId } from "@/lib/id";
 
 export function ImageUploader({
   value,
@@ -19,6 +20,7 @@ export function ImageUploader({
   uploadLabel = "Tải ảnh lên Supabase Storage",
   helpText,
   placeholder = "https://... hoặc /assets/...",
+  className = "",
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -30,6 +32,7 @@ export function ImageUploader({
   uploadLabel?: string;
   helpText?: ReactNode;
   placeholder?: string;
+  className?: string;
 }) {
   const [message, setMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -40,7 +43,9 @@ export function ImageUploader({
   );
 
   return (
-    <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
+    <div
+      className={`rounded-[28px] border border-slate-200 bg-slate-50/70 p-4 ${className}`.trim()}
+    >
       <div className="flex flex-col gap-4 lg:flex-row">
         <div className="relative aspect-square w-full overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-white lg:w-[220px]">
           {canPreview ? (
@@ -108,7 +113,7 @@ export function ImageUploader({
 
                   const fileExt =
                     (file.name.split(".").pop() ?? "webp").toLowerCase();
-                  const filePath = `${pathPrefix}/${crypto.randomUUID()}.${fileExt}`;
+                  const filePath = `${pathPrefix}/${createId("image")}.${fileExt}`;
                   const { error } = await client.storage
                     .from(bucket)
                     .upload(filePath, file, { upsert: true });

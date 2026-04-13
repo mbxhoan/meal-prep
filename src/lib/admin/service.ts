@@ -324,45 +324,131 @@ function normalizeInventoryItem(row: Record<string, unknown>): InventoryItem {
   };
 }
 
+function normalizeComboComponentsSnapshot(
+  rawComponents: unknown,
+): OrderRecord["items"][number]["comboComponentsSnapshot"] {
+  if (!Array.isArray(rawComponents)) {
+    return null;
+  }
+
+  return rawComponents.map((component) => {
+    const rowComponent = component as Record<string, unknown>;
+
+    return {
+      menuItemVariantId: String(
+        rowComponent.menuItemVariantId ?? rowComponent.menu_item_variant_id ?? "",
+      ),
+      menuItemName: String(rowComponent.menuItemName ?? rowComponent.menu_item_name ?? "Món"),
+      variantLabel:
+        rowComponent.variantLabel == null && rowComponent.variant_label == null
+          ? null
+          : String(rowComponent.variantLabel ?? rowComponent.variant_label),
+      weightGrams:
+        rowComponent.weightGrams == null && rowComponent.weight_grams == null
+          ? null
+          : safeNumber(rowComponent.weightGrams ?? rowComponent.weight_grams),
+      quantity: safeNumber(rowComponent.quantity, 1),
+      unitSalePrice: safeNumber(
+        rowComponent.unitSalePrice ?? rowComponent.unit_sale_price ?? 0,
+      ),
+      unitCost: safeNumber(rowComponent.unitCost ?? rowComponent.unit_cost ?? 0),
+      lineSaleTotal: safeNumber(
+        rowComponent.lineSaleTotal ?? rowComponent.line_sale_total ?? 0,
+      ),
+      lineCostTotal: safeNumber(
+        rowComponent.lineCostTotal ?? rowComponent.line_cost_total ?? 0,
+      ),
+      sortOrder:
+        rowComponent.sortOrder == null && rowComponent.sort_order == null
+          ? undefined
+          : safeNumber(rowComponent.sortOrder ?? rowComponent.sort_order, 0),
+      displayText: String(rowComponent.displayText ?? rowComponent.display_text ?? ""),
+    };
+  }).sort((left, right) => {
+    const leftOrder = left.sortOrder ?? 0;
+    const rightOrder = right.sortOrder ?? 0;
+
+    return leftOrder - rightOrder || left.menuItemVariantId.localeCompare(right.menuItemVariantId);
+  });
+}
+
 function normalizeOrder(row: Record<string, unknown>): OrderRecord {
   const items = Array.isArray(row.sales_order_items)
     ? row.sales_order_items.map((entry) => {
         const item = entry as Record<string, unknown>;
+        const isCombo = item.item_type === "combo" || item.combo_id_snapshot != null;
+        const comboComponentsSnapshot = normalizeComboComponentsSnapshot(
+          item.combo_components_snapshot,
+        );
 
         return {
           id: String(item.id),
           orderId: String(item.sales_order_id ?? row.id ?? ""),
           productId: String(
-            item.menu_item_variant_id ??
-              item.legacy_product_variant_id ??
-              item.id ??
-              "",
+            isCombo
+              ? item.combo_id_snapshot ?? item.id ?? ""
+              : item.menu_item_variant_id ??
+                item.legacy_product_variant_id ??
+                item.id ??
+                "",
           ),
-          productName: String(item.item_name_snapshot ?? "Món"),
+          productName: String(
+            isCombo
+              ? item.combo_name_snapshot ?? item.item_name_snapshot ?? "Combo"
+              : item.item_name_snapshot ?? "Món",
+          ),
           variantId: String(
-            item.menu_item_variant_id ??
-              item.legacy_product_variant_id ??
-              item.id ??
-              "",
+            isCombo
+              ? item.combo_id_snapshot ?? item.id ?? ""
+              : item.menu_item_variant_id ??
+                item.legacy_product_variant_id ??
+                item.id ??
+                "",
           ),
-          variantLabel: String(item.variant_label_snapshot ?? ""),
+          variantLabel: String(
+            isCombo
+              ? item.combo_code_snapshot ?? item.variant_label_snapshot ?? "Combo"
+              : item.variant_label_snapshot ?? "",
+          ),
           quantity: safeNumber(item.quantity, 1),
           unitPrice: safeNumber(item.unit_price_snapshot),
           unitCogs: safeNumber(item.standard_cost_snapshot),
           lineRevenue: safeNumber(item.line_total_after_discount),
           lineCogs: safeNumber(item.line_cost_total),
           lineProfit: safeNumber(item.line_profit_total),
-          itemNameSnapshot: String(item.item_name_snapshot ?? "Món"),
+          itemType: (isCombo ? "combo" : "menu_item") as "menu_item" | "combo",
+          itemNameSnapshot: String(
+            isCombo
+              ? item.combo_name_snapshot ?? item.item_name_snapshot ?? "Combo"
+              : item.item_name_snapshot ?? "Món",
+          ),
           variantLabelSnapshot:
-            item.variant_label_snapshot == null
-              ? null
-              : String(item.variant_label_snapshot),
+            isCombo
+              ? item.combo_code_snapshot == null
+                ? item.variant_label_snapshot == null
+                  ? "Combo"
+                  : String(item.variant_label_snapshot)
+                : String(item.combo_code_snapshot)
+              : item.variant_label_snapshot == null
+                ? null
+                : String(item.variant_label_snapshot),
           weightGramsSnapshot:
-            item.weight_grams_snapshot == null
+            isCombo || item.weight_grams_snapshot == null
               ? null
               : safeNumber(item.weight_grams_snapshot),
           unitPriceSnapshot: safeNumber(item.unit_price_snapshot),
           standardCostSnapshot: safeNumber(item.standard_cost_snapshot),
+          comboIdSnapshot:
+            item.combo_id_snapshot == null ? null : String(item.combo_id_snapshot),
+          comboCodeSnapshot:
+            item.combo_code_snapshot == null ? null : String(item.combo_code_snapshot),
+          comboNameSnapshot:
+            item.combo_name_snapshot == null ? null : String(item.combo_name_snapshot),
+          comboDefaultSalePriceSnapshot:
+            item.combo_default_sale_price_snapshot == null
+              ? null
+              : safeNumber(item.combo_default_sale_price_snapshot),
+          comboComponentsSnapshot,
           lineDiscountType:
             item.line_discount_type == null
               ? null
@@ -388,7 +474,7 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
             item.price_book_item_id_snapshot == null
               ? null
               : String(item.price_book_item_id_snapshot),
-        };
+        } satisfies OrderRecord["items"][number];
       })
     : Array.isArray(row.order_items)
       ? row.order_items.map((entry) => {
@@ -419,7 +505,29 @@ function normalizeOrder(row: Record<string, unknown>): OrderRecord {
             lineRevenue: safeNumber(item.line_revenue),
             lineCogs: safeNumber(item.line_cogs),
             lineProfit: safeNumber(item.line_profit),
-          };
+            itemType: "menu_item" as const,
+            itemNameSnapshot: String(product.name ?? "Món"),
+            variantLabelSnapshot:
+              variant.label == null ? null : String(variant.label),
+            weightGramsSnapshot: null,
+            unitPriceSnapshot: safeNumber(item.unit_price),
+            standardCostSnapshot: safeNumber(item.unit_cogs),
+            lineDiscountType: null,
+            lineDiscountValue: null,
+            lineDiscountAmount: 0,
+            lineTotalBeforeDiscount: safeNumber(item.line_revenue),
+            lineTotalAfterDiscount: safeNumber(item.line_revenue),
+            lineCostTotal: safeNumber(item.line_cogs),
+            lineProfitTotal: safeNumber(item.line_profit),
+            legacyProductVariantId: null,
+            menuItemVariantId: String(item.variant_id ?? variant.id ?? ""),
+            priceBookItemIdSnapshot: null,
+            comboIdSnapshot: null,
+            comboCodeSnapshot: null,
+            comboNameSnapshot: null,
+            comboDefaultSalePriceSnapshot: null,
+            comboComponentsSnapshot: null,
+          } satisfies OrderRecord["items"][number];
       })
       : [];
   const payments = Array.isArray(row.sales_payments)
@@ -750,7 +858,7 @@ export async function getOrders(): Promise<OrderRecord[]> {
     const salesResponse = await supabase
       .from("sales_orders")
       .select(
-        "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at)",
+        "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, item_type, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_default_sale_price_snapshot, combo_components_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at)",
       )
       .eq("shop_id", context.shop.id)
       .order("ordered_at", { ascending: false });
@@ -764,7 +872,7 @@ export async function getOrders(): Promise<OrderRecord[]> {
     const legacyResponse = await supabase
       .from("orders")
       .select(
-        "id, order_number, customer_name, customer_phone, sales_channel, status, note, subtotal, discount_amount, shipping_fee, other_fee, total_revenue, total_cogs, gross_profit, gross_margin, ordered_at, inventory_applied_at, order_items(id, order_id, product_id, variant_id, quantity, unit_price, unit_cogs, line_revenue, line_cogs, line_profit, products(id, name), product_variants(id, label))",
+        "id, order_number, customer_name, customer_phone, sales_channel, status, note, subtotal, discount_amount, shipping_fee, other_fee, total_revenue, total_cogs, gross_profit, gross_margin, ordered_at, inventory_applied_at, order_items(id, order_id, product_id, variant_id, item_type, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_components_snapshot, combo_default_sale_price_snapshot, quantity, unit_price, unit_cogs, line_revenue, line_cogs, line_profit, products(id, name), product_variants(id, label))",
       )
       .order("ordered_at", { ascending: false });
 

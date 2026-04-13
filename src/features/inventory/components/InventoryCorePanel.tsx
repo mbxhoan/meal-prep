@@ -9,6 +9,7 @@ import {
   StatusPill,
 } from "@/features/admin/components";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/admin/format";
+import { createId } from "@/lib/id";
 import {
   postInventoryIssueAction,
   postInventoryReceiptAction,
@@ -43,8 +44,7 @@ function toIsoFromLocalValue(value: string) {
 }
 
 function makeDocumentNo(prefix: string) {
-  return `${prefix}-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${crypto
-    .randomUUID()
+  return `${prefix}-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${createId("doc")
     .slice(0, 8)
     .toUpperCase()}`;
 }

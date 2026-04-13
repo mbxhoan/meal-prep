@@ -11,6 +11,8 @@ export const MASTER_DATA_ENTITY_KEYS = [
   "items",
   "menu_items",
   "menu_item_variants",
+  "combos",
+  "combo_items",
   "price_books",
   "price_book_items",
 ] as const;

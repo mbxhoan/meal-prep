@@ -1,12 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getAdminContext } from "@/lib/admin/service";
 import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
+import { requirePermission, PermissionDeniedError } from "@/lib/rbac/server";
+import { createId } from "@/lib/id";
 import type {
   ActionState,
+  ActionReference,
   MenuProductPayload,
 } from "@/lib/admin/types";
 import { createSalesOrderAction } from "@/lib/sales/actions";
+import { validateMenuProductPayload } from "@/lib/admin/menu-product";
 
 const demoSuccess = (message: string): ActionState => ({
   status: "success",
@@ -86,6 +91,19 @@ export async function saveMenuProductAction(
     payload = parseJsonField<MenuProductPayload>(formData, "payload");
   } catch {
     return actionError("Không đọc được dữ liệu thực đơn.", "demo");
+  }
+
+  const validationMessage = validateMenuProductPayload({
+    name: payload.name,
+    categoryId: payload.categoryId,
+    variants: payload.variants,
+  });
+
+  if (validationMessage) {
+    return actionError(
+      validationMessage,
+      isSupabaseConfigured() ? "live" : "demo",
+    );
   }
 
   if (!isSupabaseConfigured()) {
@@ -215,6 +233,577 @@ export async function saveMenuProductAction(
   } catch (error) {
     return actionError(
       error instanceof Error ? error.message : "Không lưu được thực đơn.",
+      "live",
+    );
+  }
+}
+
+type DuplicateComboPayload = {
+  comboId: string;
+};
+
+type UpdateComboSalePricePayload = {
+  comboId: string;
+  salePrice: number;
+};
+
+type DeleteMenuProductPayload = {
+  productId: string;
+};
+
+function buildDuplicatedComboCode(sourceCode: string, existingCodes: Set<string>) {
+  const baseCode = `${sourceCode.trim().length > 0 ? sourceCode.trim() : "COMBO"}-COPY`;
+
+  if (!existingCodes.has(baseCode)) {
+    return baseCode;
+  }
+
+  let suffix = 2;
+  while (existingCodes.has(`${baseCode}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseCode}-${suffix}`;
+}
+
+function firstWords(value: string, maxWords = 3) {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, maxWords)
+    .join(" ");
+}
+
+function formatUsageNote(label: string, extra?: string) {
+  return extra ? `${label} · ${extra}` : label;
+}
+
+type UsageCountRow = {
+  id: string;
+};
+
+type SalesOrderUsageRow = UsageCountRow & {
+  sales_order_id: string;
+  item_name_snapshot: string;
+  variant_label_snapshot: string | null;
+  created_at: string;
+  sales_orders: Array<{ id: string; order_no: string }>;
+};
+
+type ComboUsageRow = UsageCountRow & {
+  combo_id: string;
+  display_text: string;
+  updated_at: string;
+  combos: Array<{ id: string; code: string; name: string }>;
+};
+
+type PriceBookUsageRow = UsageCountRow & {
+  price_book_id: string;
+  updated_at: string;
+  price_books: Array<{ id: string; code: string; name: string }>;
+};
+
+function groupUsageReferences<T extends UsageCountRow>(
+  rows: T[],
+  getGroupKey: (row: T) => string,
+  buildReference: (groupRows: T[]) => ActionReference | null,
+) {
+  const groups = new Map<string, T[]>();
+
+  for (const row of rows) {
+    const key = getGroupKey(row);
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+
+    groups.get(key)?.push(row);
+  }
+
+  return Array.from(groups.values())
+    .map((groupRows) => buildReference(groupRows))
+    .filter((reference): reference is ActionReference => reference != null);
+}
+
+async function collectMenuProductDeletionReferences(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  shopId: string,
+  productId: string,
+) {
+  if (!supabase) {
+    throw new Error("Supabase client is not available.");
+  }
+
+  const { data: productRow, error: productError } = await supabase
+    .from("products")
+    .select("id, name, slug, product_variants(id, label, weight_in_grams)")
+    .eq("id", productId)
+    .eq("shop_id", shopId)
+    .maybeSingle();
+
+  if (productError) {
+    throw new Error(productError.message);
+  }
+
+  if (!productRow) {
+    throw new Error("Không tìm thấy món cần xoá.");
+  }
+
+  const variantRows = Array.isArray((productRow as Record<string, unknown>).product_variants)
+    ? ((productRow as Record<string, unknown>).product_variants as Record<string, unknown>[])
+    : [];
+
+  const variantIds = variantRows
+    .map((variant) => String(variant.id ?? "").trim())
+    .filter((variantId) => variantId.length > 0);
+  if (variantIds.length === 0) {
+    return {
+      productName: String((productRow as Record<string, unknown>).name ?? "Món"),
+      variantCount: 0,
+      references: [],
+    };
+  }
+
+  const [menuOrderUsageResponse, legacyOrderUsageResponse, combosResponse, priceBooksResponse] =
+    await Promise.all([
+      supabase
+        .from("sales_order_items")
+        .select(
+          "id, sales_order_id, item_name_snapshot, variant_label_snapshot, created_at, sales_orders(id, order_no)",
+          { count: "exact" },
+        )
+        .eq("shop_id", shopId)
+        .in("menu_item_variant_id", variantIds)
+        .order("created_at", { ascending: false })
+        .limit(12),
+      supabase
+        .from("sales_order_items")
+        .select(
+          "id, sales_order_id, item_name_snapshot, variant_label_snapshot, created_at, sales_orders(id, order_no)",
+          { count: "exact" },
+        )
+        .eq("shop_id", shopId)
+        .in("legacy_product_variant_id", variantIds)
+        .order("created_at", { ascending: false })
+        .limit(12),
+      supabase
+        .from("combo_items")
+        .select(
+          "id, combo_id, display_text, updated_at, combos(id, code, name)",
+          { count: "exact" },
+        )
+        .eq("shop_id", shopId)
+        .in("menu_item_variant_id", variantIds)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(12),
+      supabase
+        .from("price_book_items")
+        .select(
+          "id, price_book_id, updated_at, price_books(id, code, name)",
+          { count: "exact" },
+        )
+        .eq("shop_id", shopId)
+        .in("menu_item_variant_id", variantIds)
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(12),
+    ]);
+
+  if (menuOrderUsageResponse.error) {
+    throw new Error(menuOrderUsageResponse.error.message);
+  }
+  if (legacyOrderUsageResponse.error) {
+    throw new Error(legacyOrderUsageResponse.error.message);
+  }
+  if (combosResponse.error) {
+    throw new Error(combosResponse.error.message);
+  }
+  if (priceBooksResponse.error) {
+    throw new Error(priceBooksResponse.error.message);
+  }
+
+  const references: ActionReference[] = [];
+
+  const orderRows = [
+    ...((menuOrderUsageResponse.data ?? []) as SalesOrderUsageRow[]),
+    ...((legacyOrderUsageResponse.data ?? []) as SalesOrderUsageRow[]),
+  ];
+  references.push(
+    ...groupUsageReferences(
+      orderRows,
+      (row) => row.sales_order_id,
+      (groupRows) => {
+        const firstRow = groupRows[0];
+        const orderNo =
+          firstRow.sales_orders?.[0]?.order_no?.trim() ||
+          firstRow.sales_order_id.slice(0, 8);
+        const firstItemLabel = firstWords(
+          String(
+            firstRow.variant_label_snapshot ??
+              firstRow.item_name_snapshot ??
+              "Dòng món",
+          ),
+          4,
+        );
+
+        return {
+          label: `Đơn ${orderNo}`,
+          href: `/admin/orders/${firstRow.sales_order_id}`,
+          note: formatUsageNote(firstItemLabel, `${groupRows.length} dòng khớp`),
+        };
+      },
+    ),
+  );
+
+  const comboRows = (combosResponse.data ?? []) as ComboUsageRow[];
+  references.push(
+    ...groupUsageReferences(
+      comboRows,
+      (row) => row.combo_id,
+      (groupRows) => {
+        const firstRow = groupRows[0];
+        const comboMeta = firstRow.combos?.[0] ?? null;
+        const comboLabel =
+          comboMeta?.code?.trim().length > 0
+            ? `Combo ${comboMeta.code.trim()}`
+            : comboMeta?.name?.trim() || "Combo";
+
+        return {
+          label: comboLabel,
+          href: "/admin/master-data/combos",
+          note: formatUsageNote(
+            firstWords(comboMeta?.name ?? firstRow.display_text ?? "Combo", 4),
+            `${groupRows.length} món khớp`,
+          ),
+        };
+      },
+    ),
+  );
+
+  const priceBookRows = (priceBooksResponse.data ?? []) as PriceBookUsageRow[];
+  references.push(
+    ...groupUsageReferences(
+      priceBookRows,
+      (row) => row.price_book_id,
+      (groupRows) => {
+        const firstRow = groupRows[0];
+        const priceBookMeta = firstRow.price_books?.[0] ?? null;
+        const priceBookLabel =
+          priceBookMeta?.code?.trim().length > 0
+            ? `Bảng giá ${priceBookMeta.code.trim()}`
+            : priceBookMeta?.name?.trim() || "Bảng giá";
+
+        return {
+          label: priceBookLabel,
+          href: "/admin/master-data/price_book_items",
+          note: formatUsageNote(
+            firstWords(priceBookMeta?.name ?? "Bảng giá", 4),
+            `${groupRows.length} dòng khớp`,
+          ),
+        };
+      },
+    ),
+  );
+
+  const hasUsage =
+    (menuOrderUsageResponse.count ?? 0) > 0 ||
+    (legacyOrderUsageResponse.count ?? 0) > 0 ||
+    (combosResponse.count ?? 0) > 0 ||
+    (priceBooksResponse.count ?? 0) > 0;
+
+  if (!hasUsage) {
+    return {
+      productName: String((productRow as Record<string, unknown>).name ?? "Món"),
+      variantCount: variantIds.length,
+      references: [],
+    };
+  }
+
+  return {
+    productName: String((productRow as Record<string, unknown>).name ?? "Món"),
+    variantCount: variantIds.length,
+    references,
+  };
+}
+
+export async function duplicateComboAction(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let payload: DuplicateComboPayload;
+
+  try {
+    payload = parseJsonField<DuplicateComboPayload>(formData, "payload");
+  } catch {
+    return actionError("Không đọc được dữ liệu combo.", "demo");
+  }
+
+  if (!payload.comboId) {
+    return actionError("Thiếu comboId.", "demo");
+  }
+
+  if (!isSupabaseConfigured()) {
+    return demoSuccess("Đã sao chép combo trong chế độ demo.");
+  }
+
+  try {
+    await requirePermission("master.menu.create");
+
+    const supabase = await createSupabaseServerClient();
+
+    if (!supabase) {
+      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
+    }
+
+    const { data: sourceCombo, error: sourceError } = await supabase
+      .from("combos")
+      .select(
+        "id, shop_id, code, name, sale_price, notes, is_active, combo_items(id, menu_item_variant_id, quantity, sort_order, is_active, notes, display_text)",
+      )
+      .eq("id", payload.comboId)
+      .maybeSingle();
+
+    if (sourceError) {
+      return actionError(sourceError.message, "live");
+    }
+
+    if (!sourceCombo) {
+      return actionError("Không tìm thấy combo cần sao chép.", "live");
+    }
+
+    const sourceRow = sourceCombo as Record<string, unknown>;
+    const sourceItems = Array.isArray(sourceRow.combo_items)
+      ? (sourceRow.combo_items as Record<string, unknown>[])
+      : [];
+
+    const { data: codeRows, error: codeError } = await supabase
+      .from("combos")
+      .select("code")
+      .eq("shop_id", String(sourceRow.shop_id ?? ""))
+      .is("deleted_at", null);
+
+    if (codeError) {
+      return actionError(codeError.message, "live");
+    }
+
+    const existingCodes = new Set(
+      (codeRows ?? [])
+        .map((row) => String((row as Record<string, unknown>).code ?? "").trim())
+        .filter((code) => code.length > 0),
+    );
+
+    const duplicatedComboCode = buildDuplicatedComboCode(
+      String(sourceRow.code ?? "COMBO"),
+      existingCodes,
+    );
+    const duplicatedComboName = `${String(sourceRow.name ?? "Combo")} (bản sao)`;
+
+    const { data: createdCombo, error: createComboError } = await supabase
+      .from("combos")
+      .insert({
+        id: createId("combo"),
+        shop_id: String(sourceRow.shop_id ?? ""),
+        code: duplicatedComboCode,
+        name: duplicatedComboName,
+        sale_price: Number(sourceRow.sale_price ?? 0),
+        notes: sourceRow.notes == null ? null : String(sourceRow.notes),
+        is_active: sourceRow.is_active !== false,
+      })
+      .select("id")
+      .single();
+
+    if (createComboError) {
+      return actionError(createComboError.message, "live");
+    }
+
+    const newComboId = String(createdCombo.id);
+
+    if (sourceItems.length > 0) {
+      const { error: createItemsError } = await supabase.from("combo_items").insert(
+        sourceItems.map((item, index) => ({
+          id: createId("combo-item"),
+          shop_id: String(sourceRow.shop_id ?? ""),
+          combo_id: newComboId,
+          menu_item_variant_id: String(item.menu_item_variant_id ?? ""),
+          quantity: Number(item.quantity ?? 1),
+          sort_order: Number(item.sort_order ?? index),
+          is_active: item.is_active !== false,
+          notes: item.notes == null ? null : String(item.notes),
+          display_text:
+            item.display_text == null ? "" : String(item.display_text),
+        })),
+      );
+
+      if (createItemsError) {
+        return actionError(createItemsError.message, "live");
+      }
+    }
+
+    revalidatePath("/admin/menu");
+    revalidatePath("/admin/orders/new");
+    revalidatePath("/admin/master-data");
+    revalidatePath("/admin/master-data/combos");
+    revalidatePath("/admin/master-data/combo_items");
+
+    return liveSuccess(`Đã sao chép ${duplicatedComboName}.`);
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return actionError("Bạn không có quyền sao chép combo.", "live");
+    }
+
+    return actionError(
+      error instanceof Error ? error.message : "Không sao chép được combo.",
+      "live",
+    );
+  }
+}
+
+export async function updateComboSalePriceAction(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let payload: UpdateComboSalePricePayload;
+
+  try {
+    payload = parseJsonField<UpdateComboSalePricePayload>(formData, "payload");
+  } catch {
+    return actionError("Không đọc được dữ liệu combo.", "demo");
+  }
+
+  if (!payload.comboId) {
+    return actionError("Thiếu comboId.", "demo");
+  }
+
+  if (!Number.isFinite(payload.salePrice) || payload.salePrice <= 0) {
+    return actionError("Giá bán phải lớn hơn 0.", isSupabaseConfigured() ? "live" : "demo");
+  }
+
+  if (!isSupabaseConfigured()) {
+    return demoSuccess("Đã cập nhật giá bán combo trong chế độ demo.");
+  }
+
+  try {
+    await requirePermission("master.menu.update");
+
+    const context = await getAdminContext();
+    if (!context.shop) {
+      return actionError("Thiếu shop đang hoạt động.", "live");
+    }
+
+    const supabase = await createSupabaseServerClient();
+
+    if (!supabase) {
+      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
+    }
+
+    const { error } = await supabase
+      .from("combos")
+      .update({ sale_price: payload.salePrice })
+      .eq("id", payload.comboId)
+      .eq("shop_id", context.shop.id);
+
+    if (error) {
+      return actionError(error.message, "live");
+    }
+
+    revalidatePath("/admin/menu");
+    revalidatePath("/admin/orders/new");
+    revalidatePath("/admin/master-data");
+    revalidatePath("/admin/master-data/combos");
+    revalidatePath("/admin/master-data/combo_items");
+
+    return liveSuccess("Đã cập nhật giá bán combo.");
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return actionError("Bạn không có quyền cập nhật combo.", "live");
+    }
+
+    return actionError(
+      error instanceof Error ? error.message : "Không cập nhật được combo.",
+      "live",
+    );
+  }
+}
+
+export async function deleteMenuProductAction(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let payload: DeleteMenuProductPayload;
+
+  try {
+    payload = parseJsonField<DeleteMenuProductPayload>(formData, "deletePayload");
+  } catch {
+    try {
+      payload = parseJsonField<DeleteMenuProductPayload>(formData, "payload");
+    } catch {
+      return actionError("Không đọc được dữ liệu món.", "demo");
+    }
+  }
+
+  if (!payload.productId) {
+    return actionError("Thiếu productId.", "demo");
+  }
+
+  if (!isSupabaseConfigured()) {
+    return demoSuccess("Đã mô phỏng xoá món trong chế độ demo.");
+  }
+
+  try {
+    await requirePermission("master.menu.delete");
+
+    const context = await getAdminContext();
+    if (!context.shop) {
+      return actionError("Thiếu shop đang hoạt động.", "live");
+    }
+
+    const supabase = await createSupabaseServerClient();
+
+    if (!supabase) {
+      return demoSuccess("Supabase chưa sẵn sàng, đang giữ ở chế độ demo.");
+    }
+
+    const usage = await collectMenuProductDeletionReferences(
+      supabase,
+      context.shop.id,
+      payload.productId,
+    );
+
+    if (usage.references.length > 0) {
+      return {
+        status: "error",
+        mode: "live",
+        message: `Món ${usage.productName} đã được dùng ở ${usage.references.length} nơi nên chưa thể xoá.`,
+        references: usage.references.slice(0, 12),
+      };
+    }
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", payload.productId)
+      .eq("shop_id", context.shop.id);
+
+    if (error) {
+      return actionError(error.message, "live");
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/menu");
+    revalidatePath(`/admin/menu/${payload.productId}`);
+    revalidatePath("/admin/orders/new");
+    revalidatePath("/menu");
+
+    return liveSuccess("Đã xoá món.");
+  } catch (error) {
+    if (error instanceof PermissionDeniedError) {
+      return actionError("Bạn không có quyền xoá món.", "live");
+    }
+
+    return actionError(
+      error instanceof Error ? error.message : "Không xoá được món.",
       "live",
     );
   }

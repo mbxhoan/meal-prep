@@ -1,11 +1,24 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
-import { FaPlus, FaTrash } from "react-icons/fa6";
+import { useActionState, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FaPlus, FaTrash, FaTriangleExclamation } from "react-icons/fa6";
 import { ImageUploader } from "@/features/admin/components/ImageUploader";
-import { saveMenuProductAction } from "@/lib/admin/actions";
+import {
+  StickyFormFooter,
+  getImageShellClassName,
+  getSelectClassName,
+  getSectionClassName,
+  getTextFieldClassName,
+  getTextareaClassName,
+  getToggleLabelClassName,
+} from "@/features/admin/components/form-ux";
+import { deleteMenuProductAction, saveMenuProductAction } from "@/lib/admin/actions";
 import { formatCurrency, slugify } from "@/lib/admin/format";
 import { ADMIN_SIMPLE_MODE } from "@/features/admin/config";
+import { createId } from "@/lib/id";
+import { validateMenuProductPayload } from "@/lib/admin/menu-product";
 import type {
   AdminCategory,
   InventoryItem,
@@ -21,6 +34,12 @@ const initialState = {
   mode: "demo",
 } as const;
 
+const initialDeleteState = {
+  status: "idle",
+  message: "",
+  mode: "demo",
+} as const;
+
 type VariantState = MenuVariant;
 
 function makeEmptyGalleryImage(
@@ -29,7 +48,7 @@ function makeEmptyGalleryImage(
   isPrimary = false,
 ): MenuProductImage {
   return {
-    id: crypto.randomUUID(),
+    id: createId("gallery"),
     productId,
     imageUrl: "",
     altText: "",
@@ -72,7 +91,7 @@ function buildInitialGallery(product: MenuProduct): MenuProductImage[] {
       : product.mainImageUrl
         ? [
             {
-              id: crypto.randomUUID(),
+              id: createId("gallery"),
               productId: product.id,
               imageUrl: product.mainImageUrl,
               altText: product.name,
@@ -87,9 +106,9 @@ function buildInitialGallery(product: MenuProduct): MenuProductImage[] {
 
 function makeEmptyVariant(productId: string): VariantState {
   return {
-    id: crypto.randomUUID(),
+    id: createId("variant"),
     productId,
-    label: "Biến thể mới",
+    label: "",
     weightInGrams: null,
     price: 0,
     compareAtPrice: null,
@@ -153,15 +172,87 @@ function recalculateVariantCosts(
   };
 }
 
+function imageSignature(image: MenuProductImage) {
+  return {
+    imageUrl: image.imageUrl.trim(),
+    altText: image.altText.trim(),
+    isPrimary: image.isPrimary,
+  };
+}
+
+function variantFieldSignature(variant: VariantState) {
+  return {
+    label: variant.label,
+    weightInGrams: variant.weightInGrams,
+    price: variant.price,
+    compareAtPrice: variant.compareAtPrice,
+    standardCost: variant.standardCost,
+    packagingCost: variant.packagingCost,
+    laborCost: variant.laborCost,
+    overheadCost: variant.overheadCost,
+    isDefault: variant.isDefault,
+    isActive: variant.isActive,
+    sortOrder: variant.sortOrder,
+    recipeComponents: variant.recipeComponents.map((component) => ({
+      inventoryItemId: component.inventoryItemId,
+      quantityPerUnit: component.quantityPerUnit,
+      wastagePercent: component.wastagePercent,
+    })),
+  };
+}
+
+function isVariantValueDirty(
+  current: VariantState,
+  original: VariantState | null,
+  key: keyof Pick<
+    VariantState,
+    | "label"
+    | "weightInGrams"
+    | "price"
+    | "compareAtPrice"
+    | "standardCost"
+    | "packagingCost"
+    | "laborCost"
+    | "overheadCost"
+    | "isDefault"
+    | "isActive"
+    | "sortOrder"
+  >,
+) {
+  if (!original) {
+    return true;
+  }
+
+  return current[key] !== original[key];
+}
+
+function isRecipeComponentDirty(
+  component: RecipeComponent,
+  original: RecipeComponent | null,
+) {
+  if (!original) {
+    return true;
+  }
+
+  return (
+    component.inventoryItemId !== original.inventoryItemId ||
+    component.quantityPerUnit !== original.quantityPerUnit ||
+    component.wastagePercent !== original.wastagePercent
+  );
+}
+
 export function ProductEditorForm({
   product,
   categories,
   inventoryItems,
+  allowDelete = false,
 }: {
   product: MenuProduct;
   categories: AdminCategory[];
   inventoryItems: InventoryItem[];
+  allowDelete?: boolean;
 }) {
+  const router = useRouter();
   const isSimple = ADMIN_SIMPLE_MODE;
   const inventoryIndex = useMemo(
     () => Object.fromEntries(inventoryItems.map((item) => [item.id, item])),
@@ -182,6 +273,10 @@ export function ProductEditorForm({
     product.variants.map((variant) => recalculateVariantCosts(variant, inventoryIndex)),
   );
   const [state, action, pending] = useActionState(saveMenuProductAction, initialState);
+  const [deleteState, deleteAction, deletePending] = useActionState(
+    deleteMenuProductAction,
+    initialDeleteState,
+  );
   const mainImageUrl = useMemo(() => {
     const primaryImage = galleryImages.find(
       (image) => image.isPrimary && image.imageUrl.trim().length > 0,
@@ -193,6 +288,46 @@ export function ProductEditorForm({
       ""
     );
   }, [galleryImages]);
+  const originalGallerySignature = useMemo(
+    () =>
+      JSON.stringify(
+        buildInitialGallery(product).map((image) => imageSignature(image)),
+      ),
+    [product],
+  );
+  const currentGallerySignature = useMemo(
+    () => JSON.stringify(galleryImages.map((image) => imageSignature(image))),
+    [galleryImages],
+  );
+  const originalVariantMap = useMemo(
+    () => new Map(product.variants.map((variant) => [variant.id, variant])),
+    [product.variants],
+  );
+  const validationMessage = useMemo(
+    () =>
+      validateMenuProductPayload({
+        name,
+        categoryId,
+        variants,
+      }),
+    [categoryId, name, variants],
+  );
+  const canSaveProduct = validationMessage == null;
+  const nameDirty = name !== product.name;
+  const slugDirty = slug !== product.slug;
+  const categoryDirty = categoryId !== (product.categoryId ?? "");
+  const shortDescriptionDirty = shortDescription !== product.shortDescription;
+  const descriptionDirty = description !== product.description;
+  const sortOrderDirty = sortOrder !== product.sortOrder;
+  const isFeaturedDirty = isFeatured !== product.isFeatured;
+  const isPublishedDirty = isPublished !== product.isPublished;
+  const galleryDirty = currentGallerySignature !== originalGallerySignature;
+
+  useEffect(() => {
+    if (allowDelete && deleteState.status === "success") {
+      router.replace("/admin/menu");
+    }
+  }, [allowDelete, deleteState.status, router]);
 
   function updateVariant(variantId: string, updater: (variant: VariantState) => VariantState) {
     setVariants((current) =>
@@ -251,7 +386,7 @@ export function ProductEditorForm({
       recipeComponents: [
         ...variant.recipeComponents,
         {
-          id: crypto.randomUUID(),
+          id: createId("gallery"),
           variantId,
           inventoryItemId: defaultItem.id,
           ingredientName: defaultItem.name,
@@ -266,7 +401,7 @@ export function ProductEditorForm({
   }
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className="space-y-6 pb-40">
       <input
         type="hidden"
         name="payload"
@@ -310,6 +445,13 @@ export function ProductEditorForm({
           })),
         })}
       />
+      {allowDelete ? (
+        <input
+          type="hidden"
+          name="deletePayload"
+          value={JSON.stringify({ productId: product.id })}
+        />
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-5">
@@ -333,7 +475,7 @@ export function ProductEditorForm({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="block">
                 <span className="mb-2 block text-sm font-medium text-slate-700">
                   Tên món
@@ -347,7 +489,7 @@ export function ProductEditorForm({
                       current === product.slug ? slugify(nextName) : current,
                     );
                   }}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                  className={getTextFieldClassName(nameDirty)}
                 />
               </label>
               {!isSimple ? (
@@ -358,7 +500,7 @@ export function ProductEditorForm({
                   <input
                     value={slug}
                     onChange={(event) => setSlug(slugify(event.target.value))}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                    className={getTextFieldClassName(slugDirty)}
                   />
                 </label>
               ) : null}
@@ -369,7 +511,7 @@ export function ProductEditorForm({
                 <select
                   value={categoryId}
                   onChange={(event) => setCategoryId(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                  className={getSelectClassName(categoryDirty)}
                 >
                   <option value="">Chưa chọn nhóm</option>
                   {categories.map((category) => (
@@ -388,7 +530,7 @@ export function ProductEditorForm({
                     type="number"
                     value={sortOrder}
                     onChange={(event) => setSortOrder(Number(event.target.value || 0))}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                    className={getTextFieldClassName(sortOrderDirty)}
                   />
                 </label>
               ) : null}
@@ -398,13 +540,13 @@ export function ProductEditorForm({
               <span className="mb-2 block text-sm font-medium text-slate-700">
                 Ghi chú ngắn
               </span>
-              <textarea
-                rows={2}
-                value={shortDescription}
-                onChange={(event) => setShortDescription(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
-              />
-            </label>
+            <textarea
+              rows={2}
+              value={shortDescription}
+              onChange={(event) => setShortDescription(event.target.value)}
+              className={getTextareaClassName(shortDescriptionDirty)}
+            />
+          </label>
 
             {!isSimple ? (
               <label className="mt-4 block">
@@ -415,14 +557,14 @@ export function ProductEditorForm({
                   rows={4}
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none"
+                  className={getTextareaClassName(descriptionDirty)}
                 />
               </label>
             ) : null}
 
             <div className="mt-4 flex flex-wrap gap-3">
               {!isSimple ? (
-                <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <label className={getToggleLabelClassName(isFeaturedDirty)}>
                   <input
                     type="checkbox"
                     checked={isFeatured}
@@ -431,7 +573,7 @@ export function ProductEditorForm({
                   Nổi bật
                 </label>
               ) : null}
-              <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              <label className={getToggleLabelClassName(isPublishedDirty)}>
                 <input
                   type="checkbox"
                   checked={isPublished}
@@ -452,26 +594,35 @@ export function ProductEditorForm({
                   Mỗi khối lượng có một giá riêng
                 </h2>
               </div>
-              {!isSimple ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setVariants((current) => [...current, makeEmptyVariant(product.id)])
-                  }
-                  title="Thêm loại"
-                  aria-label="Thêm loại"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white"
-                >
-                  <FaPlus className="text-sm" />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() =>
+                  setVariants((current) => [...current, makeEmptyVariant(product.id)])
+                }
+                title="Thêm loại"
+                aria-label="Thêm loại"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white"
+              >
+                <FaPlus className="text-sm" />
+              </button>
             </div>
 
             <div className="mt-4 space-y-4">
               {variants.map((variant) => (
+                (() => {
+                  const originalVariant = originalVariantMap.get(variant.id) ?? null;
+                  const originalVariantSignature = originalVariant
+                    ? JSON.stringify(variantFieldSignature(originalVariant))
+                    : null;
+                  const variantCardDirty =
+                    !originalVariant ||
+                    JSON.stringify(variantFieldSignature(variant)) !==
+                      originalVariantSignature;
+
+                  return (
                 <div
                   key={variant.id}
-                  className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4"
+                  className={getSectionClassName(variantCardDirty)}
                 >
                   <div
                     className={`grid gap-4 ${
@@ -490,7 +641,11 @@ export function ProductEditorForm({
                             label: event.target.value,
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        placeholder="Ví dụ: 100g"
+                        className={getTextFieldClassName(
+                          isVariantValueDirty(variant, originalVariant, "label"),
+                          "bg-white",
+                        )}
                       />
                     </label>
 
@@ -509,7 +664,15 @@ export function ProductEditorForm({
                               : null,
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        placeholder="Ví dụ: 100"
+                        className={getTextFieldClassName(
+                          isVariantValueDirty(
+                            variant,
+                            originalVariant,
+                            "weightInGrams",
+                          ),
+                          "bg-white",
+                        )}
                       />
                     </label>
 
@@ -528,7 +691,10 @@ export function ProductEditorForm({
                             standardCost: Math.max(Number(event.target.value || 0), 0),
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        className={getTextFieldClassName(
+                          isVariantValueDirty(variant, originalVariant, "standardCost"),
+                          "bg-white",
+                        )}
                       />
                     </label>
 
@@ -547,7 +713,10 @@ export function ProductEditorForm({
                             price: Number(event.target.value || 0),
                           }))
                         }
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                        className={getTextFieldClassName(
+                          isVariantValueDirty(variant, originalVariant, "price"),
+                          "bg-white",
+                        )}
                       />
                     </label>
 
@@ -567,7 +736,14 @@ export function ProductEditorForm({
                                 : null,
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                          className={getTextFieldClassName(
+                            isVariantValueDirty(
+                              variant,
+                              originalVariant,
+                              "compareAtPrice",
+                            ),
+                            "bg-white",
+                          )}
                         />
                       </label>
                     ) : (
@@ -597,7 +773,10 @@ export function ProductEditorForm({
                               packagingCost: Number(event.target.value || 0),
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                          className={getTextFieldClassName(
+                            isVariantValueDirty(variant, originalVariant, "packagingCost"),
+                            "bg-white",
+                          )}
                         />
                       </label>
                       <label className="block">
@@ -613,7 +792,10 @@ export function ProductEditorForm({
                               laborCost: Number(event.target.value || 0),
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                          className={getTextFieldClassName(
+                            isVariantValueDirty(variant, originalVariant, "laborCost"),
+                            "bg-white",
+                          )}
                         />
                       </label>
                       <label className="block">
@@ -629,7 +811,10 @@ export function ProductEditorForm({
                               overheadCost: Number(event.target.value || 0),
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                          className={getTextFieldClassName(
+                            isVariantValueDirty(variant, originalVariant, "overheadCost"),
+                            "bg-white",
+                          )}
                         />
                       </label>
                       <label className="block">
@@ -645,7 +830,10 @@ export function ProductEditorForm({
                               sortOrder: Number(event.target.value || 0),
                             }))
                           }
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                          className={getTextFieldClassName(
+                            isVariantValueDirty(variant, originalVariant, "sortOrder"),
+                            "bg-white",
+                          )}
                         />
                       </label>
                     </div>
@@ -656,7 +844,10 @@ export function ProductEditorForm({
                   )}
 
                   <div className="mt-4 flex flex-wrap gap-3">
-                    <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                    <label className={getToggleLabelClassName(
+                      originalVariant ? variant.isDefault !== originalVariant.isDefault : true,
+                      "bg-white",
+                    )}>
                       <input
                         type="checkbox"
                         checked={variant.isDefault}
@@ -672,7 +863,10 @@ export function ProductEditorForm({
                       />
                       Mặc định
                     </label>
-                    <label className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                    <label className={getToggleLabelClassName(
+                      originalVariant ? variant.isActive !== originalVariant.isActive : true,
+                      "bg-white",
+                    )}>
                       <input
                         type="checkbox"
                         checked={variant.isActive}
@@ -685,28 +879,40 @@ export function ProductEditorForm({
                       />
                       Đang dùng
                     </label>
-                    {!isSimple ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setVariants((current) =>
-                            current.length > 1
-                              ? current.filter((entry) => entry.id !== variant.id)
-                              : current,
-                          )
-                        }
-                        title="Xóa loại"
-                        aria-label="Xóa loại"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700"
-                      >
-                        <FaTrash className="text-sm" />
-                      </button>
-                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVariants((current) =>
+                          current.length > 1
+                            ? current.filter((entry) => entry.id !== variant.id)
+                            : current,
+                        )
+                      }
+                      disabled={variants.length <= 1}
+                      title="Xóa loại"
+                      aria-label="Xóa loại"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <FaTrash className="text-sm" />
+                    </button>
                   </div>
 
                   {!isSimple ? (
                     <>
-                      <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-4">
+                      <div
+                        className={`mt-4 rounded-[24px] border bg-white p-4 ${
+                          variant.recipeComponents.length > 0 &&
+                          variant.recipeComponents.some((component) => {
+                            const originalComponent =
+                              originalVariant?.recipeComponents.find(
+                                (entry) => entry.id === component.id,
+                              ) ?? null;
+                            return isRecipeComponentDirty(component, originalComponent);
+                          })
+                            ? "border-emerald-200 ring-2 ring-emerald-100/80"
+                            : "border-slate-200"
+                        }`}
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div>
                             <p className="text-sm font-semibold text-slate-900">
@@ -760,7 +966,15 @@ export function ProductEditorForm({
                                       ),
                                     }))
                                   }
-                                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                                  className={getSelectClassName(
+                                    isRecipeComponentDirty(
+                                      component,
+                                      originalVariant?.recipeComponents.find(
+                                        (entry) => entry.id === component.id,
+                                      ) ?? null,
+                                    ),
+                                    "bg-white",
+                                  )}
                                 >
                                   {inventoryItems.map((item) => (
                                     <option key={item.id} value={item.id}>
@@ -790,7 +1004,15 @@ export function ProductEditorForm({
                                       ),
                                     }))
                                   }
-                                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                                  className={getTextFieldClassName(
+                                    isRecipeComponentDirty(
+                                      component,
+                                      originalVariant?.recipeComponents.find(
+                                        (entry) => entry.id === component.id,
+                                      ) ?? null,
+                                    ),
+                                    "bg-white",
+                                  )}
                                 />
                               </label>
                               <label className="block">
@@ -814,7 +1036,15 @@ export function ProductEditorForm({
                                       ),
                                     }))
                                   }
-                                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none"
+                                  className={getTextFieldClassName(
+                                    isRecipeComponentDirty(
+                                      component,
+                                      originalVariant?.recipeComponents.find(
+                                        (entry) => entry.id === component.id,
+                                      ) ?? null,
+                                    ),
+                                    "bg-white",
+                                  )}
                                 />
                               </label>
                               <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
@@ -918,6 +1148,8 @@ export function ProductEditorForm({
                     </div>
                   )}
                 </div>
+                  );
+                })()
               ))}
             </div>
           </div>
@@ -925,7 +1157,11 @@ export function ProductEditorForm({
 
         <div className="space-y-6">
           {!isSimple ? (
-            <div className="rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+            <div
+              className={`rounded-[30px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)] ${
+                galleryDirty ? "ring-2 ring-emerald-100/80" : ""
+              }`}
+            >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#51724f]">
@@ -954,7 +1190,12 @@ export function ProductEditorForm({
               {galleryImages.map((image, index) => (
                 <div
                   key={image.id}
-                  className="rounded-[26px] border border-slate-200 bg-slate-50 p-4"
+                  className={getImageShellClassName(
+                    String(image.imageUrl).trim() !== "" ||
+                      String(image.altText).trim() !== "" ||
+                      image.isPrimary,
+                    "rounded-[26px] p-4",
+                  )}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -1000,33 +1241,106 @@ export function ProductEditorForm({
             </div>
           ) : null}
 
-          <div className="rounded-[30px] border border-[#18352d]/10 bg-[#18352d] p-5 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.9)]">
-            <p className="text-xs uppercase tracking-[0.22em] text-white/45">
-              Lưu món
-            </p>
-            <h2 className="mt-3 text-lg font-semibold">Lưu</h2>
-            <p className="mt-3 text-sm leading-6 text-white/70">
-              Lưu xong, món sẽ dùng giá mới ngay.
-            </p>
-            <button
-              type="submit"
-              disabled={pending}
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-medium text-[#18352d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {pending ? "Đang lưu..." : "Lưu"}
-            </button>
-            {state.status !== "idle" ? (
-              <p
-                className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
-                  state.status === "success"
-                    ? "bg-emerald-400/15 text-emerald-200"
-                    : "bg-rose-400/15 text-rose-200"
-                }`}
-              >
-                {state.message}
-              </p>
-            ) : null}
-          </div>
+          {allowDelete ? (
+            <div className="rounded-[30px] border border-rose-200 bg-rose-50/75 p-5 shadow-[0_20px_80px_-40px_rgba(239,68,68,0.28)]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-rose-600">
+                    <FaTriangleExclamation className="text-[10px]" />
+                    Xoá món
+                  </p>
+                  <h2 className="mt-2 text-lg font-semibold text-rose-900">
+                    Xoá chỉ khi món chưa được dùng
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-rose-700/80">
+                    Nếu món này đã xuất hiện trong đơn hàng, combo hoặc bảng giá,
+                    hệ thống sẽ chặn và chỉ ra nơi đang dùng để bạn mở tab kiểm tra.
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  formAction={deleteAction}
+                  disabled={deletePending}
+                  onClick={(event) => {
+                    if (
+                      !window.confirm(
+                        "Xoá món này? Chỉ thực hiện khi bạn chắc chắn món chưa được dùng ở bất kỳ đâu.",
+                      )
+                    ) {
+                      event.preventDefault();
+                    }
+                  }}
+                  className="inline-flex items-center justify-center rounded-full bg-rose-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {deletePending ? "Đang xoá..." : "Xoá món"}
+                </button>
+              </div>
+
+              {deleteState.status !== "idle" ? (
+                <div
+                  className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+                    deleteState.status === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-rose-200 bg-white text-rose-700"
+                  }`}
+                >
+                  <p className="font-medium">{deleteState.message}</p>
+                  {deleteState.references?.length ? (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs uppercase tracking-[0.16em] text-rose-500">
+                        Đã được dùng ở
+                      </p>
+                      {deleteState.references.map((reference) => (
+                        <Link
+                          key={`${reference.label}-${reference.href}`}
+                          href={reference.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-start justify-between gap-3 rounded-2xl border border-rose-100 bg-white px-3 py-2 transition hover:border-rose-200 hover:bg-rose-50/60"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-medium text-slate-900">
+                              {reference.label}
+                            </span>
+                            {reference.note ? (
+                              <span className="mt-0.5 block text-xs text-slate-500">
+                                {reference.note}
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="shrink-0 text-xs font-medium text-rose-600">
+                            Mở tab
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <StickyFormFooter
+            note="Lưu xong, món sẽ dùng giá mới ngay."
+            message={
+              canSaveProduct
+                ? state.status !== "idle"
+                  ? state.message
+                  : undefined
+                : "Tên món, nhóm và ít nhất 1 loại có khối lượng, giá vốn và giá bán là bắt buộc."
+            }
+            messageTone={
+              canSaveProduct
+                ? state.status === "success"
+                  ? "success"
+                  : "danger"
+                : "danger"
+            }
+            submitLabel={canSaveProduct ? "Lưu" : "Nhập tên, nhóm và ít nhất 1 loại"}
+            pendingLabel="Đang lưu..."
+            pending={pending}
+            disabled={!canSaveProduct}
+          />
         </div>
       </section>
     </form>

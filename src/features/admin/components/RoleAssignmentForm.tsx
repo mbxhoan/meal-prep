@@ -10,6 +10,7 @@ import {
 import type { RoleAssignmentDirectory } from "@/lib/rbac/types";
 import type { ActionState } from "@/lib/admin/types";
 import { StatusPill } from "@/features/admin/components/StatusPill";
+import { StickyFormFooter } from "@/features/admin/components/form-ux";
 
 const initialState: ActionState = {
   status: "idle",
@@ -83,7 +84,7 @@ export function RoleAssignmentForm({
           <StatusPill label={selectedRoleLabel} tone="accent" />
         </div>
 
-        <form action={action} className="mt-6 space-y-4">
+        <form action={action} className="mt-6 space-y-4 pb-36">
           <input type="hidden" name="payload" value={payload} />
 
           <label className="block">
@@ -165,25 +166,15 @@ export function RoleAssignmentForm({
             </div>
           ) : null}
 
-          {state.message ? (
-            <div
-              className={`rounded-2xl px-4 py-3 text-sm ${
-                state.status === "success"
-                  ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border border-rose-200 bg-rose-50 text-rose-700"
-              }`}
-            >
-              {state.message}
-            </div>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={pending || !selectedUserId}
-            className="inline-flex w-full items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {pending ? "Đang lưu..." : "Gán vai trò"}
-          </button>
+          <StickyFormFooter
+            note="Lưu để áp dụng vai trò ngay."
+            message={state.status !== "idle" ? state.message : undefined}
+            messageTone={state.status === "success" ? "success" : "danger"}
+            submitLabel="Gán vai trò"
+            pendingLabel="Đang lưu..."
+            pending={pending}
+            disabled={!selectedUserId}
+          />
         </form>
       </section>
 

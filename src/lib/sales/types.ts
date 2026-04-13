@@ -21,6 +21,7 @@ export type SalesPaymentStatus =
 export interface SalesOrderItemRecord {
   id: string;
   salesOrderId: string;
+  itemType?: "menu_item" | "combo";
   menuItemVariantId: string | null;
   legacyProductVariantId: string | null;
   priceBookItemIdSnapshot: string | null;
@@ -30,6 +31,23 @@ export interface SalesOrderItemRecord {
   quantity: number;
   unitPriceSnapshot: number;
   standardCostSnapshot: number;
+  comboIdSnapshot?: string | null;
+  comboCodeSnapshot?: string | null;
+  comboNameSnapshot?: string | null;
+  comboDefaultSalePriceSnapshot?: number | null;
+  comboComponentsSnapshot?: Array<{
+    menuItemVariantId: string;
+    menuItemName: string;
+    variantLabel: string | null;
+    weightGrams: number | null;
+    quantity: number;
+    unitSalePrice: number;
+    unitCost: number;
+    lineSaleTotal: number;
+    lineCostTotal: number;
+    displayText: string;
+    sortOrder?: number;
+  }> | null;
   lineDiscountType: string | null;
   lineDiscountValue: number | null;
   lineDiscountAmount: number;
@@ -112,6 +130,7 @@ export interface SalesOrderDetailRecord {
 export interface SalesOrderBuilderData {
   mode: "canonical" | "legacy";
   products: MenuProduct[];
+  combos: SalesComboOption[];
   priceBookId: string | null;
   priceBookName: string | null;
   customers: SalesOrderCustomerOption[];
@@ -148,4 +167,33 @@ export interface SalesOrderEmployeeOption {
   fullName: string;
   phone: string | null;
   jobTitle: string | null;
+}
+
+export interface SalesComboComponentOption {
+  menuItemVariantId: string;
+  menuItemName: string;
+  variantLabel: string | null;
+  weightGrams: number | null;
+  quantity: number;
+  unitSalePrice: number;
+  unitCost: number;
+  lineSaleTotal: number;
+  lineCostTotal: number;
+  displayText: string;
+  sortOrder?: number;
+}
+
+export interface SalesComboOption {
+  id: string;
+  code: string | null;
+  name: string;
+  salePrice: number;
+  defaultSalePrice: number;
+  totalCost: number;
+  grossProfit: number;
+  grossMargin: number;
+  notes: string | null;
+  isActive: boolean;
+  updatedAt: string;
+  components: SalesComboComponentOption[];
 }

@@ -1,8 +1,8 @@
 import { MenuCatalog } from "@/features/admin/components/MenuCatalog";
-import { getMenuProducts } from "@/lib/admin/service";
+import { getSalesOrderBuilderData } from "@/lib/sales/service";
 
 export default async function AdminMenuPage() {
-  const products = await getMenuProducts();
+  const { products, combos } = await getSalesOrderBuilderData();
 
-  return <MenuCatalog products={products} />;
+  return <MenuCatalog products={products} combos={combos} />;
 }

@@ -8,7 +8,9 @@ import {
   GuardrailChecklist,
   GuidedWorkflowCard,
 } from "@/features/admin/components";
+import { StickyFormFooter } from "@/features/admin/components/form-ux";
 import { ADMIN_SIMPLE_MODE } from "@/features/admin/config";
+import { createId } from "@/lib/id";
 import type {
   MenuProduct,
   MenuVariant,
@@ -21,6 +23,7 @@ import {
   quickCreateEmployeeAction,
 } from "@/lib/sales/actions";
 import type {
+  SalesComboOption,
   SalesOrderCustomerOption,
   SalesOrderEmployeeOption,
   SalesQuickEmployeeState,
@@ -54,6 +57,13 @@ type BuilderLine = {
   unitPrice: number;
 };
 
+type BuilderComboLine = {
+  id: string;
+  comboId: string;
+  quantity: number;
+  unitPrice: number;
+};
+
 function buildVariantIndex(products: MenuProduct[]) {
   const entries: Array<{ product: MenuProduct; variant: MenuVariant }> = [];
 
@@ -66,6 +76,39 @@ function buildVariantIndex(products: MenuProduct[]) {
   return entries;
 }
 
+function buildComboIndex(
+  combos: {
+    id: string;
+    code: string | null;
+    name: string;
+    salePrice: number;
+    defaultSalePrice: number;
+    totalCost: number;
+    grossProfit: number;
+    grossMargin: number;
+    notes: string | null;
+    isActive: boolean;
+    updatedAt: string;
+    components: Array<{
+      menuItemVariantId: string;
+      menuItemName: string;
+      variantLabel: string | null;
+      weightGrams: number | null;
+      quantity: number;
+      unitSalePrice: number;
+      unitCost: number;
+      lineSaleTotal: number;
+      lineCostTotal: number;
+      displayText: string;
+    }>;
+  }[],
+) {
+  return combos.map((combo) => ({
+    ...combo,
+    displayLabel: [combo.code, combo.name].filter(Boolean).join(" · "),
+  }));
+}
+
 function formatCustomerLabel(customer: SalesOrderCustomerOption) {
   return [customer.code, customer.name].filter(Boolean).join(" · ");
 }
@@ -76,17 +119,21 @@ function formatEmployeeLabel(employee: SalesOrderEmployeeOption) {
 
 export function OrderBuilder({
   products,
+  combos,
   customers,
   employees,
   defaultEmployeeId,
 }: {
   products: MenuProduct[];
+  combos: SalesComboOption[];
   customers: SalesOrderCustomerOption[];
   employees: SalesOrderEmployeeOption[];
   defaultEmployeeId: string | null;
 }) {
   const variantEntries = useMemo(() => buildVariantIndex(products), [products]);
+  const comboEntries = useMemo(() => buildComboIndex(combos), [combos]);
   const fallbackVariant = variantEntries[0]?.variant ?? null;
+  const fallbackCombo = comboEntries[0] ?? null;
   const [customerOptions, setCustomerOptions] = useState(customers);
   const [employeeOptions, setEmployeeOptions] = useState(employees);
   const [customerId, setCustomerId] = useState(customerOptions[0]?.id ?? "__new__");
@@ -111,10 +158,22 @@ export function OrderBuilder({
     fallbackVariant
       ? [
           {
-            id: crypto.randomUUID(),
+            id: createId("line"),
             variantId: fallbackVariant.id,
             quantity: 1,
             unitPrice: fallbackVariant.price,
+          },
+        ]
+      : [],
+  );
+  const [comboLines, setComboLines] = useState<BuilderComboLine[]>(() =>
+    fallbackCombo
+      ? [
+          {
+            id: createId("combo"),
+            comboId: fallbackCombo.id,
+            quantity: 1,
+            unitPrice: fallbackCombo.salePrice,
           },
         ]
       : [],
@@ -220,8 +279,32 @@ export function OrderBuilder({
     };
   });
 
+  const comboSummaries = comboLines.map((line) => {
+    const entry = comboEntries.find((comboEntry) => comboEntry.id === line.comboId);
+    const unitCost = entry?.totalCost ?? 0;
+    const lineRevenue = roundCurrency(line.quantity * line.unitPrice);
+    const lineCost = roundCurrency(line.quantity * unitCost);
+
+    return {
+      ...line,
+      comboCode: entry?.code ?? "",
+      comboName: entry?.name ?? "Chọn combo",
+      comboLabel: entry?.displayLabel ?? "Chọn combo",
+      defaultUnitPrice: entry?.salePrice ?? line.unitPrice,
+      defaultSalePrice: entry?.defaultSalePrice ?? line.unitPrice,
+      totalCost: unitCost,
+      components: entry?.components ?? [],
+      lineRevenue,
+      lineCost,
+      lineProfit: roundCurrency(lineRevenue - lineCost),
+    };
+  });
+
   const subtotalBeforeDiscount = roundCurrency(
-    lineSummaries.reduce((sum, line) => sum + line.lineRevenue, 0),
+    [...lineSummaries, ...comboSummaries].reduce(
+      (sum, line) => sum + line.lineRevenue,
+      0,
+    ),
   );
   const discountPercentValue = Math.max(Number(discountPercent || 0), 0);
   const discountAmount = roundCurrency(subtotalBeforeDiscount * discountPercentValue / 100);
@@ -237,9 +320,10 @@ export function OrderBuilder({
   const balanceDue = roundCurrency(Math.max(totalPayable - paidAmountValue, 0));
   const orderCustomerId = customerId === "__new__" ? null : customerId || null;
   const orderEmployeeId = employeeId === "__new__" ? null : employeeId || null;
+  const hasOrderLines = lineSummaries.length + comboSummaries.length > 0;
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-5 pb-40">
       <GuidedWorkflowCard
         eyebrow="Quy trình"
         title="Tạo đơn theo kiểu sheet"
@@ -271,11 +355,20 @@ export function OrderBuilder({
           paidAmount: paidAmountValue,
           otherFee: 0,
           note,
-          items: lines.map((line) => ({
-            variantId: line.variantId,
-            quantity: line.quantity,
-            unitPrice: line.unitPrice,
-          })),
+          items: [
+            ...lines.map((line) => ({
+              itemType: "menu_item" as const,
+              variantId: line.variantId,
+              quantity: line.quantity,
+              unitPrice: line.unitPrice,
+            })),
+            ...comboLines.map((line) => ({
+              itemType: "combo" as const,
+              comboId: line.comboId,
+              quantity: line.quantity,
+              unitPrice: line.unitPrice,
+            })),
+          ],
         })}
       />
 
@@ -554,7 +647,7 @@ export function OrderBuilder({
                   setLines((current) => [
                     ...current,
                     {
-                      id: crypto.randomUUID(),
+                      id: createId("line"),
                       variantId: fallbackVariant.id,
                       quantity: 1,
                       unitPrice: fallbackVariant.price,
@@ -755,7 +848,7 @@ export function OrderBuilder({
                   Số dòng
                 </p>
                 <p className="mt-1 text-base font-semibold text-slate-900">
-                  {lines.length}
+                  {lineSummaries.length + comboSummaries.length}
                 </p>
               </div>
               <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-2.5">
@@ -768,6 +861,255 @@ export function OrderBuilder({
               </div>
             </div>
           </section>
+
+          {comboEntries.length > 0 ? (
+            <section className="rounded-[24px] border border-white/70 bg-white/90 p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#51724f]">
+                    Combo
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-slate-900">
+                      Dòng combo
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setComboLines((current) =>
+                          current.map((line) => {
+                            const entry = comboEntries.find(
+                              (comboEntry) => comboEntry.id === line.comboId,
+                            );
+
+                            return {
+                              ...line,
+                              unitPrice: entry?.defaultSalePrice ?? line.unitPrice,
+                            };
+                          }),
+                        );
+                      }}
+                      title="Về giá mặc định"
+                      aria-label="Về giá mặc định"
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[12px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                    >
+                      <FaRotateLeft className="text-[11px]" />
+                      <span>Giá mặc định</span>
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!fallbackCombo) {
+                      return;
+                    }
+
+                    setComboLines((current) => [
+                      ...current,
+                      {
+                        id: createId("combo"),
+                        comboId: fallbackCombo.id,
+                        quantity: 1,
+                        unitPrice: fallbackCombo.salePrice,
+                      },
+                    ]);
+                  }}
+                  title="Thêm combo"
+                  aria-label="Thêm combo"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                >
+                  <FaPlus className="text-sm" />
+                </button>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Combo</th>
+                      <th className="px-3 py-2 font-medium">SL</th>
+                      <th className="px-3 py-2 font-medium">Giá mặc định</th>
+                      <th className="px-3 py-2 font-medium">Đơn giá</th>
+                      <th className="px-3 py-2 font-medium">Thành tiền</th>
+                      <th className="px-3 py-2 font-medium">Xóa</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {comboLines.map((line, index) => {
+                      const summary = comboSummaries[index];
+
+                      return (
+                        <tr key={line.id} className="align-top">
+                          <td className="px-3 py-3">
+                            <select
+                              value={line.comboId}
+                              onChange={(event) => {
+                                const selectedCombo = comboEntries.find(
+                                  (entry) => entry.id === event.target.value,
+                                );
+
+                                setComboLines((current) =>
+                                  current.map((entry) =>
+                                    entry.id === line.id
+                                      ? {
+                                          ...entry,
+                                          comboId: event.target.value,
+                                          unitPrice: selectedCombo?.salePrice ?? entry.unitPrice,
+                                        }
+                                      : entry,
+                                  ),
+                                );
+                              }}
+                              className="w-full min-w-[240px] rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none"
+                            >
+                              {comboEntries.map((entry) => (
+                                <option key={entry.id} value={entry.id}>
+                                  {entry.displayLabel}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="mt-1 text-[12px] text-slate-500">
+                              {summary.comboName}
+                            </p>
+                            <p className="mt-1 text-[12px] leading-5 text-slate-400">
+                              {summary.components.length > 0
+                                ? summary.components
+                                    .map((component) => component.displayText)
+                                    .join(" · ")
+                                : "—"}
+                            </p>
+                          </td>
+                          <td className="px-3 py-3">
+                            <input
+                              type="number"
+                              min="1"
+                              value={line.quantity}
+                              onChange={(event) =>
+                                setComboLines((current) =>
+                                  current.map((entry) =>
+                                    entry.id === line.id
+                                      ? {
+                                          ...entry,
+                                          quantity: Math.max(
+                                            1,
+                                            Number(event.target.value || 1),
+                                          ),
+                                        }
+                                      : entry,
+                                  ),
+                                )
+                              }
+                              className="w-20 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none"
+                            />
+                          </td>
+                          <td className="px-3 py-3 text-slate-700">
+                            {formatCurrency(summary.defaultSalePrice)}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex flex-col gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                step="1000"
+                                value={line.unitPrice}
+                                onChange={(event) =>
+                                  setComboLines((current) =>
+                                    current.map((entry) =>
+                                      entry.id === line.id
+                                        ? {
+                                            ...entry,
+                                            unitPrice: Number(event.target.value || 0),
+                                          }
+                                        : entry,
+                                    ),
+                                  )
+                                }
+                                className="w-28 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setComboLines((current) =>
+                                    current.map((entry) =>
+                                      entry.id === line.id
+                                        ? {
+                                            ...entry,
+                                            unitPrice: summary.defaultSalePrice,
+                                          }
+                                        : entry,
+                                    ),
+                                  )
+                                }
+                                title="Về giá mặc định của combo này"
+                                aria-label="Về giá mặc định của combo này"
+                                className="inline-flex items-center gap-1 self-start rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                              >
+                                <FaRotateLeft className="text-[10px]" />
+                                <span>Mặc định</span>
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 font-medium text-slate-900">
+                            {formatCurrency(summary.lineRevenue)}
+                            <div className="mt-1 text-[12px] text-slate-500">
+                              Vốn {formatCurrency(summary.lineCost)}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setComboLines((current) =>
+                                    current.length > 1
+                                      ? current.filter((entry) => entry.id !== line.id)
+                                      : current,
+                                  )
+                                }
+                                title="Xóa dòng"
+                                aria-label="Xóa dòng"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700 transition hover:bg-rose-100"
+                              >
+                                <FaTrash className="text-sm" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                    Tổng combo
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-slate-900">
+                    {formatCurrency(comboSummaries.reduce((sum, line) => sum + line.lineRevenue, 0))}
+                  </p>
+                </div>
+                <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                    Số combo
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-slate-900">
+                    {comboLines.length}
+                  </p>
+                </div>
+                <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">
+                    Giá mặc định
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-slate-900">
+                    {formatCurrency(comboSummaries.reduce((sum, line) => sum + line.defaultSalePrice, 0))}
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <aside className="space-y-4">
@@ -865,31 +1207,20 @@ export function OrderBuilder({
             ]}
           />
 
-          <div className="grid gap-2">
-            <button
-              type="submit"
-              disabled={pending || lines.length === 0}
-              className="inline-flex items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {pending ? "Đang lưu..." : "Lưu đơn và ra bill"}
-            </button>
-            {state.status !== "idle" ? (
-              <p
-                className={`rounded-2xl px-4 py-3 text-sm ${
-                  state.status === "success"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-rose-50 text-rose-700"
-                }`}
-              >
-                {state.message}
-              </p>
-            ) : null}
-            {ADMIN_SIMPLE_MODE ? (
-              <p className="text-[12px] leading-5 text-slate-500">
-                Giao diện đã được rút gọn để giống sheet. Các phần kho và công thức đang ẩn.
-              </p>
-            ) : null}
-          </div>
+          <StickyFormFooter
+            note="Lưu để giữ giá và mở bill ngay."
+            message={state.status !== "idle" ? state.message : undefined}
+            messageTone={state.status === "success" ? "success" : "danger"}
+            submitLabel="Lưu đơn và ra bill"
+            pendingLabel="Đang lưu..."
+            pending={pending}
+            disabled={!hasOrderLines}
+          />
+          {ADMIN_SIMPLE_MODE ? (
+            <p className="pb-24 text-[12px] leading-5 text-slate-500">
+              Giao diện đã được rút gọn để giống sheet. Các phần kho và công thức đang ẩn.
+            </p>
+          ) : null}
         </aside>
       </div>
     </form>

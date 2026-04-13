@@ -24,6 +24,7 @@ export default async function AdminMenuProductPage({
         product={product}
         categories={categories}
         inventoryItems={inventoryItems}
+        allowDelete
       />
     </div>
   );

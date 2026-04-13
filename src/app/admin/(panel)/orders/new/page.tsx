@@ -8,6 +8,7 @@ export default async function AdminNewOrderPage() {
     <div className="space-y-5 pb-8">
       <OrderBuilder
         products={builderData.products}
+        combos={builderData.combos}
         customers={builderData.customers}
         employees={builderData.employees}
         defaultEmployeeId={builderData.defaultEmployeeId}
