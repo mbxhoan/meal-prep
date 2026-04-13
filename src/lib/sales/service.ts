@@ -764,6 +764,183 @@ export const getSalesOrders = cache(async (): Promise<SalesOrderDetailRecord[]> 
   return (data ?? []).map((row) => normalizeSalesOrderDetail(row as Record<string, unknown>));
 });
 
+function normalizeLegacySalesOrderDetail(
+  row: Record<string, unknown>,
+  shopId: string,
+): SalesOrderDetailRecord {
+  const salesOrderItems = Array.isArray(row.order_items)
+    ? row.order_items.map((entry) => {
+        const item = entry as Record<string, unknown>;
+        const product =
+          item.products &&
+          typeof item.products === "object" &&
+          !Array.isArray(item.products)
+            ? (item.products as Record<string, unknown>)
+            : {};
+        const variant =
+          item.product_variants &&
+          typeof item.product_variants === "object" &&
+          !Array.isArray(item.product_variants)
+            ? (item.product_variants as Record<string, unknown>)
+            : {};
+        const isCombo = item.item_type === "combo" || item.combo_id_snapshot != null;
+        const comboComponents = Array.isArray(item.combo_components_snapshot)
+          ? item.combo_components_snapshot.map((component) => {
+              const rowComponent = component as Record<string, unknown>;
+
+              return {
+                menuItemVariantId: safeString(
+                  rowComponent.menuItemVariantId ?? rowComponent.menu_item_variant_id,
+                ),
+                menuItemName: safeString(
+                  rowComponent.menuItemName ?? rowComponent.menu_item_name,
+                ),
+                variantLabel:
+                  rowComponent.variantLabel == null && rowComponent.variant_label == null
+                    ? null
+                    : safeString(rowComponent.variantLabel ?? rowComponent.variant_label),
+                weightGrams:
+                  rowComponent.weightGrams == null && rowComponent.weight_grams == null
+                    ? null
+                    : safeNumber(rowComponent.weightGrams ?? rowComponent.weight_grams),
+                quantity: safeNumber(rowComponent.quantity, 1),
+                unitSalePrice: safeNumber(
+                  rowComponent.unitSalePrice ?? rowComponent.unit_sale_price ?? 0,
+                ),
+                unitCost: safeNumber(rowComponent.unitCost ?? rowComponent.unit_cost ?? 0),
+                lineSaleTotal: safeNumber(
+                  rowComponent.lineSaleTotal ?? rowComponent.line_sale_total ?? 0,
+                ),
+                lineCostTotal: safeNumber(
+                  rowComponent.lineCostTotal ?? rowComponent.line_cost_total ?? 0,
+                ),
+                sortOrder:
+                  rowComponent.sortOrder == null && rowComponent.sort_order == null
+                    ? undefined
+                    : safeNumber(rowComponent.sortOrder ?? rowComponent.sort_order, 0),
+                displayText: safeString(
+                  rowComponent.displayText ?? rowComponent.display_text,
+                ),
+              };
+            })
+          : null;
+
+        return {
+          id: safeString(item.id),
+          salesOrderId: safeString(item.order_id ?? row.id),
+          itemType: isCombo ? "combo" : "menu_item",
+          menuItemVariantId:
+            item.variant_id == null ? null : safeString(item.variant_id),
+          legacyProductVariantId:
+            item.variant_id == null ? null : safeString(item.variant_id),
+          priceBookItemIdSnapshot: null,
+          itemNameSnapshot: safeString(
+            isCombo
+              ? item.combo_name_snapshot ?? item.item_name_snapshot ?? "Combo"
+              : product.name ?? item.item_name_snapshot ?? "Món",
+          ),
+          variantLabelSnapshot:
+            isCombo
+              ? item.combo_code_snapshot == null
+                ? item.variant_label_snapshot == null
+                  ? "Combo"
+                  : safeString(item.variant_label_snapshot)
+                : safeString(item.combo_code_snapshot)
+              : variant.label == null
+                ? null
+                : safeString(item.variant_label_snapshot ?? variant.label),
+          weightGramsSnapshot: null,
+          quantity: safeNumber(item.quantity, 1),
+          unitPriceSnapshot: safeNumber(item.unit_price ?? item.line_revenue ?? 0),
+          standardCostSnapshot: safeNumber(item.unit_cogs ?? item.line_cogs ?? 0),
+          comboIdSnapshot:
+            item.combo_id_snapshot == null ? null : safeString(item.combo_id_snapshot),
+          comboCodeSnapshot:
+            item.combo_code_snapshot == null ? null : safeString(item.combo_code_snapshot),
+          comboNameSnapshot:
+            item.combo_name_snapshot == null ? null : safeString(item.combo_name_snapshot),
+          comboDefaultSalePriceSnapshot:
+            item.combo_default_sale_price_snapshot == null
+              ? null
+              : safeNumber(item.combo_default_sale_price_snapshot),
+          comboComponentsSnapshot: comboComponents,
+          lineDiscountType: null,
+          lineDiscountValue: null,
+          lineDiscountAmount: 0,
+          lineTotalBeforeDiscount: safeNumber(item.line_revenue ?? 0),
+          lineTotalAfterDiscount: safeNumber(item.line_revenue ?? 0),
+          lineCostTotal: safeNumber(item.line_cogs ?? 0),
+          lineProfitTotal: safeNumber(item.line_profit ?? 0),
+        } satisfies SalesOrderItemRecord;
+      })
+    : [];
+
+  const transformedRow: Record<string, unknown> = {
+    id: safeString(row.id),
+    shop_id: shopId,
+    order_no: safeString(row.order_number ?? row.order_no ?? row.id),
+    sales_channel: safeString(row.sales_channel, "manual"),
+    order_type: row.order_type == null ? "order" : safeString(row.order_type),
+    delivery_status:
+      row.delivery_status == null ? "pending" : safeString(row.delivery_status),
+    shipper_name: row.shipper_name == null ? null : safeString(row.shipper_name),
+    ordered_at: safeString(row.ordered_at, new Date().toISOString()),
+    customer_id: row.customer_id == null ? null : safeString(row.customer_id),
+    customer_name_snapshot: safeString(
+      row.customer_name_snapshot ?? row.customer_name ?? "Khách lẻ",
+    ),
+    customer_phone_snapshot:
+      row.customer_phone_snapshot == null && row.customer_phone == null
+        ? null
+        : safeString(row.customer_phone_snapshot ?? row.customer_phone),
+    customer_address_snapshot:
+      row.customer_address_snapshot == null && row.customer_address == null
+        ? null
+        : safeString(row.customer_address_snapshot ?? row.customer_address),
+    employee_id: row.employee_id == null ? null : safeString(row.employee_id),
+    status: safeString(row.status, "draft"),
+    payment_status: safeString(row.payment_status, "unpaid"),
+    price_book_id_snapshot:
+      row.price_book_id_snapshot == null ? null : safeString(row.price_book_id_snapshot),
+    subtotal_before_discount: safeNumber(
+      row.subtotal_before_discount ?? row.subtotal,
+      0,
+    ),
+    order_discount_type:
+      row.order_discount_type == null ? null : safeString(row.order_discount_type),
+    order_discount_value:
+      row.order_discount_value == null ? null : safeNumber(row.order_discount_value),
+    order_discount_amount: safeNumber(
+      row.order_discount_amount ?? row.discount_amount,
+      0,
+    ),
+    shipping_fee: safeNumber(row.shipping_fee, 0),
+    other_fee: safeNumber(row.other_fee, 0),
+    total_amount: safeNumber(row.total_amount ?? row.total_revenue, 0),
+    total_revenue: safeNumber(row.total_revenue ?? row.total_amount, 0),
+    total_cogs: safeNumber(row.total_cogs, 0),
+    gross_profit: safeNumber(row.gross_profit, 0),
+    gross_margin: safeNumber(row.gross_margin, 0),
+    coupon_code_snapshot:
+      row.coupon_code_snapshot == null ? null : safeString(row.coupon_code_snapshot),
+    notes:
+      row.notes == null
+        ? row.note == null
+          ? null
+          : safeString(row.note)
+        : safeString(row.notes),
+    sent_at: row.sent_at == null ? null : safeString(row.sent_at),
+    confirmed_at: row.confirmed_at == null ? null : safeString(row.confirmed_at),
+    created_at: safeString(row.created_at, new Date().toISOString()),
+    updated_at: safeString(row.updated_at, new Date().toISOString()),
+    sales_order_items: salesOrderItems,
+    sales_payments: [],
+    sales_order_status_logs: [],
+  };
+
+  return normalizeSalesOrderDetail(transformedRow);
+}
+
 export const getSalesOrderById = cache(async (
   orderId: string,
 ): Promise<SalesOrderDetailRecord | null> => {
@@ -779,17 +956,66 @@ export const getSalesOrderById = cache(async (
     return null;
   }
 
-  const { data, error } = await supabase
+  const orderSelect =
+    "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, item_type, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_default_sale_price_snapshot, combo_components_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)";
+
+  const { data: dataById, error: errorById } = await supabase
     .from("sales_orders")
-    .select(
-      "id, shop_id, order_no, sales_channel, order_type, delivery_status, shipper_name, ordered_at, customer_id, customer_name_snapshot, customer_phone_snapshot, customer_address_snapshot, employee_id, status, payment_status, price_book_id_snapshot, subtotal_before_discount, order_discount_type, order_discount_value, order_discount_amount, shipping_fee, other_fee, total_amount, total_revenue, total_cogs, gross_profit, gross_margin, coupon_code_snapshot, notes, sent_at, confirmed_at, created_at, updated_at, sales_order_items(id, sales_order_id, item_type, menu_item_variant_id, legacy_product_variant_id, price_book_item_id_snapshot, item_name_snapshot, variant_label_snapshot, weight_grams_snapshot, quantity, unit_price_snapshot, standard_cost_snapshot, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_default_sale_price_snapshot, combo_components_snapshot, line_discount_type, line_discount_value, line_discount_amount, line_total_before_discount, line_total_after_discount, line_cost_total, line_profit_total), sales_payments(id, sales_order_id, payment_method_id, amount, paid_at, note, created_at), sales_order_status_logs(id, sales_order_id, from_status, to_status, action, note, changed_by, created_at)",
-    )
+    .select(orderSelect)
     .eq("id", orderId)
     .eq("shop_id", context.shop.id)
     .maybeSingle();
 
-  if (error || !data) {
+  if (errorById) {
     return null;
+  }
+
+  let data = dataById;
+
+  if (!data) {
+    const legacySelect =
+      "id, shop_id, order_number, customer_id, customer_name, customer_phone, customer_address, employee_id, sales_channel, order_type, delivery_status, shipper_name, status, note, subtotal, discount_amount, shipping_fee, other_fee, total_revenue, total_cogs, gross_profit, gross_margin, ordered_at, created_at, updated_at, order_items(id, order_id, product_id, variant_id, item_type, combo_id_snapshot, combo_code_snapshot, combo_name_snapshot, combo_components_snapshot, combo_default_sale_price_snapshot, quantity, unit_price, unit_cogs, line_revenue, line_cogs, line_profit, products(id, name), product_variants(id, label))";
+
+    const { data: legacyById, error: legacyByIdError } = await supabase
+      .from("orders")
+      .select(legacySelect)
+      .eq("id", orderId)
+      .eq("shop_id", context.shop.id)
+      .maybeSingle();
+
+    if (!legacyByIdError && legacyById) {
+      return normalizeLegacySalesOrderDetail(
+        legacyById as Record<string, unknown>,
+        context.shop.id,
+      );
+    }
+
+    const { data: legacyByOrderNo, error: legacyByOrderNoError } = await supabase
+      .from("orders")
+      .select(legacySelect)
+      .eq("order_number", orderId)
+      .eq("shop_id", context.shop.id)
+      .maybeSingle();
+
+    if (!legacyByOrderNoError && legacyByOrderNo) {
+      return normalizeLegacySalesOrderDetail(
+        legacyByOrderNo as Record<string, unknown>,
+        context.shop.id,
+      );
+    }
+
+    const { data: dataByOrderNo, error: errorByOrderNo } = await supabase
+      .from("sales_orders")
+      .select(orderSelect)
+      .eq("order_no", orderId)
+      .eq("shop_id", context.shop.id)
+      .maybeSingle();
+
+    if (errorByOrderNo || !dataByOrderNo) {
+      return null;
+    }
+
+    data = dataByOrderNo;
   }
 
   const detail = normalizeSalesOrderDetail(data as Record<string, unknown>);

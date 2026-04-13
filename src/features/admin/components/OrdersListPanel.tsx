@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   FaArrowRight,
+  FaPlus,
   FaFilter,
   FaRotateLeft,
   FaMagnifyingGlass,
@@ -151,6 +152,13 @@ export function OrdersListPanel({ orders }: { orders: OrderRecord[] }) {
 
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill label={`${filteredOrders.length} đơn`} tone="success" />
+            <Link
+              href="/admin/orders/new"
+              className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-3 py-1.5 text-[13px] font-medium text-white transition hover:opacity-90"
+            >
+              <FaPlus className="text-[11px]" />
+              <span>Tạo đơn</span>
+            </Link>
             <ExportExcelButton
               filename={`don-hang-${new Date().toISOString().slice(0, 10)}`}
               sheetName="Đơn hàng"

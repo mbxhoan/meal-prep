@@ -80,15 +80,15 @@ export function StickyFormFooter({
   const isDisabled = disabled || pending;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 px-3 md:px-6 lg:px-8">
+    <div className="pointer-events-none fixed bottom-4 left-3 right-3 z-30 md:bottom-4 md:left-[calc(var(--admin-sidebar-width)+2rem)] md:right-4 lg:left-[calc(var(--admin-sidebar-width)+2rem)] lg:right-4">
       <div
-        className={`pointer-events-auto mx-auto flex max-w-[1400px] flex-col gap-3 rounded-[26px] border border-white/80 bg-white/95 px-4 py-3 shadow-[0_30px_100px_-45px_rgba(15,23,42,0.55)] backdrop-blur md:flex-row md:items-center md:justify-between ${className}`.trim()}
+        className={`pointer-events-auto mx-auto flex max-w-[1400px] flex-col gap-3 rounded-[26px] border border-slate-300/70 bg-slate-100/92 px-4 py-3 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.42)] backdrop-blur-md md:flex-row md:items-center md:justify-between ${className}`.trim()}
       >
         <div className="min-w-0 space-y-1">
-          <div className="text-sm leading-6 text-slate-600">{note}</div>
+          <div className="text-sm leading-6 text-slate-700/90">{note}</div>
           {message ? (
             <div
-              className={`inline-flex max-w-full items-start rounded-2xl border px-3 py-2 text-sm ${messageClasses(messageTone)}`}
+              className={`inline-flex max-w-full items-start rounded-2xl border px-3 py-2 text-sm shadow-sm ${messageClasses(messageTone)}`}
             >
               {message}
             </div>
@@ -98,7 +98,7 @@ export function StickyFormFooter({
         <button
           type="submit"
           disabled={isDisabled}
-          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white shadow-[0_12px_30px_-18px_rgba(24,53,45,0.9)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? pendingLabel : submitLabel}
         </button>

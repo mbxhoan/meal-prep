@@ -248,6 +248,7 @@ export function AdminShell({
   const visibleNavItems = navItems.filter((item) =>
     item.permission ? context.permissions.includes(item.permission) : true,
   );
+  const sidebarWidth = collapsed ? 88 : 290;
   const hideShellHeader =
     pathname === "/admin/menu" ||
     pathname.startsWith("/admin/menu/") ||
@@ -258,7 +259,14 @@ export function AdminShell({
     pathname.startsWith("/admin/orders/");
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(244,114,32,0.12),_transparent_32%),linear-gradient(180deg,_#f6f7f1_0%,_#eef2e7_56%,_#f6f1e7_100%)] text-slate-900">
+    <div
+      className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(244,114,32,0.12),_transparent_32%),linear-gradient(180deg,_#f6f7f1_0%,_#eef2e7_56%,_#f6f1e7_100%)] text-slate-900"
+      style={
+        {
+          "--admin-sidebar-width": `${sidebarWidth}px`,
+        } as React.CSSProperties
+      }
+    >
       <div className="flex min-h-screen w-full gap-3 px-3 py-3 md:gap-4 md:px-4">
         <aside
           className={`fixed inset-y-3 left-3 z-40 overflow-y-auto overflow-x-hidden rounded-[28px] border border-white/20 bg-[#13261f]/95 p-3.5 text-white shadow-[0_25px_90px_-45px_rgba(15,23,42,0.85)] backdrop-blur transition md:!relative md:!inset-auto md:!block md:!translate-x-0 md:h-[calc(100vh-1.5rem)] ${
