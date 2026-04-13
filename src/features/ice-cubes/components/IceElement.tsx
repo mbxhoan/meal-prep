@@ -17,7 +17,8 @@ export function IceElement({ element, side, mounted, index }: ElementProps) {
       })`
     : "none";
 
-  const position = mounted ? `${Math.random() * 30}%` : "0%";
+  const positionSeed = (index * 13 + (side === "left" ? 7 : 17)) % 30;
+  const position = mounted ? `${positionSeed}%` : "0%";
 
   return (
     <div

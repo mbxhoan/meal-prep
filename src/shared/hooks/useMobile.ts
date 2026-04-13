@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 
 /**
  * Custom hook to detect mobile screen size
@@ -7,24 +7,32 @@ import { useState, useEffect } from "react";
  * @returns boolean indicating if the screen is mobile size
  */
 export function useMobile(breakpoint: number = 600): boolean {
-    const [isMobile, setIsMobile] = useState(false);
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === "undefined") {
+        return () => undefined;
+      }
 
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth <= breakpoint);
-        };
+      const mediaQuery = window.matchMedia(`(max-width: ${breakpoint}px)`);
+      const handleChange = () => onStoreChange();
 
-        // Set initial value
-        checkMobile();
+      mediaQuery.addEventListener("change", handleChange);
+      window.addEventListener("resize", handleChange);
 
-        // Add resize listener
-        window.addEventListener("resize", checkMobile);
+      return () => {
+        mediaQuery.removeEventListener("change", handleChange);
+        window.removeEventListener("resize", handleChange);
+      };
+    },
+    () => {
+      if (typeof window === "undefined") {
+        return false;
+      }
 
-        // Cleanup listener
-        return () => window.removeEventListener("resize", checkMobile);
-    }, [breakpoint]);
-
-    return isMobile;
+      return window.innerWidth <= breakpoint;
+    },
+    () => false,
+  );
 }
 
 export default useMobile;
