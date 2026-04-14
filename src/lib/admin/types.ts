@@ -138,6 +138,33 @@ export interface MenuProductImage {
   isPrimary: boolean;
 }
 
+export interface MenuExcelImportRow {
+  productId: string | null;
+  productName: string;
+  categoryName: string;
+  variantId: string | null;
+  variantLabel: string | null;
+  weightInGrams: number | null;
+  price: number;
+  standardCost: number;
+  compareAtPrice: number | null;
+  isDefault: boolean;
+  isActive: boolean;
+  productSortOrder: number | null;
+  variantSortOrder: number | null;
+  notes: string | null;
+}
+
+export interface MenuExcelImportSummary {
+  processedRows: number;
+  importedProducts: number;
+  updatedProducts: number;
+  importedVariants: number;
+  updatedVariants: number;
+  skippedRows: number;
+  warnings: string[];
+}
+
 export interface InventoryItem {
   id: string;
   name: string;

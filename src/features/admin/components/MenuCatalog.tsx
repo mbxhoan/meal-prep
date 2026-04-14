@@ -19,8 +19,14 @@ import {
 } from "@/lib/admin/actions";
 import { ADMIN_SIMPLE_MODE } from "@/features/admin/config";
 import { formatCurrency, formatDate } from "@/lib/admin/format";
-import type { ActionState, MenuProduct, MenuVariant } from "@/lib/admin/types";
+import type {
+  ActionState,
+  AdminCategory,
+  MenuProduct,
+  MenuVariant,
+} from "@/lib/admin/types";
 import type { SalesComboOption } from "@/lib/sales/types";
+import { MenuExcelImportPanel } from "@/features/admin/components/MenuExcelImportPanel";
 
 function pickVariantByWeight(product: MenuProduct, targetWeight: number) {
   return (
@@ -419,9 +425,11 @@ function ComboSalePriceForm({ combo }: { combo: SalesComboOption }) {
 export function MenuCatalog({
   products,
   combos,
+  categories,
 }: {
   products: MenuProduct[];
   combos: SalesComboOption[];
+  categories: AdminCategory[];
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "hidden">("all");
@@ -547,6 +555,10 @@ export function MenuCatalog({
               rows={exportRows}
             />
           </div>
+        </div>
+
+        <div className="mt-4">
+          <MenuExcelImportPanel categories={categories} />
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">

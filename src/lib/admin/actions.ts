@@ -1,16 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getAdminContext } from "@/lib/admin/service";
+import { getAdminContext, getCategories, getMenuProducts } from "@/lib/admin/service";
 import { createSupabaseServerClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import { requirePermission, PermissionDeniedError } from "@/lib/rbac/server";
 import { createId } from "@/lib/id";
 import type {
   ActionState,
   ActionReference,
+  MenuExcelImportRow,
+  MenuExcelImportSummary,
+  MenuProduct,
   MenuProductPayload,
 } from "@/lib/admin/types";
 import { createSalesOrderAction } from "@/lib/sales/actions";
+import { slugify } from "@/lib/admin/format";
 import { validateMenuProductPayload } from "@/lib/admin/menu-product";
 
 const demoSuccess = (message: string): ActionState => ({
@@ -233,6 +237,443 @@ export async function saveMenuProductAction(
   } catch (error) {
     return actionError(
       error instanceof Error ? error.message : "Không lưu được thực đơn.",
+      "live",
+    );
+  }
+}
+
+type ImportMenuProductsPayload = {
+  rows: Array<Record<string, unknown>>;
+};
+
+function normalizeImportKey(value: string) {
+  return slugify(value.trim());
+}
+
+function parseBooleanField(value: unknown, fallback = true) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  const text = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (["1", "true", "yes", "y", "có", "co", "đúng", "dang dung", "dang hoat dong"].includes(text)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "n", "khong", "không", "tam an", "tạm ẩn"].includes(text)) {
+    return false;
+  }
+
+  return fallback;
+}
+
+function parseNullableNumber(value: unknown) {
+  if (value == null || String(value).trim().length === 0) {
+    return null;
+  }
+
+  const normalized = String(value)
+    .replaceAll(".", "")
+    .replaceAll(",", ".")
+    .trim();
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseRequiredNumber(value: unknown) {
+  const parsed = parseNullableNumber(value);
+  return parsed == null ? null : parsed;
+}
+
+function resolveCategoryId(
+  categories: Array<{ id: string; name: string; slug: string }>,
+  categoryName: string,
+) {
+  const normalized = normalizeImportKey(categoryName);
+
+  return (
+    categories.find((category) => normalizeImportKey(category.name) === normalized)?.id ??
+    categories.find((category) => normalizeImportKey(category.slug) === normalized)?.id ??
+    null
+  );
+}
+
+function normalizeImportRow(row: Record<string, unknown>, rowIndex: number): {
+  row: MenuExcelImportRow | null;
+  warning?: string;
+} {
+  const productName = String(
+    row["Tên món"] ??
+      row["Món"] ??
+      row["ten mon"] ??
+      row["Tên món "] ??
+      row["ten_mon"] ??
+      "",
+  ).trim();
+  const categoryName = String(
+    row["Nhóm"] ??
+      row["nhom"] ??
+      row["Nhóm hàng"] ??
+      row["nhom_hang"] ??
+      "",
+  ).trim();
+  const variantLabel = String(
+    row["Tên loại"] ??
+      row["Loại"] ??
+      row["ten loai"] ??
+      row["ten_loai"] ??
+      row["Loại món"] ??
+      "",
+  ).trim();
+  const weightInGrams =
+    parseNullableNumber(
+      row["Trọng lượng (g)"] ??
+        row["Trọng lượng"] ??
+        row["trong luong (g)"] ??
+        row["trong_luong_g"],
+    ) ??
+    parseNullableNumber(
+      row["Khối lượng"] ?? row["Khối lượng (g)"] ?? row["khoi_luong"] ?? row["trong luong"],
+    );
+  const price = parseRequiredNumber(row["Giá bán"] ?? row["gia ban"] ?? row["gia_ban"]);
+  const standardCost = parseRequiredNumber(row["Giá vốn"] ?? row["gia von"] ?? row["gia_von"]);
+  const compareAtPrice = parseNullableNumber(row["Giá niêm yết"] ?? row["gia niem yet"] ?? row["compare_at_price"]);
+  const productSortOrder = parseNullableNumber(row["Thứ tự món"] ?? row["thu tu mon"] ?? row["product_sort_order"]);
+  const variantSortOrder = parseNullableNumber(row["Thứ tự loại"] ?? row["thu tu loai"] ?? row["variant_sort_order"]);
+  const productId = String(row["Mã món"] ?? row["ma mon"] ?? "").trim();
+  const variantId = String(row["Mã loại"] ?? row["ma loai"] ?? "").trim();
+  const notes = String(row["Ghi chú"] ?? row["ghi chu"] ?? "").trim();
+
+  if (productName.length === 0 || categoryName.length === 0 || weightInGrams == null || price == null || standardCost == null) {
+    return {
+      row: null,
+      warning: `Dòng ${rowIndex + 2} thiếu Tên món / Nhóm / Trọng lượng / Giá bán / Giá vốn.`,
+    };
+  }
+
+  if (price <= 0 || standardCost <= 0 || weightInGrams <= 0) {
+    return {
+      row: null,
+      warning: `Dòng ${rowIndex + 2} có giá trị không hợp lệ.`,
+    };
+  }
+
+  return {
+    row: {
+      productId: productId.length > 0 ? productId : null,
+      productName,
+      categoryName,
+      variantId: variantId.length > 0 ? variantId : null,
+      variantLabel: variantLabel.length > 0 ? variantLabel : null,
+      weightInGrams,
+      price,
+      standardCost,
+      compareAtPrice,
+      isDefault: parseBooleanField(row["Mặc định"] ?? row["mac dinh"] ?? row["is_default"], false),
+      isActive: parseBooleanField(row["Đang dùng"] ?? row["dang dung"] ?? row["is_active"], true),
+      productSortOrder: productSortOrder == null ? null : productSortOrder,
+      variantSortOrder: variantSortOrder == null ? null : variantSortOrder,
+      notes: notes.length > 0 ? notes : null,
+    },
+  };
+}
+
+export async function importMenuProductsFromExcelAction(
+  _previousState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  let payload: ImportMenuProductsPayload;
+
+  try {
+    payload = parseJsonField<ImportMenuProductsPayload>(formData, "payload");
+  } catch {
+    return actionError("Không đọc được dữ liệu Excel.", "demo");
+  }
+
+  const inputRows = Array.isArray(payload.rows) ? payload.rows : [];
+
+  if (inputRows.length === 0) {
+    return actionError("File Excel chưa có dòng dữ liệu hợp lệ.", "demo");
+  }
+
+  if (!isSupabaseConfigured()) {
+    return liveSuccess(
+      `Đã đọc ${inputRows.length} dòng Excel. Khi nối Supabase thật, hệ thống sẽ tự nạp/update món và loại món.`,
+    );
+  }
+
+  try {
+    const context = await getAdminContext();
+    if (!context.shop) {
+      return actionError("Chưa chọn shop hiện tại.", "live");
+    }
+
+    const supabase = await createSupabaseServerClient();
+    if (!supabase) {
+      return actionError("Supabase chưa sẵn sàng.", "live");
+    }
+
+    const [categories, existingProducts] = await Promise.all([
+      getCategories(),
+      getMenuProducts(),
+    ]);
+
+    const normalizedRows: MenuExcelImportRow[] = [];
+    const warnings: string[] = [];
+
+    inputRows.forEach((row, index) => {
+      const normalized = normalizeImportRow(row, index);
+
+      if (normalized.warning) {
+        warnings.push(normalized.warning);
+      }
+
+      if (normalized.row) {
+        normalizedRows.push(normalized.row);
+      }
+    });
+
+    if (normalizedRows.length === 0) {
+      return actionError(
+        warnings[0] ?? "Không có dòng hợp lệ để nạp.",
+        "live",
+      );
+    }
+
+    const existingById = new Map(existingProducts.map((product) => [product.id, product]));
+    const existingByKey = new Map(
+      existingProducts.map((product) => [
+        `${product.categoryId ?? ""}:${normalizeImportKey(product.name)}`,
+        product,
+      ]),
+    );
+
+    type GroupedProduct = {
+      key: string;
+      productId: string;
+      categoryId: string;
+      categoryName: string;
+      name: string;
+      rows: MenuExcelImportRow[];
+      existingProduct: MenuProduct | null;
+    };
+
+    const groupedProducts = new Map<string, GroupedProduct>();
+
+    for (const row of normalizedRows) {
+      const categoryId = resolveCategoryId(categories, row.categoryName);
+
+      if (!categoryId) {
+        warnings.push(`Không tìm thấy nhóm "${row.categoryName}" cho món "${row.productName}".`);
+        continue;
+      }
+
+      const rowKey = row.productId?.length
+        ? `id:${row.productId}`
+        : `${categoryId}:${normalizeImportKey(row.productName)}`;
+      const existingProduct =
+        (row.productId ? existingById.get(row.productId) ?? null : null) ??
+        existingByKey.get(`${categoryId}:${normalizeImportKey(row.productName)}`) ??
+        null;
+      const productId =
+        row.productId && row.productId.length > 0
+          ? row.productId
+          : existingProduct?.id ?? createId("product");
+
+      const bucket =
+        groupedProducts.get(rowKey) ??
+        ({
+          key: rowKey,
+          productId,
+          categoryId,
+          categoryName: row.categoryName,
+          name: row.productName,
+          rows: [],
+          existingProduct,
+        } satisfies GroupedProduct);
+
+      bucket.rows.push(row);
+      groupedProducts.set(rowKey, bucket);
+    }
+
+    const productRows: Array<{
+      id: string;
+      category_id: string | null;
+      name: string;
+      slug: string;
+      short_description: string;
+      description: string;
+      main_image_url: string | null;
+      is_featured: boolean;
+      is_published: boolean;
+      sort_order: number;
+    }> = [];
+    const variantRows: Array<{
+      id: string;
+      product_id: string;
+      label: string;
+      weight_in_grams: number | null;
+      price: number;
+      compare_at_price: number | null;
+      standard_cost: number;
+      packaging_cost: number;
+      labor_cost: number;
+      overhead_cost: number;
+      is_default: boolean;
+      is_active: boolean;
+      sort_order: number;
+    }> = [];
+    let importedProducts = 0;
+    let updatedProducts = 0;
+    let importedVariants = 0;
+    let updatedVariants = 0;
+
+    for (const group of groupedProducts.values()) {
+      const product = group.existingProduct;
+      const productSlug = slugify(group.name);
+      const nextProductId = group.productId;
+      const isUpdate = Boolean(product);
+
+      if (isUpdate) {
+        updatedProducts += 1;
+      } else {
+        importedProducts += 1;
+      }
+
+      productRows.push({
+        id: nextProductId,
+        category_id: group.categoryId,
+        name: group.name,
+        slug: product?.slug ?? productSlug,
+        short_description: product?.shortDescription ?? "",
+        description: product?.description ?? "",
+        main_image_url: product?.mainImageUrl?.trim() ?? "",
+        is_featured: product?.isFeatured ?? false,
+        is_published: group.rows.some((row) => row.isActive),
+        sort_order:
+          group.rows.find((row) => row.productSortOrder != null)?.productSortOrder ??
+          product?.sortOrder ??
+          0,
+      });
+
+      const existingVariantsByKey = new Map(
+        (product?.variants ?? []).map((variant) => [
+          `${normalizeImportKey(variant.label)}:${variant.weightInGrams ?? ""}`,
+          variant,
+        ]),
+      );
+
+      const sortedRows = [...group.rows].sort((left, right) => {
+        const leftOrder = left.variantSortOrder ?? left.productSortOrder ?? 0;
+        const rightOrder = right.variantSortOrder ?? right.productSortOrder ?? 0;
+
+        return leftOrder - rightOrder;
+      });
+      const hasDefault = sortedRows.some((row) => row.isDefault);
+
+      sortedRows.forEach((row, index) => {
+        const variantKey = `${normalizeImportKey(row.variantLabel ?? `${row.weightInGrams}g`)}:${row.weightInGrams ?? ""}`;
+        let existingVariant = existingVariantsByKey.get(variantKey) ?? null;
+
+        if (row.variantId && product) {
+          const variantById = product.variants.find((variant) => variant.id === row.variantId);
+
+          if (variantById) {
+            existingVariant = variantById;
+          }
+        }
+
+        const variantId =
+          row.variantId && row.variantId.length > 0
+            ? row.variantId
+            : existingVariant?.id ?? createId("variant");
+        const variantLabel =
+          row.variantLabel?.trim().length
+            ? row.variantLabel.trim()
+            : `${row.weightInGrams}g`;
+
+        if (existingVariant) {
+          updatedVariants += 1;
+        } else {
+          importedVariants += 1;
+        }
+
+        variantRows.push({
+          id: variantId,
+          product_id: nextProductId,
+          label: variantLabel,
+          weight_in_grams: row.weightInGrams,
+          price: row.price,
+          compare_at_price: row.compareAtPrice,
+          standard_cost: row.standardCost,
+          packaging_cost: 0,
+          labor_cost: 0,
+          overhead_cost: 0,
+          is_default:
+            sortedRows.length === 1 ? true : row.isDefault || (!hasDefault && index === 0),
+          is_active: row.isActive,
+          sort_order: row.variantSortOrder ?? index,
+        });
+      });
+    }
+
+    if (productRows.length === 0 || variantRows.length === 0) {
+      return actionError("File Excel chưa có dòng hợp lệ để nạp.", "live");
+    }
+
+    const { error: productError } = await supabase
+      .from("products")
+      .upsert(productRows, { onConflict: "id" });
+
+    if (productError) {
+      return actionError(productError.message, "live");
+    }
+
+    const { error: variantError } = await supabase
+      .from("product_variants")
+      .upsert(variantRows, { onConflict: "id" });
+
+    if (variantError) {
+      return actionError(variantError.message, "live");
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/menu");
+    revalidatePath("/admin/orders/new");
+    revalidatePath("/menu");
+    for (const group of groupedProducts.values()) {
+      const product = group.existingProduct;
+      const previousSlug = product?.slug ?? null;
+      const nextSlug = slugify(group.name);
+
+      if (previousSlug) {
+        revalidatePath(`/product/${previousSlug}`);
+      }
+      revalidatePath(`/product/${nextSlug}`);
+      revalidatePath(`/admin/menu/${group.productId}`);
+    }
+
+    const summary: MenuExcelImportSummary = {
+      processedRows: inputRows.length,
+      importedProducts,
+      updatedProducts,
+      importedVariants,
+      updatedVariants,
+      skippedRows: inputRows.length - normalizedRows.length,
+      warnings,
+    };
+
+    const suffix = warnings.length > 0 ? ` Đã bỏ qua ${warnings.length} dòng lỗi.` : "";
+    return liveSuccess(
+      `Đã nạp Excel: ${summary.importedProducts} món mới, ${summary.updatedProducts} món cập nhật, ${summary.importedVariants} loại mới, ${summary.updatedVariants} loại cập nhật.${suffix}`,
+    );
+  } catch (error) {
+    return actionError(
+      error instanceof Error ? error.message : "Không nạp được file Excel.",
       "live",
     );
   }
