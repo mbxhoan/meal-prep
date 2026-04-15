@@ -289,6 +289,61 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     searchFields: ["code", "name", "description"],
     optionLabelPaths: ["code", "name"],
   }),
+  categories: lookupConfig("categories", {
+    title: "Danh mục món",
+    description: "Phân loại món bán dùng cho Món & Combo và nạp Excel.",
+    table: "categories",
+    shopScoped: false,
+    permissions: {
+      read: "master.menu.read",
+      create: "master.menu.create",
+      update: "master.menu.update",
+      delete: "master.menu.delete",
+    },
+    select:
+      "id, name, slug, description, image_url, sort_order, is_active, deleted_at, created_at, updated_at",
+    orderBy: { column: "sort_order", ascending: true },
+    fields: [
+      { name: "name", label: "Tên danh mục", type: "text", required: true },
+      {
+        name: "slug",
+        label: "Slug",
+        type: "text",
+        required: true,
+        helpText: "Dùng cho liên kết và để nạp Excel đúng danh mục.",
+      },
+      {
+        name: "image_url",
+        label: "Ảnh danh mục",
+        type: "image",
+        helpText: "Ảnh này hiển thị trên các màn cần nhận diện nhanh danh mục.",
+      },
+      { name: "description", label: "Mô tả", type: "textarea" },
+      {
+        name: "sort_order",
+        label: "Thứ tự",
+        type: "number",
+        step: "1",
+        min: 0,
+        defaultValue: 0,
+      },
+      {
+        name: "is_active",
+        label: "Đang hoạt động",
+        type: "checkbox",
+        defaultValue: true,
+      },
+    ],
+    columns: [
+      { key: "name", label: "Tên" },
+      { key: "slug", label: "Slug" },
+      { key: "sort_order", label: "Thứ tự", type: "number" },
+      { key: "is_active", label: "Trạng thái", type: "boolean" },
+    ],
+    searchFields: ["name", "slug", "description"],
+    optionLabelPaths: ["name", "slug"],
+    deletePatch: { is_active: false },
+  }),
   units: lookupConfig("units", {
     title: "Đơn vị tính",
     description: "Đơn vị chuẩn cho hàng hóa và công thức định lượng.",
@@ -570,7 +625,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     optionLabelPaths: ["menu_items.name", "label"],
   }),
   combos: lookupConfig("combos", {
-    title: "Combo tổng hợp",
+    title: "Combo",
     description:
       "Mỗi combo gồm nhiều món bán. Giá vốn và giá bán mặc định được tổng từ chi tiết combo.",
     table: "combos",
@@ -612,10 +667,11 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     optionLabelPaths: ["code", "name"],
   }),
   combo_items: lookupConfig("combo_items", {
-    title: "Combo chi tiết",
+    title: "Combo",
     description:
-      "Các món nằm trong từng combo, gồm số lượng, khối lượng và giá trị tự tính.",
+      "Chi tiết combo được chỉnh chung ngay trong màn Combo. Bảng này giữ snapshot nội bộ cho từng món thuộc combo.",
     table: "combo_items",
+    hiddenFromLanding: true,
     permissions: {
       read: "master.menu.read",
       create: "master.menu.create",
@@ -623,7 +679,7 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
       delete: "master.menu.delete",
     },
     select:
-      "id, shop_id, combo_id, combos(code, name), menu_item_variant_id, menu_item_variants(label, weight_grams, menu_items(code, name)), quantity, unit_sale_price_snapshot, unit_cost_snapshot, line_sale_total, line_cost_total, display_text, sort_order, is_active, notes, deleted_at, created_at, updated_at",
+      "id, shop_id, combo_id, combos(code, name), product_variant_id, product_variants(label, weight_in_grams, products(name)), menu_item_variant_id, menu_item_variants(label, weight_grams, menu_items(code, name)), quantity, unit_sale_price_snapshot, unit_cost_snapshot, line_sale_total, line_cost_total, display_text, sort_order, is_active, notes, deleted_at, created_at, updated_at",
     orderBy: { column: "sort_order", ascending: true },
     fields: [
       {
@@ -634,11 +690,17 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
         required: true,
       },
       {
+        name: "product_variant_id",
+        label: "Món hàng trong combo",
+        type: "select",
+        optionsSource: "product_variants",
+        required: true,
+      },
+      {
         name: "menu_item_variant_id",
-        label: "Món trong combo",
+        label: "Món hàng trong combo (cũ)",
         type: "select",
         optionsSource: "menu_item_variants",
-        required: true,
       },
       {
         name: "quantity",
@@ -662,8 +724,8 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     ],
     columns: [
       { key: "combos.name", label: "Combo" },
-      { key: "menu_item_variants.menu_items.name", label: "Món" },
-      { key: "menu_item_variants.label", label: "Biến thể" },
+      { key: "product_variants.products.name", label: "Món hàng" },
+      { key: "product_variants.label", label: "Biến thể" },
       { key: "quantity", label: "SL", type: "number" },
       { key: "line_sale_total", label: "Giá bán", type: "money" },
       { key: "line_cost_total", label: "Giá vốn", type: "money" },
@@ -673,12 +735,14 @@ export const MASTER_DATA_ENTITY_CONFIGS: Record<
     searchFields: [
       "combos.code",
       "combos.name",
+      "product_variants.label",
+      "product_variants.products.name",
       "menu_item_variants.label",
       "menu_item_variants.menu_items.name",
       "display_text",
       "notes",
     ],
-    optionLabelPaths: ["combos.name", "menu_item_variants.menu_items.name", "menu_item_variants.label"],
+    optionLabelPaths: ["combos.name", "product_variants.products.name", "product_variants.label"],
   }),
   price_books: lookupConfig("price_books", {
     title: "Bảng giá",

@@ -84,7 +84,7 @@ export function RoleAssignmentForm({
           <StatusPill label={selectedRoleLabel} tone="accent" />
         </div>
 
-        <form action={action} className="mt-6 space-y-4 pb-36">
+        <form action={action} className="mt-6 space-y-4 pb-56">
           <input type="hidden" name="payload" value={payload} />
 
           <label className="block">

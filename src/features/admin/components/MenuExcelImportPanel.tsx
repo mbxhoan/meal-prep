@@ -29,6 +29,66 @@ const TEMPLATE_HEADERS = [
   "Ghi chú",
 ];
 
+const IMPORT_HEADER_HINTS = [
+  "Mã món",
+  "Tên món",
+  "Món",
+  "Nhóm",
+  "Nhóm hàng",
+  "Tên loại",
+  "Loại",
+  "Trọng lượng (g)",
+  "Trọng lượng",
+  "Khối lượng",
+  "Giá vốn",
+  "Giá bán",
+  "Giá niêm yết",
+  "Mặc định",
+  "Đang dùng",
+  "Thứ tự loại",
+  "Ghi chú",
+];
+
+function getRowValue(row: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = row[key];
+
+    if (value == null) {
+      continue;
+    }
+
+    const text = String(value).trim();
+    if (text.length > 0) {
+      return text;
+    }
+  }
+
+  return "";
+}
+
+function scoreImportRow(row: Record<string, unknown>) {
+  const productName = getRowValue(row, ["Tên món", "Món", "ten mon", "ten_mon"]);
+  const categoryName = getRowValue(row, ["Nhóm", "Nhóm hàng", "nhom", "nhom_hang"]);
+  const variantLabel = getRowValue(row, ["Tên loại", "Loại", "ten loai", "ten_loai"]);
+  const weight = getRowValue(row, [
+    "Trọng lượng (g)",
+    "Trọng lượng",
+    "Khối lượng",
+    "trong luong (g)",
+    "khoi_luong",
+  ]);
+  const price = getRowValue(row, ["Giá bán", "gia ban", "gia_ban"]);
+  const cost = getRowValue(row, ["Giá vốn", "gia von", "gia_von"]);
+
+  return [productName, categoryName, variantLabel || weight, price, cost].filter(
+    (value) => value.length > 0,
+  ).length;
+}
+
+function scoreWorkbookSheet(rows: Record<string, unknown>[]) {
+  return rows.reduce((score, row) => score + (scoreImportRow(row) >= 4 ? 1 : 0), 0);
+}
+
 function buildTemplateWorkbook(categories: AdminCategory[]) {
   const workbook = XLSX.utils.book_new();
   const rows = [
@@ -84,6 +144,7 @@ export function MenuExcelImportPanel({
   );
   const router = useRouter();
   const [fileName, setFileName] = useState("");
+  const [sheetName, setSheetName] = useState("");
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [parseError, setParseError] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -135,24 +196,46 @@ export function MenuExcelImportPanel({
 
     setParseError("");
     setFileName(file.name);
+    setSheetName("");
 
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
 
-      if (!sheetName) {
+      if (workbook.SheetNames.length === 0) {
         setRows([]);
         setParseError("File Excel không có sheet dữ liệu.");
         return;
       }
 
-      const sheet = workbook.Sheets[sheetName];
-      const parsed = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-        defval: "",
-      });
+      let bestRows: Record<string, unknown>[] = [];
+      let bestSheetName = "";
+      let bestScore = 0;
 
-      setRows(parsed);
+      for (const candidateSheetName of workbook.SheetNames) {
+        const sheet = workbook.Sheets[candidateSheetName];
+        const parsed = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+          defval: "",
+        });
+        const score = scoreWorkbookSheet(parsed);
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestSheetName = candidateSheetName;
+          bestRows = parsed;
+        }
+      }
+
+      if (bestScore === 0) {
+        setRows([]);
+        setParseError(
+          `Không tìm thấy sheet dữ liệu hợp lệ. Hãy mở đúng tab có các cột ${IMPORT_HEADER_HINTS.slice(0, 6).join(", ")}...`,
+        );
+        return;
+      }
+
+      setSheetName(bestSheetName);
+      setRows(bestRows);
     } catch {
       setRows([]);
       setParseError("Không đọc được file Excel. Hãy dùng template tải từ app.");
@@ -177,6 +260,11 @@ export function MenuExcelImportPanel({
             Nhập nhanh theo sheet bạn đang dùng, không cần tạo tay từng món.
             {categoryHint ? ` Nhóm đang có: ${categoryHint}.` : ""}
           </p>
+          {sheetName ? (
+            <p className="mt-1 text-[12px] leading-5 text-emerald-700">
+              Đã đọc sheet: {sheetName}
+            </p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -20,6 +20,18 @@ import type {
   MasterDataRow,
 } from "@/lib/master-data/types";
 
+export interface MasterDataDeleteReference {
+  label: string;
+  href: string;
+  note?: string;
+}
+
+export interface MasterDataDeleteImpact {
+  blocked: boolean;
+  message?: string;
+  references: MasterDataDeleteReference[];
+}
+
 function getEntityConfig(entity: MasterDataEntityKey): MasterDataEntityConfig {
   return MASTER_DATA_ENTITY_CONFIGS[entity];
 }
@@ -34,6 +46,18 @@ function getUniqueOptionSources(config: MasterDataEntityConfig) {
   }
 
   return [...sources];
+}
+
+function applyScopeFilter<T extends { eq: (column: string, value: string) => T; is: (column: string, value: null) => T }>(
+  query: T,
+  config: MasterDataEntityConfig,
+  shopId: string,
+) {
+  if (config.shopScoped === false) {
+    return query;
+  }
+
+  return query.eq("shop_id", shopId);
 }
 
 async function listInventoryStockItemOptions(
@@ -62,6 +86,50 @@ async function listInventoryStockItemOptions(
   });
 }
 
+async function listProductVariantOptions(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, sort_order, product_variants(id, label, weight_in_grams, sort_order)")
+    .order("sort_order", { ascending: true });
+
+  if (error || !Array.isArray(data)) {
+    return [];
+  }
+
+  const options = data.flatMap((row) => {
+    const product = row as Record<string, unknown>;
+    const productName = String(product.name ?? "").trim();
+    const variants = Array.isArray(product.product_variants)
+      ? (product.product_variants as Record<string, unknown>[])
+      : [];
+
+    return variants.map((variant) => {
+      const variantName = String(variant.label ?? "").trim();
+      const weightValue = variant.weight_in_grams == null ? null : String(variant.weight_in_grams).trim();
+      const label = [
+        productName,
+        variantName,
+        weightValue && weightValue.length > 0 ? `${weightValue}g` : "",
+      ]
+        .filter((part) => part.length > 0)
+        .join(" · ");
+
+      return {
+        value: String(variant.id ?? ""),
+        label: label.length > 0 ? label : String(variant.id ?? ""),
+        sortOrder: Number(product.sort_order ?? 0) * 1000 + Number(variant.sort_order ?? 0),
+      };
+    });
+  });
+
+  return options
+    .filter((option) => option.value.length > 0)
+    .sort((left, right) => left.sortOrder - right.sortOrder)
+    .map(({ sortOrder: _sortOrder, ...option }) => option);
+}
+
 async function listRowsForEntity(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   config: MasterDataEntityConfig,
@@ -71,13 +139,12 @@ async function listRowsForEntity(
     return [];
   }
 
-  const { data, error } = await supabase
-    .from(config.table)
-    .select(config.select)
-    .eq("shop_id", shopId)
-    .order(config.orderBy.column, {
-      ascending: config.orderBy.ascending ?? true,
-    });
+  let query = supabase.from(config.table).select(config.select);
+  query = applyScopeFilter(query, config, shopId);
+
+  const { data, error } = await query.order(config.orderBy.column, {
+    ascending: config.orderBy.ascending ?? true,
+  });
 
   if (error) {
     return [];
@@ -97,25 +164,65 @@ async function listOptionsForEntity(
     return [];
   }
 
-  const { data, error } = await supabase
-    .from(config.table)
-    .select(config.select)
-    .eq("shop_id", shopId)
-    .is("deleted_at", null)
-    .eq("is_active", true)
-    .order(config.orderBy.column, {
-      ascending: config.orderBy.ascending ?? true,
-    });
+  if (config.key === "menu_item_variants") {
+    const selectVariants = [
+      "id, label, menu_items(name)",
+      "id, label",
+    ];
+
+    for (const select of selectVariants) {
+      let query = supabase.from(config.table).select(select);
+      query = applyScopeFilter(query, config, shopId);
+      query = query.is("deleted_at", null);
+
+      const { data, error } = await query.order(config.orderBy.column, {
+        ascending: config.orderBy.ascending ?? true,
+      });
+
+      if (error) {
+        continue;
+      }
+
+      const options = (data ?? []).map((row) => {
+        const record = row as unknown as Record<string, unknown>;
+        const menuItem =
+          record.menu_items &&
+          typeof record.menu_items === "object" &&
+          !Array.isArray(record.menu_items)
+            ? (record.menu_items as Record<string, unknown>)
+            : {};
+        const menuItemName = String(menuItem.name ?? "").trim();
+        const variantLabel = String(record.label ?? "").trim();
+        const label = [menuItemName, variantLabel].filter(Boolean).join(" · ");
+
+        return {
+          value: String(record.id ?? ""),
+          label: label.length > 0 ? label : String(record.id ?? ""),
+        };
+      });
+
+      if (options.length > 0) {
+        return options;
+      }
+    }
+
+    return [];
+  }
+
+  let query = supabase.from(config.table).select(config.select);
+  query = applyScopeFilter(query, config, shopId);
+  query = query.is("deleted_at", null).eq("is_active", true);
+
+  const { data, error } = await query.order(config.orderBy.column, {
+    ascending: config.orderBy.ascending ?? true,
+  });
 
   if (error) {
     return [];
   }
 
   return (data ?? []).map((row) =>
-    buildMasterDataOption(
-      row as unknown as Record<string, unknown>,
-      config.optionLabelPaths,
-    ),
+    buildMasterDataOption(row as unknown as Record<string, unknown>, config.optionLabelPaths),
   );
 }
 
@@ -131,7 +238,7 @@ export const getMasterDataLandingConfig = cache(async (): Promise<{
   const countEntries = await Promise.all(
     MASTER_DATA_ENTITY_LIST.filter((entity) =>
       context.permissions.includes(entity.permissions.read),
-    ).map(async (entity) => {
+    ).filter((entity) => entity.hiddenFromLanding !== true).map(async (entity) => {
       if (!supabase || !context.shop) {
         return {
           ...entity,
@@ -139,10 +246,11 @@ export const getMasterDataLandingConfig = cache(async (): Promise<{
         };
       }
 
-      const { count } = await supabase
+      let query = supabase
         .from(entity.table)
-        .select("id", { count: "exact", head: true })
-        .eq("shop_id", context.shop.id);
+        .select("id", { count: "exact", head: true });
+      query = applyScopeFilter(query, entity, context.shop.id);
+      const { count } = await query;
 
       return {
         ...entity,
@@ -203,6 +311,16 @@ export const getMasterDataPageData = cache(async (
           return {
             key: source,
             label: "Tồn kho (mã hàng)",
+            options,
+          } satisfies MasterDataOptionGroup;
+        }
+
+        if (source === "product_variants") {
+          const options = await listProductVariantOptions(supabase);
+
+          return {
+            key: source,
+            label: "Món hàng",
             options,
           } satisfies MasterDataOptionGroup;
         }
@@ -284,15 +402,72 @@ export async function deleteMasterDataRecord(
   }
 
   const patch = buildMasterDataDeletePatch(config);
-  const { error } = await supabase
-    .from(config.table)
-    .update(patch)
-    .eq("id", recordId)
-    .eq("shop_id", context.shop.id);
+  let query = supabase.from(config.table).update(patch).eq("id", recordId);
+  query = applyScopeFilter(query, config, context.shop.id);
+
+  const { error } = await query;
 
   if (error) {
     throw new Error(error.message);
   }
+}
+
+export async function getMasterDataDeleteImpact(
+  entity: MasterDataEntityKey,
+  recordId: string,
+): Promise<MasterDataDeleteImpact> {
+  const context = await getAdminContext();
+
+  if (!context.shop) {
+    return {
+      blocked: true,
+      message: "Thiếu shop hiện tại.",
+      references: [],
+    };
+  }
+
+  if (entity === "categories" && isSupabaseConfigured()) {
+    const supabase = await createSupabaseServerClient();
+
+    if (!supabase) {
+      return { blocked: false, references: [] };
+    }
+
+    const [countResponse, rowsResponse] = await Promise.all([
+      supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", context.shop.id)
+        .eq("category_id", recordId),
+      supabase
+        .from("products")
+        .select("id, name, slug")
+        .eq("shop_id", context.shop.id)
+        .eq("category_id", recordId)
+        .order("updated_at", { ascending: false })
+        .limit(5),
+    ]);
+
+    const count = countResponse.count ?? 0;
+    const rows = Array.isArray(rowsResponse.data) ? rowsResponse.data : [];
+
+    if (count > 0) {
+      return {
+        blocked: true,
+        message: `Không thể xoá danh mục này vì đang được dùng trong ${count} món.`,
+        references: rows.map((row) => ({
+          label: String(row.name ?? row.slug ?? row.id),
+          href: `/admin/menu/${String(row.id)}`,
+          note: "Mở món đang tham chiếu",
+        })),
+      };
+    }
+  }
+
+  return {
+    blocked: false,
+    references: [],
+  };
 }
 
 export function getMasterDataEntityConfig(entity: MasterDataEntityKey) {

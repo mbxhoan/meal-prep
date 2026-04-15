@@ -422,6 +422,20 @@ export async function importMenuProductsFromExcelAction(
       getMenuProducts(),
     ]);
 
+    const categoryIndex = new Map<string, { id: string; name: string; slug: string }>();
+    for (const category of categories) {
+      categoryIndex.set(normalizeImportKey(category.name), {
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+      });
+      categoryIndex.set(normalizeImportKey(category.slug), {
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+      });
+    }
+
     const normalizedRows: MenuExcelImportRow[] = [];
     const warnings: string[] = [];
 
@@ -442,6 +456,73 @@ export async function importMenuProductsFromExcelAction(
         warnings[0] ?? "Không có dòng hợp lệ để nạp.",
         "live",
       );
+    }
+
+    const missingCategories = new Map<string, {
+      name: string;
+      slug: string;
+      description: string | null;
+      image_url: string | null;
+      sort_order: number;
+      is_active: boolean;
+    }>();
+
+    for (const row of normalizedRows) {
+      const normalizedCategoryKey = normalizeImportKey(row.categoryName);
+
+      if (categoryIndex.has(normalizedCategoryKey)) {
+        continue;
+      }
+
+      if (!missingCategories.has(normalizedCategoryKey)) {
+        let slug = normalizeImportKey(row.categoryName);
+        if (!slug) {
+          slug = createId("category").replaceAll("-", "").slice(0, 12);
+        }
+
+        let suffix = 2;
+        while (
+          categoryIndex.has(slug) ||
+          [...missingCategories.values()].some((category) => category.slug === slug)
+        ) {
+          slug = `${normalizeImportKey(row.categoryName)}-${suffix}`;
+          suffix += 1;
+        }
+
+        missingCategories.set(normalizedCategoryKey, {
+          name: row.categoryName,
+          slug,
+          description: null,
+          image_url: null,
+          sort_order: 0,
+          is_active: true,
+        });
+      }
+    }
+
+    if (missingCategories.size > 0) {
+      const { data: createdCategories, error: categoryError } = await supabase
+        .from("categories")
+        .upsert([...missingCategories.values()], { onConflict: "slug" })
+        .select("id, name, slug");
+
+      if (categoryError) {
+        return actionError(categoryError.message, "live");
+      }
+
+      for (const row of createdCategories ?? []) {
+        const category = row as Record<string, unknown>;
+        const name = String(category.name ?? "").trim();
+        const slug = String(category.slug ?? "").trim();
+        const id = String(category.id ?? "").trim();
+
+        if (id.length === 0) {
+          continue;
+        }
+
+        categoryIndex.set(normalizeImportKey(name), { id, name, slug });
+        categoryIndex.set(normalizeImportKey(slug), { id, name, slug });
+      }
     }
 
     const existingById = new Map(existingProducts.map((product) => [product.id, product]));
@@ -465,7 +546,10 @@ export async function importMenuProductsFromExcelAction(
     const groupedProducts = new Map<string, GroupedProduct>();
 
     for (const row of normalizedRows) {
-      const categoryId = resolveCategoryId(categories, row.categoryName);
+      const normalizedCategoryKey = normalizeImportKey(row.categoryName);
+      const categoryId =
+        categoryIndex.get(normalizedCategoryKey)?.id ??
+        resolveCategoryId(categories, row.categoryName);
 
       if (!categoryId) {
         warnings.push(`Không tìm thấy nhóm "${row.categoryName}" cho món "${row.productName}".`);
@@ -835,7 +919,9 @@ async function collectMenuProductDeletionReferences(
           { count: "exact" },
         )
         .eq("shop_id", shopId)
-        .in("menu_item_variant_id", variantIds)
+        .or(
+          `product_variant_id.in.(${variantIds.join(",")}),menu_item_variant_id.in.(${variantIds.join(",")})`,
+        )
         .is("deleted_at", null)
         .order("updated_at", { ascending: false })
         .limit(12),
@@ -1001,7 +1087,7 @@ export async function duplicateComboAction(
     const { data: sourceCombo, error: sourceError } = await supabase
       .from("combos")
       .select(
-        "id, shop_id, code, name, sale_price, notes, is_active, combo_items(id, menu_item_variant_id, quantity, sort_order, is_active, notes, display_text)",
+        "id, shop_id, code, name, sale_price, notes, is_active, combo_items(id, product_variant_id, menu_item_variant_id, quantity, sort_order, is_active, notes, display_text)",
       )
       .eq("id", payload.comboId)
       .maybeSingle();
@@ -1067,7 +1153,14 @@ export async function duplicateComboAction(
           id: createId("combo-item"),
           shop_id: String(sourceRow.shop_id ?? ""),
           combo_id: newComboId,
-          menu_item_variant_id: String(item.menu_item_variant_id ?? ""),
+          product_variant_id:
+            item.product_variant_id == null
+              ? null
+              : String(item.product_variant_id),
+          menu_item_variant_id:
+            item.product_variant_id == null
+              ? String(item.menu_item_variant_id ?? "")
+              : null,
           quantity: Number(item.quantity ?? 1),
           sort_order: Number(item.sort_order ?? index),
           is_active: item.is_active !== false,

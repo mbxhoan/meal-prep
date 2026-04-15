@@ -323,7 +323,7 @@ export function OrderBuilder({
   const hasOrderLines = lineSummaries.length + comboSummaries.length > 0;
 
   return (
-    <form action={action} className="space-y-5 pb-40">
+    <form action={action} className="space-y-5 pb-56">
       <GuidedWorkflowCard
         eyebrow="Quy trình"
         title="Tạo đơn theo kiểu sheet"
@@ -1217,7 +1217,7 @@ export function OrderBuilder({
             disabled={!hasOrderLines}
           />
           {ADMIN_SIMPLE_MODE ? (
-            <p className="pb-24 text-[12px] leading-5 text-slate-500">
+            <p className="pb-32 text-[12px] leading-5 text-slate-500">
               Giao diện đã được rút gọn để giống sheet. Các phần kho và công thức đang ẩn.
             </p>
           ) : null}

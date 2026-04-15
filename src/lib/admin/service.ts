@@ -945,8 +945,9 @@ export async function getCategories() {
 
     const { data, error } = await supabase
       .from("categories")
-      .select("id, name, slug, description, is_active")
+      .select("id, name, slug, description, is_active, deleted_at")
       .eq("is_active", true)
+      .is("deleted_at", null)
       .order("sort_order", { ascending: true });
 
     if (error) {

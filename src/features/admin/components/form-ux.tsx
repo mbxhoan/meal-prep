@@ -11,6 +11,7 @@ type StickyFormFooterProps = {
   pending?: boolean;
   disabled?: boolean;
   className?: string;
+  form?: string;
 };
 
 const baseFieldClassName =
@@ -76,13 +77,14 @@ export function StickyFormFooter({
   pending = false,
   disabled = false,
   className = "",
+  form,
 }: StickyFormFooterProps) {
   const isDisabled = disabled || pending;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-3 right-3 z-30 md:bottom-4 md:left-[calc(var(--admin-sidebar-width)+2rem)] md:right-4 lg:left-[calc(var(--admin-sidebar-width)+2rem)] lg:right-4">
+    <div className="fixed bottom-4 left-4 right-4 z-40 md:left-[calc(var(--admin-sidebar-width)+1rem)]">
       <div
-        className={`pointer-events-auto mx-auto flex max-w-[1400px] flex-col gap-3 rounded-[26px] border border-slate-300/70 bg-slate-100/92 px-4 py-3 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.42)] backdrop-blur-md md:flex-row md:items-center md:justify-between ${className}`.trim()}
+        className={`mx-auto flex max-w-[1400px] flex-col gap-3 rounded-[26px] border border-slate-300/80 bg-slate-100/96 px-4 py-3 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.4)] backdrop-blur-md md:flex-row md:items-center md:justify-between ${className}`.trim()}
       >
         <div className="min-w-0 space-y-1">
           <div className="text-sm leading-6 text-slate-700/90">{note}</div>
@@ -96,6 +98,7 @@ export function StickyFormFooter({
         </div>
 
         <button
+          form={form}
           type="submit"
           disabled={isDisabled}
           className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#18352d] px-5 py-3 text-sm font-medium text-white shadow-[0_12px_30px_-18px_rgba(24,53,45,0.9)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"

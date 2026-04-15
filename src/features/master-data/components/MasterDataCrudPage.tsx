@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useMemo, useState } from "react";
 import {
   FaBoxArchive,
@@ -148,7 +149,7 @@ export function MasterDataCrudPage({
     saveMasterDataAction,
     initialState,
   );
-  const [, deleteAction] = useActionState(
+  const [deleteState, deleteAction, deletePending] = useActionState(
     deleteMasterDataAction,
     initialState,
   );
@@ -250,7 +251,7 @@ export function MasterDataCrudPage({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24">
       <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
@@ -362,6 +363,36 @@ export function MasterDataCrudPage({
         </section>
       ) : null}
 
+      {deleteState.status !== "idle" ? (
+        <section
+          className={`rounded-[24px] border p-4 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)] ${
+            deleteState.status === "success"
+              ? "border-emerald-200 bg-emerald-50/80 text-emerald-800"
+              : "border-rose-200 bg-rose-50/85 text-rose-800"
+          }`}
+        >
+          <p className="text-sm font-medium">{deleteState.message}</p>
+          {deleteState.references?.length ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {deleteState.references.map((reference) => (
+                <Link
+                  key={reference.href}
+                  href={reference.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-[13px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white"
+                >
+                  <span>{reference.label}</span>
+                  {reference.note ? (
+                    <span className="text-slate-400">{reference.note}</span>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       {canCreate || canUpdate ? (
         <section className="rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -386,7 +417,7 @@ export function MasterDataCrudPage({
             ) : null}
           </div>
 
-          <form action={action} className="mt-6 space-y-4 pb-36">
+          <form action={action} className="mt-6 space-y-4 pb-56">
             <input type="hidden" name="payload" value={payload} />
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -619,7 +650,8 @@ export function MasterDataCrudPage({
                             type="submit"
                             title="Xoá"
                             aria-label="Xoá"
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50"
+                            disabled={deletePending}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-rose-200 text-rose-600 transition hover:border-rose-300 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <FaTrash />
                           </button>

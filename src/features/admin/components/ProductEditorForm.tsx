@@ -401,7 +401,7 @@ export function ProductEditorForm({
   }
 
   return (
-    <form action={action} className="space-y-6 pb-40">
+    <form action={action} className="space-y-6 pb-56">
       <input
         type="hidden"
         name="payload"

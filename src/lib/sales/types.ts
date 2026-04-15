@@ -36,6 +36,8 @@ export interface SalesOrderItemRecord {
   comboNameSnapshot?: string | null;
   comboDefaultSalePriceSnapshot?: number | null;
   comboComponentsSnapshot?: Array<{
+    productVariantId?: string;
+    productName?: string;
     menuItemVariantId: string;
     menuItemName: string;
     variantLabel: string | null;
@@ -170,6 +172,8 @@ export interface SalesOrderEmployeeOption {
 }
 
 export interface SalesComboComponentOption {
+  productVariantId?: string;
+  productName?: string;
   menuItemVariantId: string;
   menuItemName: string;
   variantLabel: string | null;

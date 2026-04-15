@@ -25,7 +25,9 @@ import type {
   MenuProduct,
   MenuVariant,
 } from "@/lib/admin/types";
-import type { SalesComboOption } from "@/lib/sales/types";
+import type {
+  MasterDataRow,
+} from "@/lib/master-data/types";
 import { MenuExcelImportPanel } from "@/features/admin/components/MenuExcelImportPanel";
 
 function pickVariantByWeight(product: MenuProduct, targetWeight: number) {
@@ -86,9 +88,9 @@ const comboPriceInitialState: ActionState = {
   mode: "live",
 };
 
-function formatComboComponentSummary(combo: SalesComboOption) {
-  const texts = combo.components
-    .map((component) => component.displayText.trim())
+function formatComboComponentSummary(comboItems: MasterDataRow[]) {
+  const texts = comboItems
+    .map((item) => String(item.display_text ?? "").trim())
     .filter((text) => text.length > 0);
 
   if (texts.length === 0) {
@@ -103,7 +105,25 @@ function formatComboComponentSummary(combo: SalesComboOption) {
     : visible.join(" · ");
 }
 
-function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
+function getComboRowsById(comboItems: MasterDataRow[], comboId: string) {
+  return comboItems
+    .filter((row) => String(row.combo_id ?? "") === comboId)
+    .filter((row) => row.deleted_at == null && row.is_active !== false)
+    .sort((left, right) => {
+      const leftOrder = Number(left.sort_order ?? 0);
+      const rightOrder = Number(right.sort_order ?? 0);
+
+      return leftOrder - rightOrder;
+    });
+}
+
+function ComboCatalog({
+  combos,
+  comboItems,
+}: {
+  combos: MasterDataRow[];
+  comboItems: MasterDataRow[];
+}) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden">("all");
   const [copyState, copyAction, copyPending] = useActionState(
@@ -115,11 +135,13 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
     const normalizedQuery = query.trim().toLowerCase();
 
     return combos.filter((combo) => {
-      if (statusFilter === "active" && !combo.isActive) {
+      const comboIsActive = combo.is_active !== false;
+
+      if (statusFilter === "active" && !comboIsActive) {
         return false;
       }
 
-      if (statusFilter === "hidden" && combo.isActive) {
+      if (statusFilter === "hidden" && comboIsActive) {
         return false;
       }
 
@@ -129,41 +151,51 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
 
       const haystack = [
         combo.code ?? "",
-        combo.name,
-        combo.notes ?? "",
-        combo.components.map((component) => component.displayText).join(" "),
+        String(combo.name ?? ""),
+        String(combo.notes ?? ""),
+        String(combo.sale_price ?? ""),
+        String(combo.default_sale_price ?? ""),
+        String(combo.total_cost ?? ""),
+        String(combo.gross_profit ?? ""),
+        String(combo.gross_margin ?? ""),
+        getComboRowsById(comboItems, String(combo.id))
+          .map((item) => String(item.display_text ?? "").trim())
+          .filter((text) => text.length > 0)
+          .join(" "),
       ]
         .join(" ")
         .toLowerCase();
 
       return haystack.includes(normalizedQuery);
     });
-  }, [combos, query, statusFilter]);
+  }, [combos, comboItems, query, statusFilter]);
 
-  const activeCount = filteredCombos.filter((combo) => combo.isActive).length;
+  const activeCount = filteredCombos.filter((combo) => combo.is_active !== false).length;
   const componentCount = filteredCombos.reduce(
-    (sum, combo) => sum + combo.components.length,
+    (sum, combo) => sum + getComboRowsById(comboItems, String(combo.id)).length,
     0,
   );
   const defaultSaleTotal = filteredCombos.reduce(
-    (sum, combo) => sum + combo.defaultSalePrice,
+    (sum, combo) => sum + Number(combo.default_sale_price ?? 0),
     0,
   );
 
   const exportRows = useMemo(
     () =>
       filteredCombos.map((combo) => ({
-        ma_combo: combo.code ?? "",
-        ten_combo: combo.name,
-        thanh_phan: formatComboComponentSummary(combo),
-        gia_mac_dinh: formatCurrency(combo.defaultSalePrice),
-        gia_ban: formatCurrency(combo.salePrice),
-        gia_von: formatCurrency(combo.totalCost),
-        lai: formatCurrency(combo.grossProfit),
-        ty_le_lai: `${(combo.grossMargin * 100).toFixed(1)}%`,
-        trang_thai: combo.isActive ? "Đang dùng" : "Tạm ẩn",
+        ma_combo: String(combo.code ?? ""),
+        ten_combo: String(combo.name ?? ""),
+        thanh_phan: formatComboComponentSummary(
+          getComboRowsById(comboItems, String(combo.id)),
+        ),
+        gia_mac_dinh: formatCurrency(Number(combo.default_sale_price ?? 0)),
+        gia_ban: formatCurrency(Number(combo.sale_price ?? 0)),
+        gia_von: formatCurrency(Number(combo.total_cost ?? 0)),
+        lai: formatCurrency(Number(combo.gross_profit ?? 0)),
+        ty_le_lai: `${(Number(combo.gross_margin ?? 0) * 100).toFixed(1)}%`,
+        trang_thai: combo.is_active !== false ? "Đang dùng" : "Tạm ẩn",
       })),
-    [filteredCombos],
+    [comboItems, filteredCombos],
   );
 
   return (
@@ -209,13 +241,6 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
               ]}
               rows={exportRows}
             />
-            <Link
-              href="/admin/master-data/combos"
-              className="inline-flex items-center gap-2 rounded-full bg-[#18352d] px-3 py-1.5 text-[13px] font-medium text-white transition hover:opacity-90"
-            >
-              <FaPlus className="text-xs" />
-              <span>Thêm combo</span>
-            </Link>
           </div>
         </div>
 
@@ -288,16 +313,18 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  {combo.code ?? "Combo"}
+                  {String(combo.code ?? "Combo")}
                 </p>
-                <h4 className="mt-1 text-base font-semibold text-slate-900">{combo.name}</h4>
+                <h4 className="mt-1 text-base font-semibold text-slate-900">
+                  {String(combo.name ?? "")}
+                </h4>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                  {formatComboComponentSummary(combo)}
+                  {formatComboComponentSummary(getComboRowsById(comboItems, String(combo.id)))}
                 </p>
               </div>
               <StatusPill
-                label={combo.isActive ? "Đang dùng" : "Tạm ẩn"}
-                tone={combo.isActive ? "success" : "warning"}
+                label={combo.is_active !== false ? "Đang dùng" : "Tạm ẩn"}
+                tone={combo.is_active !== false ? "success" : "warning"}
               />
             </div>
 
@@ -307,7 +334,7 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
                   Giá mặc định / bán
                 </p>
                 <p className="mt-1 font-semibold text-slate-900">
-                  {formatCurrency(combo.defaultSalePrice)} · {formatCurrency(combo.salePrice)}
+                  {formatCurrency(Number(combo.default_sale_price ?? 0))} · {formatCurrency(Number(combo.sale_price ?? 0))}
                 </p>
               </div>
               <div className="rounded-2xl border border-white bg-white px-3 py-2">
@@ -315,7 +342,7 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
                   Giá vốn / lãi
                 </p>
                 <p className="mt-1 font-semibold text-slate-900">
-                  {formatCurrency(combo.totalCost)} · {formatCurrency(combo.grossProfit)}
+                  {formatCurrency(Number(combo.total_cost ?? 0))} · {formatCurrency(Number(combo.gross_profit ?? 0))}
                 </p>
               </div>
               <div className="rounded-2xl border border-white bg-white px-3 py-2">
@@ -323,7 +350,7 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
                   Tỷ lệ lãi
                 </p>
                 <p className="mt-1 font-semibold text-slate-900">
-                  {(combo.grossMargin * 100).toFixed(1)}%
+                  {(Number(combo.gross_margin ?? 0) * 100).toFixed(1)}%
                 </p>
               </div>
             </div>
@@ -358,12 +385,12 @@ function ComboCatalog({ combos }: { combos: SalesComboOption[] }) {
   );
 }
 
-function ComboSalePriceForm({ combo }: { combo: SalesComboOption }) {
+function ComboSalePriceForm({ combo }: { combo: MasterDataRow }) {
   const [priceState, priceAction, pricePending] = useActionState(
     updateComboSalePriceAction,
     comboPriceInitialState,
   );
-  const [salePrice, setSalePrice] = useState(String(combo.salePrice));
+  const [salePrice, setSalePrice] = useState(String(combo.sale_price ?? 0));
 
   return (
     <form action={priceAction} className="mt-3">
@@ -402,7 +429,7 @@ function ComboSalePriceForm({ combo }: { combo: SalesComboOption }) {
         <button
           type="button"
           className="font-medium text-[#18352d] underline decoration-slate-300 underline-offset-2"
-          onClick={() => setSalePrice(String(combo.defaultSalePrice))}
+          onClick={() => setSalePrice(String(combo.default_sale_price ?? 0))}
         >
           Về giá mặc định
         </button>
@@ -426,10 +453,12 @@ export function MenuCatalog({
   products,
   combos,
   categories,
+  comboItems,
 }: {
   products: MenuProduct[];
-  combos: SalesComboOption[];
+  combos: MasterDataRow[];
   categories: AdminCategory[];
+  comboItems: MasterDataRow[];
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "hidden">("all");
@@ -536,6 +565,13 @@ export function MenuCatalog({
             >
               <FaPlus className="text-xs" />
               <span>Thêm món mới</span>
+            </Link>
+            <Link
+              href="/admin/master-data/combos"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              <FaPlus className="text-xs" />
+              <span>Thêm combo</span>
             </Link>
             <ExportExcelButton
               filename={`thuc-don-${new Date().toISOString().slice(0, 10)}`}
@@ -764,7 +800,7 @@ export function MenuCatalog({
         </div>
       </section>
 
-      <ComboCatalog combos={combos} />
+        <ComboCatalog combos={combos} comboItems={comboItems} />
 
       <section className="overflow-hidden rounded-[24px] border border-white/70 bg-white/90 shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)]">
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4">

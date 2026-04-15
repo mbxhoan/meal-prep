@@ -86,9 +86,12 @@ export function buildMasterDataUpsertPayload(
   recordId?: string | null,
 ) {
   const payload: Record<string, unknown> = {
-    shop_id: shopId,
     deleted_at: null,
   };
+
+  if (config.shopScoped !== false) {
+    payload.shop_id = shopId;
+  }
 
   if (recordId) {
     payload.id = recordId;

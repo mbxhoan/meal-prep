@@ -100,6 +100,10 @@ function buildDemoCombos(products: MenuProduct[]): SalesComboOption[] {
       beef,
       ribs,
     ].map((variant, index) => ({
+      productVariantId: variant.id,
+      productName: products.find((product) =>
+        product.variants.some((entry) => entry.id === variant.id),
+      )?.name ?? "Món",
       menuItemVariantId: variant.id,
       menuItemName: products.find((product) =>
         product.variants.some((entry) => entry.id === variant.id),
@@ -151,6 +155,10 @@ function buildDemoCombos(products: MenuProduct[]): SalesComboOption[] {
 
   if (chicken && salmon) {
     const components: SalesComboComponentOption[] = [chicken, salmon].map((variant, index) => ({
+      productVariantId: variant.id,
+      productName: products.find((product) =>
+        product.variants.some((entry) => entry.id === variant.id),
+      )?.name ?? "Món",
       menuItemVariantId: variant.id,
       menuItemName: products.find((product) =>
         product.variants.some((entry) => entry.id === variant.id),
@@ -204,40 +212,53 @@ function normalizeComboOption(row: Record<string, unknown>): SalesComboOption {
   const components = Array.isArray(row.combo_items)
     ? row.combo_items
         .map((entry) => {
-        const item = entry as Record<string, unknown>;
-        const variant = (item.menu_item_variants ?? {}) as Record<string, unknown>;
-        const menuItem = (variant.menu_items ?? {}) as Record<string, unknown>;
-        const menuItemName = String(menuItem.name ?? "Món");
-        const variantLabel = item.variant_label_snapshot == null
-          ? (variant.label == null ? null : String(variant.label))
-          : String(item.variant_label_snapshot);
-        const weightGrams = item.weight_grams_snapshot == null
-          ? (variant.weight_grams == null ? null : safeNumber(variant.weight_grams))
-          : safeNumber(item.weight_grams_snapshot);
-        const quantity = Math.max(safeNumber(item.quantity, 1), 1);
-        const unitSalePrice = safeNumber(item.unit_sale_price_snapshot, 0);
-        const unitCost = safeNumber(item.unit_cost_snapshot, 0);
-        const lineSaleTotal = safeNumber(item.line_sale_total, unitSalePrice * quantity);
-        const lineCostTotal = safeNumber(item.line_cost_total, unitCost * quantity);
-        const displayText =
-          String(item.display_text ?? "").trim().length > 0
-            ? String(item.display_text)
-            : buildComboComponentText(menuItemName, variantLabel, quantity, weightGrams);
+          const item = entry as Record<string, unknown>;
+          const productVariant = (item.product_variants ?? {}) as Record<string, unknown>;
+          const product = (productVariant.products ?? {}) as Record<string, unknown>;
+          const legacyVariant = (item.menu_item_variants ?? {}) as Record<string, unknown>;
+          const menuItem = (legacyVariant.menu_items ?? {}) as Record<string, unknown>;
+          const resolvedVariantId = String(
+            item.product_variant_id ?? item.menu_item_variant_id ?? "",
+          );
+          const productName = String(product.name ?? menuItem.name ?? "Món");
+          const variantLabel =
+            item.variant_label_snapshot == null
+              ? String(productVariant.label ?? legacyVariant.label ?? "") || null
+              : String(item.variant_label_snapshot);
+          const weightGrams =
+            item.weight_grams_snapshot == null
+              ? productVariant.weight_in_grams == null
+                ? legacyVariant.weight_grams == null
+                  ? null
+                  : safeNumber(legacyVariant.weight_grams)
+                : safeNumber(productVariant.weight_in_grams)
+              : safeNumber(item.weight_grams_snapshot);
+          const quantity = Math.max(safeNumber(item.quantity, 1), 1);
+          const unitSalePrice = safeNumber(item.unit_sale_price_snapshot, 0);
+          const unitCost = safeNumber(item.unit_cost_snapshot, 0);
+          const lineSaleTotal = safeNumber(item.line_sale_total, unitSalePrice * quantity);
+          const lineCostTotal = safeNumber(item.line_cost_total, unitCost * quantity);
+          const displayText =
+            String(item.display_text ?? "").trim().length > 0
+              ? String(item.display_text)
+              : buildComboComponentText(productName, variantLabel, quantity, weightGrams);
 
-        return {
-          menuItemVariantId: String(item.menu_item_variant_id ?? ""),
-          menuItemName,
-          variantLabel,
-          weightGrams,
-          quantity,
-          unitSalePrice,
-          unitCost,
-          lineSaleTotal,
-          lineCostTotal,
-          sortOrder: safeNumber(item.sort_order, 0),
-          displayText,
-        } satisfies SalesComboComponentOption;
-      })
+          return {
+            productVariantId: resolvedVariantId,
+            productName,
+            menuItemVariantId: String(item.menu_item_variant_id ?? item.product_variant_id ?? ""),
+            menuItemName: productName,
+            variantLabel,
+            weightGrams,
+            quantity,
+            unitSalePrice,
+            unitCost,
+            lineSaleTotal,
+            lineCostTotal,
+            sortOrder: safeNumber(item.sort_order, 0),
+            displayText,
+          } satisfies SalesComboComponentOption;
+        })
         .sort((left, right) => {
           const leftOrder = left.sortOrder ?? 0;
           const rightOrder = right.sortOrder ?? 0;
@@ -427,7 +448,7 @@ async function buildCanonicalCatalog(
   const { data: comboRows, error: comboRowsError } = await supabase
     .from("combos")
     .select(
-      "id, shop_id, code, name, sale_price, default_sale_price, total_cost, gross_profit, gross_margin, notes, is_active, updated_at, combo_items(id, combo_id, menu_item_variant_id, quantity, unit_sale_price_snapshot, unit_cost_snapshot, line_sale_total, line_cost_total, display_text, sort_order, is_active, notes, menu_item_variants(label, weight_grams, menu_items(name)))",
+      "id, shop_id, code, name, sale_price, default_sale_price, total_cost, gross_profit, gross_margin, notes, is_active, updated_at, combo_items(id, combo_id, product_variant_id, menu_item_variant_id, quantity, unit_sale_price_snapshot, unit_cost_snapshot, line_sale_total, line_cost_total, display_text, sort_order, is_active, notes, product_variants(label, weight_in_grams, products(name)), menu_item_variants(label, weight_grams, menu_items(name)))",
     )
     .eq("shop_id", shopId)
     .is("deleted_at", null)
@@ -789,6 +810,12 @@ function normalizeLegacySalesOrderDetail(
               const rowComponent = component as Record<string, unknown>;
 
               return {
+                productVariantId: safeString(
+                  rowComponent.productVariantId ?? rowComponent.product_variant_id,
+                ),
+                productName: safeString(
+                  rowComponent.productName ?? rowComponent.product_name,
+                ),
                 menuItemVariantId: safeString(
                   rowComponent.menuItemVariantId ?? rowComponent.menu_item_variant_id,
                 ),
@@ -1600,6 +1627,12 @@ function normalizeSalesOrderDetail(
               const rowComponent = component as Record<string, unknown>;
 
               return {
+                productVariantId: safeString(
+                  rowComponent.productVariantId ?? rowComponent.product_variant_id,
+                ),
+                productName: safeString(
+                  rowComponent.productName ?? rowComponent.product_name,
+                ),
                 menuItemVariantId: safeString(rowComponent.menuItemVariantId ?? rowComponent.menu_item_variant_id),
                 menuItemName: safeString(rowComponent.menuItemName ?? rowComponent.menu_item_name),
                 variantLabel:

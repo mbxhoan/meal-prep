@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { ComboWorkspace } from "@/features/admin/components/ComboWorkspace";
 import { MasterDataCrudPage } from "@/features/master-data/components/MasterDataCrudPage";
 import { EmployeeDirectoryPage } from "@/features/master-data/components/EmployeeDirectoryPage";
 import {
@@ -42,6 +43,39 @@ export default async function MasterDataEntityPage({
     }
 
     return <EmployeeDirectoryPage shopName={context.shop.name} />;
+  }
+
+  if (entityKey === "combo_items") {
+    redirect("/admin/master-data/combos");
+  }
+
+  if (entityKey === "combos") {
+    const [comboPageData, comboItemPageData] = await Promise.all([
+      getMasterDataPageData("combos"),
+      getMasterDataPageData("combo_items"),
+    ]);
+
+    if (!comboPageData || !comboItemPageData || !context.shop) {
+      notFound();
+    }
+
+    const optionGroupOptions =
+      comboItemPageData.optionGroups.find(
+        (group) => group.key === "product_variants",
+      )?.options ??
+      comboItemPageData.optionGroups.find(
+        (group) => group.key === "menu_item_variants",
+      )?.options ??
+      [];
+
+    return (
+      <ComboWorkspace
+        combos={comboPageData.rows}
+        comboItems={comboItemPageData.rows}
+        comboItemOptionGroups={comboItemPageData.optionGroups}
+        productVariantOptions={optionGroupOptions}
+      />
+    );
   }
 
   const pageData = await getMasterDataPageData(entityKey);

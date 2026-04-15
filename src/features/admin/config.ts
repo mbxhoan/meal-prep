@@ -60,7 +60,7 @@ export function getAdminGuideConfig(pathname: string): AdminGuideConfig | null {
     return {
       storageKey: "mealfit-admin-guide-master-data-v2",
       title: "Danh mục dùng chung",
-      summary: "Sửa các dữ liệu nền như khách hàng và nhân viên.",
+      summary: "Sửa các dữ liệu nền như khách hàng, nhân viên và danh mục món.",
       steps: [
         "Mở đúng nhóm cần sửa.",
         "Thêm hoặc đổi thông tin ngắn gọn.",
