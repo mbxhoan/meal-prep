@@ -43,7 +43,8 @@ function makeWeightLabel(weightValue, weightUnit) {
 }
 
 function parseWorkbook(filePath) {
-  const workbook = XLSX.readFile(filePath);
+  const buffer = fs.readFileSync(filePath);
+  const workbook = XLSX.read(buffer);
   const sheets = {};
 
   workbook.SheetNames.forEach((sheetName) => {

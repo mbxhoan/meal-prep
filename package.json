@@ -1,5 +1,5 @@
 {
-  "name": "mealfit-sales-admin",
+  "name": "mealfit",
   "version": "0.1.0",
   "private": true,
   "description": "MealFit sales admin starter for products, combos, customers, employees, orders, billing, and Excel master data import.",
@@ -7,26 +7,43 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "check": "npm run lint && npm run build",
-    "import:master": "node scripts/import-master-data.mjs",
-    "validate:master": "node scripts/validate-master-data.mjs"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/ssr": "0.10.2",
-    "@supabase/supabase-js": "2.102.0",
-    "next": "16.2.4",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "xlsx": "0.18.5",
-    "zod": "4.3.6"
+    "@react-three/drei": "^10.0.7",
+    "@react-three/fiber": "^9.1.2",
+    "@react-three/postprocessing": "^3.0.4",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.99.2",
+    "@tailwindcss/postcss": "^4.1.5",
+    "@vercel/analytics": "^2.0.0",
+    "@vercel/speed-insights": "^2.0.0",
+    "gsap": "^3.13.0",
+    "next": "^15.5.15",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-error-boundary": "^5.0.0",
+    "react-icons": "^5.5.0",
+    "three": "^0.176.0",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
-    "@types/node": "25.6.0",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
-    "eslint": "10.2.1",
-    "eslint-config-next": "16.2.4",
-    "typescript": "6.0.3"
-  }
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0",
+    "critters": "^0.0.25",
+    "css-loader": "^7.1.2",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.1",
+    "loader-utils": "^3.3.1",
+    "postcss": "^8",
+    "postcss-loader": "^8.1.1",
+    "tailwindcss": "^4",
+    "tailwindcss-patch": "^9.0.0",
+    "typescript": "^5",
+    "unplugin-tailwindcss-mangle": "^5.1.2"
+  },
+  "packageManager": "yarn@4.8.1+sha512.bc946f2a022d7a1a38adfc15b36a66a3807a67629789496c3714dd1703d2e6c6b1c69ff9ec3b43141ac7a1dd853b7685638eb0074300386a59c18df351ef8ff6"
 }
