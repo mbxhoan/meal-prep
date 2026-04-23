@@ -1,113 +1,134 @@
-# MealFit Ops
+# MealFit Sales Admin
 
-MealFit Ops là nền tảng vận hành cho mô hình Meal Prep, xây bằng Next.js App Router + Supabase. Ứng dụng kết hợp storefront công khai và khu quản trị nội bộ để quản lý thực đơn, đơn hàng, tồn kho, giá vốn, báo cáo và phân quyền.
+Bộ starter repo này dành cho phần mềm nội bộ MealFit, tập trung đúng phạm vi đã chốt:
 
-## Tính Năng Chính
+- quản lý danh mục món
+- quản lý biến thể trọng lượng + giá vốn + giá bán
+- quản lý combo
+- quản lý khách hàng
+- quản lý nhân viên bán
+- quản lý đơn hàng
+- in bill
+- import Excel master data đầu kỳ
 
-- Giao diện công khai: trang chủ 3D với carousel sản phẩm, trang thực đơn, trang chi tiết sản phẩm, trang giới thiệu, chuyển ngôn ngữ Việt / Anh, và layout responsive cho desktop / tablet / mobile.
-- Khu quản trị: dashboard tổng quan, danh mục nền tảng, quản lý thực đơn, tồn kho, đơn hàng, báo cáo và phân quyền.
-- Tồn kho: theo dõi mặt hàng, lô, hạn sử dụng, FEFO, phiếu nhập, phiếu xuất, điều chỉnh kho và sổ giao dịch.
-- Đơn hàng: tạo đơn, snapshot giá bán và giá vốn, bill chốt đơn, trạng thái đơn, thanh toán và lịch sử thay đổi trạng thái.
-- Báo cáo và xuất dữ liệu: xuất Excel cho danh sách và báo cáo ngay trên giao diện.
-- An toàn nghiệp vụ: RBAC, audit log, soft delete / status-driven flow, và nguyên tắc snapshot để lịch sử không tự đổi theo master hiện tại.
+Repo được thiết kế để **mở ra là có thể chạy UI ngay**, kể cả khi chưa nối Supabase. Khi chưa có database, app sẽ dùng **demo fallback data** để bạn xem giao diện và luồng màn hình. Khi có đủ biến môi trường và đã migrate DB, app sẽ đọc dữ liệu thật.
 
-## Tech Stack
+## Stack
 
-- Next.js 15 App Router
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Supabase Auth + Supabase PostgreSQL
-- Three.js, React Three Fiber, Drei
-- GSAP
-- react-icons
-- Vercel Analytics và Speed Insights
+- Next.js App Router
+- React
+- Supabase Postgres
+- Excel import bằng `xlsx`
+- Validation bằng `zod`
 
-## Cấu Trúc Dự Án
+## Yêu cầu môi trường
+
+Next.js hiện yêu cầu tối thiểu Node.js 20.9 cho quá trình cài đặt/chạy local. App Router là kiến trúc router mặc định phù hợp cho repo này. Supabase hiện khuyến nghị dùng `@supabase/ssr` cùng `@supabase/supabase-js`, và không dùng song song với bộ auth helpers cũ. citeturn574478search0turn574478search3turn574478search4turn503869search0turn198176search17
+
+## Khởi động nhanh
+
+```bash
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+Mở `http://localhost:3000`
+
+## Nếu muốn chạy với Supabase thật
+
+### 1) Tạo project Supabase
+Lấy các biến:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+### 2) Chạy migration
+Copy file trong:
+- `supabase/migrations/0001_init.sql`
+
+vào SQL Editor hoặc dùng Supabase CLI.
+
+Supabase hỗ trợ workflow local/dev bằng CLI + Docker, và có tài liệu chính thức cho local development cũng như generate type. citeturn574478search13turn574478search7
+
+### 3) Seed dữ liệu mẫu
+Chạy:
+- `supabase/seed.sql`
+
+### 4) Import master data bằng Excel
+Có 2 cách:
+
+#### Cách A — qua giao diện web
+Vào:
+- `/imports/master-data`
+
+Tải file `.xlsx` theo template.
+
+#### Cách B — qua CLI
+```bash
+npm run import:master -- /absolute/path/to/mealfit_import_template.xlsx
+```
+
+## Cấu trúc thư mục
 
 ```text
-src/
-  app/                 Routes public và admin
-  config/              Content, translations, product data
-  features/
-    admin/             UI và logic cho khu quản trị
-    inventory/         Tồn kho, phiếu nhập/xuất, FEFO
-    master-data/       Danh mục nền tảng
-    sales/             Hóa đơn, snapshot giá, thanh toán
-    navigation/        Header / menu công khai
-    product-showcase/  Trang chủ và chi tiết sản phẩm
-    carousel/          3D carousel
-    ice-cubes/         Hiệu ứng trang chủ
-  lib/                 Service, actions, validation, types
-  shared/              Context, hooks, component dùng chung
-supabase/              Migrations và seed
-docs/development/      Tài liệu nghiệp vụ và SOP
+app/
+  api/
+  combos/
+  customers/
+  employees/
+  imports/master-data/
+  orders/
+  products/
+components/
+docs/
+lib/
+resources/
+scripts/
+supabase/
+AGENTS.md
 ```
 
-## Chạy Dự Án
+## Thứ tự import master data
 
-1. Cài dependencies.
-
-```bash
-yarn install
+```text
+product_categories
+-> products
+-> product_variants
+-> combos
+-> combo_items
+-> customers
+-> employees
 ```
 
-2. Tạo file `.env.local` từ mẫu.
+## Các sheet Excel được hỗ trợ
 
-```bash
-cp docs/init/05_env_example.txt .env.local
-```
+- `product_categories`
+- `products`
+- `product_variants`
+- `combos`
+- `combo_items`
+- `customers`
+- `employees`
 
-3. Điền biến môi trường Supabase.
+## Đường dẫn tài liệu nên đọc trước
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-# hoặc NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=YOUR_SUPABASE_KEY
-```
+- `AGENTS.md`
+- `docs/01-repo-architecture.md`
+- `docs/03-import-flow.md`
+- `docs/06-codex-prompts.md`
 
-4. Áp dụng schema / migrations trong `supabase/migrations/` vào project Supabase của bạn. Nếu muốn dữ liệu mẫu, nạp thêm `supabase/seed.sql`.
-5. Chạy ứng dụng.
+## Ghi chú triển khai thật
 
-```bash
-yarn dev
-```
+Bản starter này ưu tiên:
+- cấu trúc repo rõ
+- import dữ liệu đầu kỳ tốt
+- UI quản trị gọn, dễ vận hành
+- tránh phụ thuộc thư viện UI nặng
 
-6. Mở trình duyệt tại `http://localhost:3000` cho storefront công khai và `http://localhost:3000/admin/login` cho khu quản trị.
-
-## Script Hữu Ích
-
-- `yarn dev`
-- `yarn build`
-- `yarn start`
-- `yarn lint`
-
-## Route Chính
-
-- `/` - trang chủ công khai
-- `/menu` - danh sách thực đơn
-- `/product/[slug]` - trang chi tiết sản phẩm
-- `/about` - giới thiệu
-- `/admin` - dashboard quản trị
-- `/admin/master-data` - danh mục nền tảng
-- `/admin/menu` - quản lý thực đơn
-- `/admin/inventory` - tồn kho
-- `/admin/orders` - danh sách đơn hàng
-- `/admin/orders/new` - tạo đơn mới
-- `/admin/analytics` - báo cáo
-- `/admin/settings/roles` - phân quyền
-
-## Tài Liệu Nghiệp Vụ
-
-- `docs/development/README.md`
-- `docs/development/PRODUCT_SCOPE.md`
-- `docs/development/BUSINESS_RULES.md`
-- `docs/development/ORDER_PRICING_COST_RULES.md`
-- `docs/development/INVENTORY_FEFO_RULES.md`
-- `docs/development/SCHEMA_SPEC.md`
-- `docs/development/RBAC.md`
-
-## Ghi Chú
-
-- Nếu Supabase chưa được cấu hình, khu quản trị sẽ chuyển sang chế độ demo để bạn xem giao diện và luồng thao tác.
-- Giao diện công khai hỗ trợ chuyển ngôn ngữ Việt / Anh qua thanh điều hướng.
+Khi đưa vào production, nên làm tiếp:
+- auth + role chi tiết
+- audit log
+- soft delete chuẩn
+- bill PDF chuẩn mẫu thương hiệu
+- test coverage cho import và order calculations
