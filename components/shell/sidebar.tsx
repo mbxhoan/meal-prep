@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { navigationItems } from '@/lib/navigation';
 
@@ -5,9 +6,13 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="brand-panel">
-        <div className="brand-badge">MF</div>
-        <div>
-          <p className="brand-title">MealFit Sales Admin</p>
+        <div className="brand-mark">
+          <Image src="/logo-square.jpg" alt="MealFit" fill sizes="56px" className="brand-mark-image" priority />
+        </div>
+        <div className="brand-copy">
+          <div className="brand-wordmark">
+            <Image src="/logo.jpg" alt="MealFit Sales Admin" fill sizes="180px" className="brand-wordmark-image" priority />
+          </div>
           <p className="brand-subtitle">Starter repo cho vận hành nội bộ</p>
         </div>
       </div>

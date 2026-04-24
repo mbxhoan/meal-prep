@@ -11,7 +11,8 @@ async function fetchMap<T extends { id: string }>(
   const { data, error } = await client.from(table).select(`id, ${codeColumn}`);
   if (error) throw error;
 
-  return new Map((data ?? []).map((row: Record<string, string>) => [row[codeColumn], row.id]));
+  const rows = (data ?? []) as unknown as Array<Record<string, string>>;
+  return new Map(rows.map((row) => [row[codeColumn], row.id]));
 }
 
 export async function executeMasterDataImport(client: SupabaseClient, buffer: Buffer): Promise<ImportResult> {
@@ -33,7 +34,7 @@ export async function executeMasterDataImport(client: SupabaseClient, buffer: Bu
   const detail: ImportIssue[] = [];
   let insertedOrUpdated = 0;
 
-  const upsertCount = async (promise: Promise<{ error: unknown; count?: number | null }>, fallbackCount: number) => {
+  const upsertCount = async (promise: PromiseLike<{ error: unknown; count?: number | null }>, fallbackCount: number) => {
     const response = await promise;
     if (response.error) throw response.error;
     insertedOrUpdated += response.count ?? fallbackCount;

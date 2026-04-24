@@ -5,6 +5,8 @@ type ComboRow = {
   id: string;
   combo_code: string;
   combo_name: string;
+  cost_price: number;
+  base_sale_price: number;
   sale_price: number;
   items_count: number;
   is_active: boolean;
@@ -17,7 +19,7 @@ export async function listCombos(params?: { q?: string }) {
   if (client) {
     const { data, error } = await client
       .from('combos')
-      .select('id, combo_code, combo_name, sale_price, is_active, combo_items(id)')
+      .select('id, combo_code, combo_name, cost_price, base_sale_price, sale_price, is_active, combo_items(id)')
       .order('combo_name', { ascending: true });
 
     if (!error && data) {
@@ -25,6 +27,8 @@ export async function listCombos(params?: { q?: string }) {
         id: row.id,
         combo_code: row.combo_code,
         combo_name: row.combo_name,
+        cost_price: Number(row.cost_price ?? 0),
+        base_sale_price: Number(row.base_sale_price ?? 0),
         sale_price: row.sale_price,
         items_count: Array.isArray(row.combo_items) ? row.combo_items.length : 0,
         is_active: row.is_active

@@ -5,9 +5,10 @@ import { PageHeader } from '@/components/ui/page-header';
 import { listOrders } from '@/lib/repository/orders';
 import { formatDate } from '@/lib/format';
 import { toCurrency } from '@/lib/utils';
+import { deleteOrderAction, updateOrderStatusesAction } from './actions';
 
 function toneForStatus(value: string) {
-  if (['paid', 'confirmed', 'delivered'].includes(value)) return 'success';
+  if (['paid', 'confirmed', 'completed', 'delivered'].includes(value)) return 'success';
   if (['unpaid', 'cancelled', 'failed'].includes(value)) return 'danger';
   return 'warning';
 }
@@ -15,7 +16,7 @@ function toneForStatus(value: string) {
 export default async function OrdersPage({
   searchParams
 }: {
-  searchParams: Promise<{ q?: string; orderStatus?: string }>;
+  searchParams: Promise<{ q?: string; orderStatus?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const rows = await listOrders(params);
@@ -34,6 +35,8 @@ export default async function OrdersPage({
           </div>
         }
       />
+
+      {params.error ? <div className="alert alert-danger">Không thể thao tác vì chưa cấu hình Supabase.</div> : null}
 
       <form className="filter-bar">
         <input name="q" defaultValue={params.q} className="text-input" placeholder="Tìm theo mã đơn, khách hoặc nhân viên..." />
@@ -61,6 +64,16 @@ export default async function OrdersPage({
           { key: 'customer_name', header: 'Khách hàng' },
           { key: 'employee_name', header: 'Nhân viên' },
           {
+            key: 'shipper_name',
+            header: 'Shipper',
+            render: (item) => (
+              <span>
+                {item.shipper_name || '-'}
+                {item.shipper_phone ? <span className="muted"> · {item.shipper_phone}</span> : null}
+              </span>
+            )
+          },
+          {
             key: 'subtotal_amount',
             header: 'Tạm tính',
             render: (item) => toCurrency(item.subtotal_amount)
@@ -81,6 +94,11 @@ export default async function OrdersPage({
             render: (item) => toCurrency(item.total_amount)
           },
           {
+            key: 'order_status',
+            header: 'Đơn',
+            render: (item) => <Badge tone={toneForStatus(item.order_status) as 'success' | 'warning' | 'danger'}>{item.order_status}</Badge>
+          },
+          {
             key: 'payment_status',
             header: 'Thanh toán',
             render: (item) => <Badge tone={toneForStatus(item.payment_status) as 'success' | 'warning' | 'danger'}>{item.payment_status}</Badge>
@@ -89,6 +107,48 @@ export default async function OrdersPage({
             key: 'delivery_status',
             header: 'Giao hàng',
             render: (item) => <Badge tone={toneForStatus(item.delivery_status) as 'success' | 'warning' | 'danger'}>{item.delivery_status}</Badge>
+          },
+          {
+            key: 'status_actions',
+            header: 'Cập nhật',
+            render: (item) => (
+              <form action={updateOrderStatusesAction} className="status-form">
+                <input type="hidden" name="id" value={item.id} />
+                <select name="order_status" defaultValue={item.order_status} className="text-input status-select">
+                  <option value="draft">draft</option>
+                  <option value="confirmed">confirmed</option>
+                  <option value="completed">completed</option>
+                  <option value="cancelled">cancelled</option>
+                </select>
+                <select name="payment_status" defaultValue={item.payment_status} className="text-input status-select">
+                  <option value="unpaid">unpaid</option>
+                  <option value="partial">partial</option>
+                  <option value="paid">paid</option>
+                </select>
+                <select name="delivery_status" defaultValue={item.delivery_status} className="text-input status-select">
+                  <option value="pending">pending</option>
+                  <option value="preparing">preparing</option>
+                  <option value="shipping">shipping</option>
+                  <option value="delivered">delivered</option>
+                  <option value="failed">failed</option>
+                </select>
+                <button type="submit" className="secondary-button compact-button">
+                  Lưu
+                </button>
+              </form>
+            )
+          },
+          {
+            key: 'delete',
+            header: 'Xóa',
+            render: (item) => (
+              <form action={deleteOrderAction}>
+                <input type="hidden" name="id" value={item.id} />
+                <button type="submit" className="danger-button compact-button">
+                  Xóa
+                </button>
+              </form>
+            )
           }
         ]}
       />

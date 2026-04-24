@@ -41,6 +41,7 @@ Nếu thiếu `variant_code`, hệ thống tự generate từ:
 
 ### combos
 Upsert theo `combo_code`
+File import chỉ nhập `sale_price` là giá bán hiện tại. Hai cột `cost_price` và `base_sale_price` của combo do DB tự cộng từ `combo_items`, không nhập/sửa tay trong import.
 
 ### combo_items
 Resolve:

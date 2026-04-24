@@ -17,7 +17,7 @@
 ## Combos `/combos`
 - search theo mã/tên combo
 - table combo
-- hiển thị giá bán
+- hiển thị giá vốn tham chiếu, giá bán ban đầu tham chiếu và giá bán hiện tại
 - hiển thị số thành phần
 
 ## Customers `/customers`
@@ -34,16 +34,23 @@
 - filter theo trạng thái
 - search theo mã đơn / khách
 - hiển thị tạm tính / ship / giảm giá / tổng thanh toán
+- hiển thị thông tin shipper nếu có
 - badge cho:
   - order_status
   - payment_status
   - delivery_status
+- cho phép cập nhật nhanh order_status / payment_status / delivery_status
+- cho phép xoá đơn hàng
 
 ## New Order `/orders/new`
-- form demo chuẩn để dev bám theo
+- form tạo đơn thật khi đã cấu hình Supabase
 - 2 vùng:
   - thông tin đầu đơn
   - dòng hàng
+- dòng hàng cho phép thêm nhiều món lẻ hoặc nhiều combo
+- phí ship và giảm giá không nhập thì mặc định 0
+- shipper và SĐT shipper là tuỳ chọn
+- tổng tiền tự cập nhật khi thêm / xoá / sửa dòng hàng
 
 ## Import `/imports/master-data`
 - upload file xlsx

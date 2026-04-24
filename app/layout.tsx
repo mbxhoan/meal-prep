@@ -4,7 +4,10 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'MealFit Sales Admin',
-  description: 'Quản lý món hàng, combo, khách hàng, nhân viên, đơn hàng và import Excel master data.'
+  description: 'Quản lý món hàng, combo, khách hàng, nhân viên, đơn hàng và import Excel master data.',
+  icons: {
+    icon: '/logo-square.jpg'
+  }
 };
 
 export default function RootLayout({

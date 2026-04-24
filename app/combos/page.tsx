@@ -34,8 +34,18 @@ export default async function CombosPage({
           { key: 'combo_name', header: 'Tên combo' },
           { key: 'items_count', header: 'Số thành phần' },
           {
+            key: 'cost_price',
+            header: 'Giá vốn',
+            render: (item) => toCurrency(item.cost_price)
+          },
+          {
+            key: 'base_sale_price',
+            header: 'Giá bán ban đầu',
+            render: (item) => toCurrency(item.base_sale_price)
+          },
+          {
             key: 'sale_price',
-            header: 'Giá bán',
+            header: 'Giá bán hiện tại',
             render: (item) => toCurrency(item.sale_price)
           },
           {

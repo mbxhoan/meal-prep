@@ -23,9 +23,9 @@ export const demoProducts = [
 ];
 
 export const demoCombos = [
-  { id: 'com-1', combo_code: 'COM-KEEPFIT', combo_name: 'Combo giữ dáng', sale_price: 159000, items_count: 3, is_active: true },
-  { id: 'com-2', combo_code: 'COM-PROTEIN', combo_name: 'Combo protein cao', sale_price: 189000, items_count: 3, is_active: true },
-  { id: 'com-3', combo_code: 'COM-LEAN', combo_name: 'Combo lean clean', sale_price: 149000, items_count: 2, is_active: true }
+  { id: 'com-1', combo_code: 'COM-KEEPFIT', combo_name: 'Combo giữ dáng', sale_price: 159000, cost_price: 109000, base_sale_price: 176000, items_count: 3, is_active: true },
+  { id: 'com-2', combo_code: 'COM-PROTEIN', combo_name: 'Combo protein cao', sale_price: 189000, cost_price: 120000, base_sale_price: 193000, items_count: 3, is_active: true },
+  { id: 'com-3', combo_code: 'COM-LEAN', combo_name: 'Combo lean clean', sale_price: 149000, cost_price: 84000, base_sale_price: 128000, items_count: 2, is_active: true }
 ];
 
 export const demoCustomers = [
@@ -49,6 +49,8 @@ export const demoOrders = [
     employee_name: 'Hoàng My',
     subtotal_amount: 189000,
     shipping_fee: 15000,
+    shipper_name: 'Anh Tú',
+    shipper_phone: '0908000111',
     discount_amount: 10000,
     total_amount: 194000,
     amount_paid: 194000,
@@ -64,6 +66,8 @@ export const demoOrders = [
     employee_name: 'Khánh Linh',
     subtotal_amount: 149000,
     shipping_fee: 20000,
+    shipper_name: '',
+    shipper_phone: '',
     discount_amount: 0,
     total_amount: 169000,
     amount_paid: 50000,
@@ -79,6 +83,8 @@ export const demoOrders = [
     employee_name: 'Minh Tuấn',
     subtotal_amount: 98000,
     shipping_fee: 0,
+    shipper_name: '',
+    shipper_phone: '',
     discount_amount: 0,
     total_amount: 98000,
     amount_paid: 0,
@@ -89,8 +95,8 @@ export const demoOrders = [
 ];
 
 export const demoVariants = [
-  { variant_code: 'VAR-UCG-CJ-100G', label: 'Ức gà cajun 100g', sale_price: 52000, cost_price: 31000 },
-  { variant_code: 'VAR-UCG-CJ-150G', label: 'Ức gà cajun 150g', sale_price: 69000, cost_price: 42000 },
-  { variant_code: 'VAR-TOM-GT-100G', label: 'Tôm gừng tỏi 100g', sale_price: 65000, cost_price: 42000 },
-  { variant_code: 'VAR-HEO-TB-150G', label: 'Nạc heo tây bắc 150g', sale_price: 59000, cost_price: 36000 }
+  { id: 'var-1', variant_code: 'VAR-UCG-CJ-100G', product_name: 'Ức gà cajun', weight_label: '100g', label: 'Ức gà cajun 100g', sale_price: 52000, cost_price: 31000 },
+  { id: 'var-2', variant_code: 'VAR-UCG-CJ-150G', product_name: 'Ức gà cajun', weight_label: '150g', label: 'Ức gà cajun 150g', sale_price: 69000, cost_price: 42000 },
+  { id: 'var-3', variant_code: 'VAR-TOM-GT-100G', product_name: 'Tôm gừng tỏi', weight_label: '100g', label: 'Tôm gừng tỏi 100g', sale_price: 65000, cost_price: 42000 },
+  { id: 'var-4', variant_code: 'VAR-HEO-TB-150G', product_name: 'Nạc heo tây bắc', weight_label: '150g', label: 'Nạc heo tây bắc 150g', sale_price: 59000, cost_price: 36000 }
 ];

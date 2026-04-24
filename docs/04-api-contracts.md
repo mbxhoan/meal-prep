@@ -46,11 +46,34 @@ Trả về:
 }
 ```
 
+## Server Actions đơn hàng
+### `createOrderAction`
+Input từ form `/orders/new`:
+- `customer_id`, `employee_id`
+- `phone`, `delivery_address`
+- `shipper_name`, `shipper_phone` tuỳ chọn
+- `shipping_fee`, `discount_amount`, mặc định 0 nếu để trống
+- `order_status`, `payment_status`, `delivery_status`
+- nhiều dòng `line_type[]`, `item_id[]`, `qty[]`
+
+Xử lý:
+- chỉ nhận `line_type = product_variant | combo`
+- đọc lại giá từ DB trước khi lưu
+- lưu snapshot tên, trọng lượng, giá bán, giá vốn vào `sales_order_items`
+- tự tính `subtotal_amount`, `discount_amount`, `total_amount`
+
+### `updateOrderStatusesAction`
+Cập nhật nhanh:
+- `order_status`
+- `payment_status`
+- `delivery_status`
+
+### `deleteOrderAction`
+Xoá `sales_orders`; `sales_order_items` xoá theo cascade.
+
 ## API mở rộng nên làm tiếp
 - `GET /api/products`
 - `POST /api/products`
 - `PATCH /api/products/:id`
 - `GET /api/combos`
-- `POST /api/orders`
-- `PATCH /api/orders/:id/status`
 - `POST /api/orders/:id/payments`

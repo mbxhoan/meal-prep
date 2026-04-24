@@ -40,6 +40,11 @@ Vì combo cần biết chính xác:
 
 Nếu chỉ trỏ về `products`, hệ thống sẽ không biết 100g hay 150g.
 
+Combo có 3 nhóm giá:
+- `cost_price`: giá vốn tham chiếu, hệ thống tự cộng từ `combo_items -> product_variants.cost_price`
+- `base_sale_price`: giá bán ban đầu tham chiếu, hệ thống tự cộng từ `combo_items -> product_variants.sale_price`
+- `sale_price`: giá bán hiện tại dùng để bán hàng và lưu snapshot vào đơn
+
 ## 6. Demo fallback
 Nếu chưa có Supabase env, app sẽ lấy dữ liệu từ `lib/demo-data.ts`.
 Mục đích:
@@ -76,3 +81,5 @@ Khi đã có env + DB:
 - id là khoá kỹ thuật
 - đơn hàng phải lưu snapshot tên và giá
 - bill đọc từ order, không nhập tay
+- đơn hàng có thể có nhiều dòng `product_variant` và nhiều dòng `combo`
+- `sales_orders.shipper_name` và `sales_orders.shipper_phone` là thông tin tuỳ chọn
