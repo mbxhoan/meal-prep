@@ -10,10 +10,10 @@ export function Sidebar() {
           <Image src="/logo-square.jpg" alt="MealFit" fill sizes="56px" className="brand-mark-image" priority />
         </div>
         <div className="brand-copy">
-          <div className="brand-wordmark">
+          {/* <div className="brand-wordmark">
             <Image src="/logo.jpg" alt="MealFit Sales Admin" fill sizes="180px" className="brand-wordmark-image" priority />
-          </div>
-          <p className="brand-subtitle">Starter repo cho vận hành nội bộ</p>
+          </div> */}
+          <p className="brand-subtitle">{process.env.NEXT_PUBLIC_APP_NAME}</p>
         </div>
       </div>
 

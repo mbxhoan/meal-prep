@@ -4,10 +4,10 @@
   "private": true,
   "description": "MealFit sales admin starter for products, combos, customers, employees, orders, billing, and Excel master data import.",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "yarn exec next dev",
+    "build": "yarn exec next build",
+    "start": "yarn exec next start",
+    "lint": "yarn exec next lint"
   },
   "dependencies": {
     "@react-three/drei": "^10.0.7",
